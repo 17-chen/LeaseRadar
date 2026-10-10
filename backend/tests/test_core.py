@@ -153,3 +153,18 @@ def test_sort_tolerates_unknown_price_kind():
     r=c.post('/api/v1/listings/search',json={'sort':'monthly'})
     assert r.status_code==200 and r.json()['total']==2
     assert {x['price_kind'] for x in r.json()['items']} == {'starting_bid', None}
+
+def test_same_input_new_extraction_is_not_market_change(monkeypatch):
+    import app.service as service
+    with Session() as db:
+        ingest(db,'nongjy','https://www.nongjy.cn/web/propertyBid/detail/1',sample());db.commit()
+    parser=service.PARSERS['nongjy']
+    def corrected(html,url):
+        fields,evidence,text=parser(html,url)
+        fields['area_m2']='61'
+        return fields,evidence,text
+    monkeypatch.setitem(service.PARSERS,'nongjy',corrected)
+    with Session() as db:
+        ingest(db,'nongjy','https://www.nongjy.cn/web/propertyBid/detail/1',sample());db.commit()
+        events=list(db.scalars(select(Event).order_by(Event.id)))
+        assert [e.kind for e in events]==['new','reprocessing']

@@ -68,7 +68,7 @@ def nongjy_parse(html, url):
     fields = {'title': title_node.get_text(' ', strip=True), 'source_url': url,
               'property_type': None, 'environment': None, 'operation': None,
               'period_basis': None, 'price_kind': 'starting_bid', 'status': 'unknown',
-              'parser_version': 'nongjy-html-v1', 'warnings': []}
+              'parser_version': 'nongjy-html-v2', 'warnings': []}
     evidence = {'title': fields['title']}
     for label, key in [('项目位置：', 'address'), ('项目编号：', 'project_code'), ('交易单位：', 'area_m2'), ('保证金：', 'deposit')]:
         node = next((n for n in soup.select('.cont-info-left-bt') if n.get_text(strip=True) == label), None)
@@ -142,7 +142,7 @@ def wzpt_parse(html, url):
     title = soup.title.get_text(strip=True)
     fields = {'title': title, 'source_url': url, 'status': 'unknown', 'price_kind': 'asking',
               'period_basis': None, 'property_type': None, 'environment': 'campus', 'operation': None,
-              'parser_version': 'wzpt-html-v1', 'warnings': ['经营许可与披露截止是否为报名截止待核对']}
+              'parser_version': 'wzpt-html-v2', 'warnings': ['经营许可与披露截止是否为报名截止待核对']}
     evidence = {'title': title, 'environment': title}
     if not article.select('tr'):
         fields['warnings'].append('链接型公告：正文未提供结构化字段，需核验所链接交易平台')

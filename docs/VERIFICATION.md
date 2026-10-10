@@ -4,7 +4,7 @@
 
 ## 已通过
 
-- PYTHONPATH=backend .venv/bin/pytest -q backend/tests：24 passed，1个Starlette/AnyIO弃用提示；隔离demo测试库，无真实消息。
+- PYTHONPATH=backend .venv/bin/pytest -q backend/tests：25 passed，1个Starlette/AnyIO弃用提示；隔离demo测试库，无真实消息。
 - node --check frontend/app.js；pip check：依赖兼容检查通过。
 - Alembic新库升级0002且3个来源种子存在；既有开发库迁移未清空数据。
 - Compose以占位密码校验配置通过；没有Docker服务，因此没有容器实际运行结果。

@@ -13,7 +13,7 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
     if attachment_cache is not None and source_id == 'nongjy':
         from .attachments import enrich_docx
         enrich_docx(fields, evidence, attachment_cache)
-        fields['parser_version'] = 'nongjy-html-docx-v2'
+        fields['parser_version'] = 'nongjy-html-docx-v3'
     fields.update(normalize_price(fields))
     content_hash = hashlib.sha256(html.encode()).hexdigest()
     snapshot_dir = DATA / 'snapshots'
@@ -44,7 +44,13 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
     db.add(version); db.flush()
     listing.current_version_id = version.id
     for field, quote in evidence.items(): db.add(Evidence(version_id=version.id, field=field, quote=quote))
-    reprocessing = previous and previous.fields.get('parser_version') != fields.get('parser_version')
+    reprocessing = False
+    if previous:
+        old_files = {a['url']: a.get('sha256') for a in previous.fields.get('attachments', [])}
+        new_files = {a['url']: a.get('sha256') for a in fields.get('attachments', [])}
+        same_html = db.get(RawDocument, previous.raw_id).sha256 == content_hash
+        incomplete_files = any(digest is None for digest in new_files.values())
+        reprocessing = previous.fields.get('parser_version') != fields.get('parser_version') or (same_html and (old_files == new_files or incomplete_files))
     kind = event_kind or ('new' if is_new else 'reprocessing' if reprocessing else 'changed')
     if previous and not reprocessing and not event_kind:
         old = previous.fields
