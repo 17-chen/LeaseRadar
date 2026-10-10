@@ -1,0 +1,6 @@
+.git
+.venv
+private
+node_modules
+docs
+*.zip

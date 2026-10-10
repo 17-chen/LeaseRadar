@@ -1,0 +1,32 @@
+[
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/list",
+    "checked_at": "2026-10-10T05:32:58.369605+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  },
+  {
+    "url": "https://www.nongjy.cn/robots.txt",
+    "checked_at": "2026-10-10T05:32:58.443462+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  },
+  {
+    "url": "https://www.wzcqpt.com/WZPT/",
+    "checked_at": "2026-10-10T05:32:58.496242+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  },
+  {
+    "url": "https://zjpse.com/prjs/lease/detail/128695.html",
+    "checked_at": "2026-10-10T05:32:58.533778+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  },
+  {
+    "url": "https://www.wzpt.edu.cn/2025/0710/c739771a2844693/page.htm",
+    "checked_at": "2026-10-10T05:32:58.819700+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  },
+  {
+    "url": "https://www.wzpt.edu.cn/robots.txt",
+    "checked_at": "2026-10-10T05:32:58.871125+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>"
+  }
+]

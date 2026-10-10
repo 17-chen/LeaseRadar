@@ -1,0 +1,22 @@
+# 设计示例，非负责人已确认条件；需要实现schema校验。
+name: 温州咖啡铺位候选
+timezone: Asia/Shanghai
+hard_filters:
+  city: 温州市
+  property_types: [shop, commercial_unit]
+  area_m2: {min: 30, max: 100, inclusive: true}
+  first_year_rent_cny: {max: 100000}
+  price_kinds: [starting_bid, asking]
+  operation: coffee_beverage
+  registration: open_or_unknown
+preferences:
+  environments: [campus, apartment_building]
+unknown_policy: review_digest
+notifications:
+  channels: [in_app, local_test_sink]
+  instant_events: [new_high_match, price_drop, relisted, material_condition_change]
+  daily_digest_local_time: '18:00'
+  deadline_reminders_hours: [72, 24]
+  quiet_hours: {start: '22:00', end: '08:00'}
+  allow_urgent_override: false
+initial_sync: digest_only

@@ -1,0 +1,36 @@
+# 架构说明
+
+> 最后更新：2026-10-10
+
+## 系统概览
+
+模块化单体API+后台worker。领域规则共享，数据库为权威；本地SQLite运行方式与PostgreSQL Compose共用模型。
+
+## 组件与职责
+
+| 组件 | 路径 | 职责 | 依赖 |
+|---|---|---|---|
+| API/认证 | backend/app/main.py | 会话、CSRF、权限、筛选与用户操作 | FastAPI/Argon2 |
+| 数据 | backend/app/db.py、migrations | 资产/挂牌/源记录/版本/证据/任务/outbox | SQLAlchemy/Alembic |
+| 来源 | backend/app/collectors.py | 已验证HTML选择器、网络边界与分页 | httpx/BeautifulSoup |
+| 附件 | backend/app/attachments.py | 限额DOCX、精确标的表格价据 | zipfile/XML |
+| 领域 | backend/app/domain.py | Decimal换算和pass/fail/unknown | Python |
+| 流水线 | backend/app/service.py | 版本/事件/匹配同事务、任务领取 | 数据库 |
+| worker | backend/app/local_worker.py、tasks.py | 本地队列/Celery轮询 | 数据库/Redis |
+| 界面 | frontend | 自由筛选、证据、比较与跟进 | 同域API |
+
+## 数据流
+
+来源列表→详情/附件→私有快照→规则字段/证据→保守资产和挂牌→不可变版本→订阅三值匹配→事务outbox→站内收件箱。
+
+## 外部服务
+
+公开候选来源；GitHub源码仓库。无AI/邮件/云托管实际接入。
+
+## 构建、测试与部署
+
+backend/requirements.lock锁定依赖；PYTHONPATH=backend pytest -q backend/tests；Dockerfile+Compose待运行验证。
+
+## 架构约束与风险
+
+未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、全量回扫、精确附件定位与生产安全仍是后续工作。

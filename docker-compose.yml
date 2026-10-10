@@ -1,0 +1,65 @@
+name: leaseradar
+services:
+  db:
+    image: postgres:16.8-alpine
+    environment:
+      POSTGRES_DB: leaseradar
+      POSTGRES_USER: leaseradar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U leaseradar]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+  redis:
+    image: redis:7.4.3-alpine
+    restart: unless-stopped
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: &env
+      DATABASE_URL: postgresql+psycopg://leaseradar:${POSTGRES_PASSWORD}@db/leaseradar
+      REDIS_URL: redis://redis:6379/0
+      APP_MODE: live
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      db: {condition: service_healthy}
+    command: [python, -m, app.cli, migrate]
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: *env
+    ports: [127.0.0.1:8000:8000]
+    volumes: [snapshots:/app/private]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+    restart: unless-stopped
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: *env
+    volumes: [snapshots:/app/private]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+    command: [celery, -A, app.tasks.celery, worker, --loglevel=INFO, --concurrency=1]
+    restart: unless-stopped
+  beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: *env
+    volumes: [snapshots:/app/private]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+    command: [celery, -A, app.tasks.celery, beat, --loglevel=INFO, --schedule=/app/private/celerybeat]
+    restart: unless-stopped
+volumes:
+  pgdata:
+  snapshots:

@@ -1,0 +1,97 @@
+[
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/list",
+    "checked_at": "2026-10-10T05:33:17.045748+00:00",
+    "http_status": "200",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 61695,
+    "detail_links": [
+      "/web/propertyBid/detail/2019",
+      "/web/propertyBid/detail/2020",
+      "/web/propertyBid/detail/2021",
+      "/web/propertyBid/detail/2022",
+      "/web/propertyBid/detail/2023"
+    ]
+  },
+  {
+    "url": "https://www.nongjy.cn/robots.txt",
+    "checked_at": "2026-10-10T05:33:19.161306+00:00",
+    "http_status": "404",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 122
+  },
+  {
+    "url": "https://www.wzcqpt.com/WZPT/",
+    "checked_at": "2026-10-10T05:33:23.293596+00:00",
+    "http_status": "200",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 66777
+  },
+  {
+    "url": "https://zjpse.com/prjs/lease/detail/128695.html",
+    "checked_at": "2026-10-10T05:33:25.408650+00:00",
+    "http_status": "302",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 0
+  },
+  {
+    "url": "https://www.wzpt.edu.cn/2025/0710/c739771a2844693/page.htm",
+    "checked_at": "2026-10-10T05:33:27.562626+00:00",
+    "http_status": "200",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 82433
+  },
+  {
+    "url": "https://www.wzpt.edu.cn/robots.txt",
+    "checked_at": "2026-10-10T05:33:29.695489+00:00",
+    "http_status": "404",
+    "error": "",
+    "method": "curl GET with TLS verification",
+    "bytes": 196
+  },
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/detail/2019",
+    "method": "curl GET",
+    "bytes": 100169,
+    "error": "",
+    "has_area": true,
+    "has_registration": true
+  },
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/detail/2020",
+    "method": "curl GET",
+    "bytes": 99782,
+    "error": "",
+    "has_area": true,
+    "has_registration": true
+  },
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/detail/2021",
+    "method": "curl GET",
+    "bytes": 96777,
+    "error": "",
+    "has_area": true,
+    "has_registration": true
+  },
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/detail/2022",
+    "method": "curl GET",
+    "bytes": 96258,
+    "error": "",
+    "has_area": true,
+    "has_registration": true
+  },
+  {
+    "url": "https://www.nongjy.cn/web/propertyBid/detail/2023",
+    "method": "curl GET",
+    "bytes": 96258,
+    "error": "",
+    "has_area": true,
+    "has_registration": true
+  }
+]

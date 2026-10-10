@@ -1,0 +1,1 @@
+"""LeaseRadar core application."""

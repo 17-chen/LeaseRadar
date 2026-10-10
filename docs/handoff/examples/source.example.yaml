@@ -1,0 +1,26 @@
+# 配置草案：待实际审计后填写，不提供猜测的selector或API。
+id: nongjy
+name: 农交云公开招租
+adapter: nongjy
+base_url: https://www.nongjy.cn
+seed_url: https://www.nongjy.cn/web/propertyBid/list
+allowed_domains: [www.nongjy.cn, nongjy.cn]
+enabled: false  # 完成接入与访问规则核验后启用
+status: pending_validation
+schedule:
+  poll_minutes: 30
+  backfill_daily: true
+fetch:
+  strategy: http_first
+  domain_concurrency: 1
+  request_gap_seconds: [2, 5]
+  respect_retry_after: true
+  timeout_seconds: 30
+  max_retries: 3
+  follow_redirects_with_validation: true
+  attachment_max_mb: 20
+policy:
+  rules_checked_at: null
+  permitted_scope_note: null
+  robots_checked_at: null
+secrets: {}  # 密钥仅环境变量或secret store，不写入配置
