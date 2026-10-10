@@ -4,7 +4,7 @@
 
 ## 已通过
 
-- PYTHONPATH=backend .venv/bin/pytest -q backend/tests：23 passed，1个Starlette/AnyIO弃用提示；隔离demo测试库，无真实消息。
+- PYTHONPATH=backend .venv/bin/pytest -q backend/tests：24 passed，1个Starlette/AnyIO弃用提示；隔离demo测试库，无真实消息。
 - node --check frontend/app.js；pip check：依赖兼容检查通过。
 - Alembic新库升级0002且3个来源种子存在；既有开发库迁移未清空数据。
 - Compose以占位密码校验配置通过；没有Docker服务，因此没有容器实际运行结果。
@@ -20,3 +20,5 @@
 Docker/PostgreSQL/Celery实际运行、生产HTTPS、外部通知、自动分页补扫、严格DNS重绑定防御、关键PDF/OCR与完整第二来源。没有匹配召回/准确率、延迟P95、真实用户耗时或试用业绩。
 
 来源扫描一次/有限分页不等于长期覆盖；6条价据成功不是关键字段正确率指标。代码测试数量不代表生产就绪。
+
+GitHub首次CI在Python3.12上通过23项测试与新库迁移；随后补充未知价格性质排序的回归测试，最新提交CI另行核查。

@@ -144,3 +144,12 @@ def test_durable_job_recovery_and_failure(monkeypatch):
 def test_sold_price_kind_does_not_become_starting_bid():
     f,_,_=nongjy_parse(sample().replace('起始价','成交价'),'https://www.nongjy.cn/web/propertyBid/detail/1')
     assert f['price_kind']=='sale'
+
+def test_sort_tolerates_unknown_price_kind():
+    with Session() as db:
+        for i, html in enumerate([sample(), sample().replace('起始价','未声明金额性质')], 1):
+            ingest(db,'nongjy',f'https://www.nongjy.cn/web/propertyBid/detail/{i}',html);db.commit()
+    c=client_for('member')
+    r=c.post('/api/v1/listings/search',json={'sort':'monthly'})
+    assert r.status_code==200 and r.json()['total']==2
+    assert {x['price_kind'] for x in r.json()['items']} == {'starting_bid', None}

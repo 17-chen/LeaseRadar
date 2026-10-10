@@ -117,7 +117,7 @@ def search(data: SearchInput, user=Depends(current_user), db=Depends(database)):
     if data.sort == 'monthly':
         # Group price kind; unknown values sort last, never as zero.
         from decimal import Decimal
-        rows.sort(key=lambda r: (r.get('price_kind', ''), r.get('first_year_monthly') is None, Decimal(r['first_year_monthly']) if r.get('first_year_monthly') else Decimal('Infinity')))
+        rows.sort(key=lambda r: (r.get('price_kind') or 'unknown', r.get('first_year_monthly') is None, Decimal(r['first_year_monthly']) if r.get('first_year_monthly') else Decimal('Infinity')))
     total = len(rows); offset = (data.page - 1) * data.limit
     return {'items': rows[offset:offset+data.limit], 'total': total, 'page': data.page, 'mode': MODE}
 
