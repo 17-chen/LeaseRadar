@@ -62,3 +62,15 @@ PostgreSQL：暂停worker/beat；执行docker compose exec -T db pg_dump -U leas
 管理员密码强哈希；会话Cookie HttpOnly，写操作CSRF验证；本地HTTP仅开发使用。生成的本地管理员信息仅在private/local-admin.txt，文件权限0600。
 
 站内outbox可用，无外部SMTP/Webhook发送实现；UI显示未配置。不要以队列accepted声称邮件已送达。AI、外部通知与云部署将在后续配置完成后验证。
+
+## 分页续扫与恢复（0.1.1）
+
+```sh
+PYTHONPATH=backend .venv/bin/python -m app.cli crawl-once nongjy --backfill --pages 1
+```
+
+管理员可在来源页面点击“续扫一页”。游标仅在该页全部详情保存后推进；失败重跑可能重复读取已有详情，版本和事件保持幂等。回扫到最后一页后游标重置为1。动态列表会移动，游标覆盖不代表固定时点完整快照，也不能替代活跃详情独立复查。
+
+启用来源后，每30分钟安排首页检查与一次单页回扫，worker持续运行时两者分开执行；默认来源暂停。临时网络错误、408/429和常见5xx最多尝试3次，等待60秒、120秒或更长的Retry-After。其他解析/访问错误停止任务并暂停来源；管理员核查后可重新启用。手动任务也使用同一持久队列。来源页面和`GET /api/v1/jobs/{id}`显示重试时间、次数和状态。
+
+更新代码前停止旧API与worker，执行backup、migrate后再启动。不要将包含账户与原文的备份上传GitHub。多worker长期生产部署的租约竞争和动态分页覆盖仍需专项验证。

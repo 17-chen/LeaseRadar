@@ -72,7 +72,8 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
             'source_url': url, 'mode': MODE}))
     return listing.id, True
 
-def crawl(source_id, pages=1, delay=2.5):
+def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
+    if not 1 <= pages <= 10: raise ValueError("单次任务限1–10页")
     if source_id not in PARSERS:
         raise SourceError('该来源尚未实现适配器')
     lease_time = (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat()
@@ -81,13 +82,14 @@ def crawl(source_id, pages=1, delay=2.5):
         if not source: raise SourceError('来源不存在')
         # Atomic compare-and-set works on PostgreSQL and local SQLite.
         claim = db.execute(update(Source).where(Source.id == source_id, (Source.lease_until.is_(None)) | (Source.lease_until < now())).values(lease_until=lease_time, last_attempt_at=now()))
-        if not claim.rowcount: raise SourceError('来源任务已运行')
+        if not claim.rowcount: raise SourceError('来源任务已运行', retryable=True)
         run = CrawlRun(source_id=source_id); db.add(run); db.commit()
         run_id, seed = run.id, source.seed_url
+        start_page = source.backfill_page if backfill else 1
     try:
         import time
         seen = set(); total = 1; attachment_cache = {}
-        for page in range(1, pages + 1):
+        for page in range(start_page, start_page + pages):
             url = seed + f'?pageNum={page}&pageSize=12' if source_id == 'nongjy' else seed if page == 1 else seed.replace('list.htm', f'list{page}.htm')
             html = fetch(url)
             refs, total = DISCOVERERS[source_id](html, page)
@@ -105,20 +107,26 @@ def crawl(source_id, pages=1, delay=2.5):
                     run.discovered += 1; run.stored += 1
                     db.commit()
             with Session() as db:
-                run = db.get(CrawlRun, run_id); run.pages += 1; db.commit()
+                run = db.get(CrawlRun, run_id); run.pages += 1
+                source = db.get(Source, source_id)
+                source.total_pages = total
+                if backfill: source.backfill_page = page + 1 if page < total else 1
+                # Renew after each completed page; incomplete pages retain their cursor.
+                source.lease_until = (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat()
+                db.commit()
             if page >= total: break
             time.sleep(delay)
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
             source.status = 'partial' if run.pages < total else 'healthy'
-            source.coverage = f'{run.pages}/{total}页；仅当前列表窗口'
+            source.coverage = f'本次第{start_page}–{start_page + run.pages - 1}页 / {total}页；回扫下一页{source.backfill_page}（不保证列表快照完整）'
             source.last_success_at = now(); source.error = None; source.lease_until = None
             run.state = source.status; run.ended_at = now(); db.commit()
-        return {'run_id': run_id, 'pages': min(pages, total), 'total_pages': total, 'records': len(seen)}
+        return {'run_id': run_id, 'pages': run.pages, 'start_page': start_page, 'total_pages': total, 'records': len(seen)}
     except Exception as exc:
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
-            source.status = 'blocked' if 'HTTP 403' in str(exc) else 'degraded'
+            source.status = 'blocked' if getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc) else 'degraded'
             source.error = str(exc)[:500]; source.lease_until = None
             if source.status == 'blocked': source.enabled = False
             run.state = 'failed'; run.error = source.error; run.ended_at = now(); db.commit()
@@ -130,34 +138,55 @@ def deliver_local():
         db.execute(update(Outbox).where(Outbox.state == 'queued', Outbox.channel == 'in_app').values(state='accepted'))
         db.commit()
 
-def enqueue(db, source_id):
-    pending = db.scalar(select(Job).where(Job.source_id == source_id, Job.state.in_(['queued', 'running'])))
+def enqueue(db, source_id, kind="front"):
+    if kind not in ("front", "backfill"): raise ValueError("未知采集任务类型")
+    pending = db.scalar(select(Job).where(Job.source_id == source_id, Job.state.in_(['queued', 'running', 'retry_wait'])))
     if pending: return pending.id
-    row = Job(source_id=source_id); db.add(row); db.flush()
+    row = Job(source_id=source_id, kind=kind); db.add(row); db.flush()
     return row.id
 
+def job_due():
+    return (Job.state == 'queued') | ((Job.state == 'retry_wait') & (Job.retry_at <= now())) | ((Job.state == 'running') & (Job.lease_until < now()))
+
 def poll_jobs():
+    import httpx
     with Session() as db:
-        # Source leases prevent duplicate scheduling and collection across worker processes.
         for source in db.scalars(select(Source).where(Source.enabled.is_(True))):
+            if db.scalar(select(Job.id).where(Job.source_id == source.id, Job.state.in_(['queued', 'running', 'retry_wait']))):
+                continue
+            # A completed front check is followed by one bounded backfill page.
             if not source.next_run_at or source.next_run_at <= now():
                 enqueue(db, source.id)
                 source.next_run_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+            elif not source.backfill_at or source.backfill_at <= now():
+                enqueue(db, source.id, 'backfill')
+                source.backfill_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
         db.commit()
-        jobs = list(db.scalars(select(Job.id).where((Job.state == 'queued') | ((Job.state == 'running') & (Job.lease_until < now())))))
+        jobs = list(db.scalars(select(Job.id).where(job_due())))
     for jid in jobs:
         with Session() as db:
-            claimed = db.execute(update(Job).where(Job.id == jid, (Job.state == 'queued') | ((Job.state == 'running') & (Job.lease_until < now()))).values(state='running', lease_until=(datetime.now(timezone.utc)+timedelta(minutes=65)).isoformat()))
+            claimed = db.execute(update(Job).where(Job.id == jid, job_due()).values(state='running', attempts=Job.attempts + 1, retry_at=None, lease_until=(datetime.now(timezone.utc)+timedelta(minutes=65)).isoformat()))
             db.commit()
             if not claimed.rowcount: continue
-            sid = db.get(Job, jid).source_id
+            job = db.get(Job, jid); sid, kind = job.source_id, job.kind
         try:
-            result = crawl(sid)
+            result = crawl(sid, backfill=True) if kind == 'backfill' else crawl(sid)
             with Session() as db:
-                job = db.get(Job, jid); job.state = 'complete'; job.result = result; job.lease_until = None; db.commit()
+                job = db.get(Job, jid); job.state = 'complete'; job.result = result; job.error = None; job.lease_until = None; db.commit()
         except Exception as exc:
             with Session() as db:
-                job = db.get(Job, jid); job.state = 'failed'; job.error = str(exc)[:500]; job.lease_until = None; db.commit()
+                job = db.get(Job, jid)
+                retryable = getattr(exc, 'retryable', False) or isinstance(exc, httpx.TransportError)
+                blocked = getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc)
+                if retryable and not blocked and job.attempts < 3:
+                    delay = max(60 * 2 ** (job.attempts - 1), getattr(exc, 'retry_after', None) or 0)
+                    job.retry_at = (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat()
+                    job.state = 'retry_wait'
+                else:
+                    job.state = 'failed'
+                    # Exhausted or invalid sources require explicit admin resumption.
+                    db.get(Source, sid).enabled = False
+                job.error = str(exc)[:500]; job.lease_until = None; db.commit()
     deliver_local()
 
 def listing_data(db, listing, user_id=None):

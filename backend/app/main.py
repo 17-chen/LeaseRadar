@@ -216,7 +216,15 @@ def read_notification(nid: int, user=Depends(current_user), db=Depends(database)
 
 @app.get('/api/v1/sources')
 def sources(user=Depends(current_user), db=Depends(database)):
-    return [{'id': s.id, 'name': s.name, 'status': s.status, 'enabled': s.enabled, 'last_success_at': s.last_success_at, 'error': s.error, 'coverage': s.coverage} for s in db.scalars(select(Source))]
+    result = []
+    for s in db.scalars(select(Source)):
+        job = db.scalar(select(Job).where(Job.source_id == s.id).order_by(Job.id.desc()).limit(1))
+        result.append({'id': s.id, 'name': s.name, 'status': s.status, 'enabled': s.enabled,
+                       'last_success_at': s.last_success_at, 'error': s.error, 'coverage': s.coverage,
+                       'backfill_page': s.backfill_page, 'total_pages': s.total_pages, 'next_run_at': s.next_run_at,
+                       'job': {'id': job.id, 'state': job.state, 'kind': job.kind, 'attempts': job.attempts,
+                               'retry_at': job.retry_at, 'error': job.error} if job else None})
+    return result
 
 class SourceInput(BaseModel):
     enabled: bool
@@ -229,17 +237,18 @@ def configure_source(sid: str, data: SourceInput, user=Depends(admin), db=Depend
     row.enabled = data.enabled; db.commit(); return {'ok': True}
 
 @app.post('/api/v1/sources/{sid}/runs')
-def source_run(sid: str, user=Depends(admin), db=Depends(database)):
+def source_run(sid: str, kind: str = 'front', user=Depends(admin), db=Depends(database)):
+    if kind not in ('front', 'backfill'): raise HTTPException(422, '任务类型不支持')
     if sid not in ('nongjy', 'wzpt'): raise HTTPException(422, '适配器未实现')
     from .service import enqueue
-    jid = enqueue(db, sid); db.commit()
+    jid = enqueue(db, sid, kind); db.commit()
     return {'job_id': jid, 'state': 'queued'}
 
 @app.get('/api/v1/jobs/{jid}')
 def job_status(jid: int, user=Depends(admin), db=Depends(database)):
     row = db.get(Job, jid)
     if not row: raise HTTPException(404)
-    return {'id': row.id, 'state': row.state, 'result': row.result, 'error': row.error}
+    return {'id': row.id, 'state': row.state, 'result': row.result, 'error': row.error, 'kind': row.kind, 'attempts': row.attempts, 'retry_at': row.retry_at}
 
 @app.get('/api/v1/health/live')
 def live(): return {'ok': True, 'mode': MODE}

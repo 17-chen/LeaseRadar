@@ -39,6 +39,9 @@ class Source(Base):
     lease_until: Mapped[str | None]
     coverage: Mapped[str | None]
     next_run_at: Mapped[str | None]
+    backfill_page: Mapped[int] = mapped_column(default=1)
+    backfill_at: Mapped[str | None]
+    total_pages: Mapped[int | None]
 
 class Job(Base):
     __tablename__ = 'jobs'
@@ -47,6 +50,9 @@ class Job(Base):
     created_at: Mapped[str] = mapped_column(default=now)
     state: Mapped[str] = mapped_column(default='queued')
     lease_until: Mapped[str | None]
+    kind: Mapped[str] = mapped_column(default="front")
+    attempts: Mapped[int] = mapped_column(default=0)
+    retry_at: Mapped[str | None]
     result: Mapped[dict | None] = mapped_column(JSON)
     error: Mapped[str | None] = mapped_column(Text)
 

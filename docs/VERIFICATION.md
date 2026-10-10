@@ -22,3 +22,11 @@ Docker/PostgreSQL/Celery实际运行、生产HTTPS、外部通知、自动分页
 来源扫描一次/有限分页不等于长期覆盖；6条价据成功不是关键字段正确率指标。代码测试数量不代表生产就绪。
 
 GitHub首次CI在Python3.12上通过23项测试与新库迁移；随后补充未知价格性质排序的回归测试，最新提交CI另行核查。
+
+## 2026-10-10 分页恢复迭代
+
+- `PYTHONPATH=backend .venv/bin/pytest -q`：30 passed；一个上游Starlette/AnyIO弃用提示。新增页中失败后恢复、429等待与3次失败停止、HTTP日期Retry-After、API任务类型、首页/回扫调度测试。
+- `node --check frontend/app.js`及`git diff --check`通过。
+- 本地旧库备份后升级0003成功；独立SQLite空库从0001迁移至0003成功。
+- 高校公开栏目真实CLI回扫第1页成功，游标2；持久job 2由实际worker续扫第2页成功，游标3，两页租赁详情均为0。保留25条原有挂牌记录，未声称扩大第二来源关键字段覆盖。
+- 本轮未运行Docker/PostgreSQL、长时间多worker或真实外部通知；前端新按钮通过语法和接口测试，本轮未重做浏览器视觉审查。

@@ -12,7 +12,28 @@ from bs4 import BeautifulSoup
 from .config import ALLOWED_HOSTS
 
 class SourceError(RuntimeError):
-    pass
+    def __init__(self, message, *, retryable=False, retry_after=None, blocked=False):
+        super().__init__(message)
+        self.retryable = retryable
+        self.retry_after = retry_after
+        self.blocked = blocked
+
+def response_error(response):
+    """Keep Retry-After as a minimum delay, never retry blocked access."""
+    from email.utils import parsedate_to_datetime
+    from datetime import timezone
+    delay = None
+    value = response.headers.get('retry-after', '')
+    try:
+        delay = max(0, int(value))
+    except ValueError:
+        try:
+            delay = max(0, (parsedate_to_datetime(value) - datetime.now(timezone.utc)).total_seconds())
+        except (ValueError, TypeError, OverflowError):
+            pass
+    status = response.status_code
+    return SourceError(f'HTTP {status}; 不自动绕过访问控制', retryable=status in (408, 429, 500, 502, 503, 504),
+                       retry_after=delay, blocked=status in (401, 403))
 
 def validate_url(url):
     parsed = urlsplit(url)
@@ -30,7 +51,7 @@ def fetch(url):
                       headers={'User-Agent': 'LeaseRadar/0.1 (public source research)'}) as client:
         with client.stream('GET', url) as response:
             if response.status_code != 200:
-                raise SourceError(f'HTTP {response.status_code}; 重定向/403不自动绕过')
+                raise response_error(response)
             if 'text/html' not in response.headers.get('content-type', ''):
                 raise SourceError('非HTML响应')
             body = bytearray()

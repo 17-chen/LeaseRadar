@@ -13,7 +13,7 @@ def main():
     sub.add_parser('migrate')
     sub.add_parser('backup')
     admin = sub.add_parser('create-admin'); admin.add_argument('--username', default='admin')
-    crawl = sub.add_parser('crawl-once'); crawl.add_argument('source', choices=['nongjy', 'wzpt']); crawl.add_argument('--pages', type=int, default=1)
+    crawl = sub.add_parser('crawl-once'); crawl.add_argument('source', choices=['nongjy', 'wzpt']); crawl.add_argument('--pages', type=int, default=1); crawl.add_argument('--backfill', action='store_true')
     check = sub.add_parser('source-check'); check.add_argument('source', choices=['nongjy', 'wzpt'])
     ingest = sub.add_parser('import-html'); ingest.add_argument('source', choices=['nongjy', 'wzpt']); ingest.add_argument('path'); ingest.add_argument('--url', required=True)
     args = parser.parse_args()
@@ -43,9 +43,9 @@ def main():
             db.add(User(username=args.username, password_hash=PasswordHasher().hash(password), role='admin')); db.commit()
         print('管理员已创建')
     elif args.command == 'crawl-once':
-        if not 1 <= args.pages <= 150: parser.error('页数须为1–150')
+        if not 1 <= args.pages <= 10: parser.error('单次页数须为1–10，可用--backfill续扫')
         from .service import crawl, deliver_local
-        print(json.dumps(crawl(args.source, args.pages), ensure_ascii=False)); deliver_local()
+        print(json.dumps(crawl(args.source, args.pages, backfill=args.backfill), ensure_ascii=False)); deliver_local()
     elif args.command == 'source-check':
         from .collectors import fetch, DISCOVERERS
         from .db import Source

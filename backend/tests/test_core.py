@@ -168,3 +168,78 @@ def test_same_input_new_extraction_is_not_market_change(monkeypatch):
         ingest(db,'nongjy','https://www.nongjy.cn/web/propertyBid/detail/1',sample());db.commit()
         events=list(db.scalars(select(Event).order_by(Event.id)))
         assert [e.kind for e in events]==['new','reprocessing']
+
+def test_retry_wait_honors_server_delay_and_stops_after_three(monkeypatch):
+    import app.service as service
+    from app.db import Job, Source
+    from datetime import datetime, timezone
+    with Session() as db:
+        jid=service.enqueue(db,'nongjy');db.commit()
+    calls=[]
+    def limited(sid):
+        calls.append(sid)
+        raise SourceError('HTTP 429', retryable=True, retry_after=600)
+    monkeypatch.setattr(service,'crawl',limited)
+    service.poll_jobs();service.poll_jobs()
+    assert len(calls)==1
+    with Session() as db:
+        job=db.get(Job,jid)
+        assert job.state=='retry_wait' and job.attempts==1
+        assert (datetime.fromisoformat(job.retry_at)-datetime.now(timezone.utc)).total_seconds()>590
+    for _ in range(2):
+        with Session() as db:
+            db.get(Job,jid).retry_at='2000-01-01T00:00:00+00:00';db.commit()
+        service.poll_jobs()
+    with Session() as db:
+        assert db.get(Job,jid).state=='failed' and db.get(Job,jid).attempts==3
+        assert not db.get(Source,'nongjy').enabled
+
+def test_retry_after_http_date_and_blocked_status():
+    import httpx
+    from app.collectors import response_error
+    from email.utils import format_datetime
+    from datetime import datetime, timedelta, timezone
+    future=format_datetime(datetime.now(timezone.utc)+timedelta(minutes=5))
+    assert response_error(httpx.Response(503,headers={'Retry-After':future})).retry_after>290
+    assert response_error(httpx.Response(429,headers={'Retry-After':'garbage'})).retry_after is None
+    assert response_error(httpx.Response(403)).blocked
+    assert not response_error(httpx.Response(403)).retryable
+
+def test_backfill_cursor_only_advances_after_complete_page(monkeypatch):
+    import app.service as service
+    from app.db import Source
+    urls=[]
+    def fake_fetch(url):
+        urls.append(url)
+        if 'pageNum=2' in url: raise SourceError('temporary',retryable=True)
+        return 'list'
+    monkeypatch.setattr(service,'fetch',fake_fetch)
+    monkeypatch.setitem(service.DISCOVERERS,'nongjy',lambda html,page: ([f'https://www.nongjy.cn/web/propertyBid/detail/{page}'],3))
+    monkeypatch.setattr(service,'ingest',lambda *args,**kwargs: (1,False))
+    with pytest.raises(SourceError): service.crawl('nongjy',pages=2,delay=0,backfill=True)
+    with Session() as db:
+        assert db.get(Source,'nongjy').backfill_page==2
+        assert db.get(Source,'nongjy').lease_until is None
+    monkeypatch.setattr(service,'fetch',lambda url: 'list')
+    result=service.crawl('nongjy',pages=2,delay=0,backfill=True)
+    assert result['start_page']==2 and result['pages']==2
+    with Session() as db: assert db.get(Source,'nongjy').backfill_page==1
+
+def test_source_api_supports_backfill_and_exposes_progress():
+    c=client_for('admin')
+    assert c.post('/api/v1/sources/nongjy/runs?kind=invalid').status_code==422
+    jid=c.post('/api/v1/sources/nongjy/runs?kind=backfill').json()['job_id']
+    assert c.get(f'/api/v1/jobs/{jid}').json()['kind']=='backfill'
+    assert c.get('/api/v1/sources').json()[0]['backfill_page']==1
+
+def test_enabled_scheduler_alternates_front_and_backfill(monkeypatch):
+    import app.service as service
+    from app.db import Source, Job
+    calls=[]
+    monkeypatch.setattr(service,'crawl',lambda sid,**kwargs: calls.append(kwargs.get('backfill',False)) or {'records':0})
+    with Session() as db:
+        db.get(Source,'nongjy').enabled=True;db.commit()
+    service.poll_jobs(); service.poll_jobs(); service.poll_jobs()
+    assert calls==[False, True]
+    with Session() as db:
+        assert [j.kind for j in db.scalars(select(Job).order_by(Job.id))]==['front','backfill']
