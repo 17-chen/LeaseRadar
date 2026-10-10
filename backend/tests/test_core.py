@@ -232,7 +232,7 @@ def test_source_api_supports_backfill_and_exposes_progress():
     assert c.get(f'/api/v1/jobs/{jid}').json()['kind']=='backfill'
     assert c.get('/api/v1/sources').json()[0]['backfill_page']==1
 
-def test_enabled_scheduler_alternates_front_and_backfill(monkeypatch):
+def test_enabled_scheduler_alternates_front_details_and_backfill(monkeypatch):
     import app.service as service
     from app.db import Source, Job
     calls=[]
@@ -242,4 +242,4 @@ def test_enabled_scheduler_alternates_front_and_backfill(monkeypatch):
     service.poll_jobs(); service.poll_jobs(); service.poll_jobs()
     assert calls==[False, True]
     with Session() as db:
-        assert [j.kind for j in db.scalars(select(Job).order_by(Job.id))]==['front','backfill']
+        assert [j.kind for j in db.scalars(select(Job).order_by(Job.id))]==['front','details','backfill']

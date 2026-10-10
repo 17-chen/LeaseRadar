@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, JSON, String, Integer, Text, ForeignKey, UniqueConstraint, Numeric
+from sqlalchemy import create_engine, JSON, String, Integer, Text, ForeignKey, UniqueConstraint, CheckConstraint, Numeric
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from .config import DATABASE_URL
 
@@ -42,6 +42,9 @@ class Source(Base):
     backfill_page: Mapped[int] = mapped_column(default=1)
     backfill_at: Mapped[str | None]
     total_pages: Mapped[int | None]
+    detail_next_run_at: Mapped[str | None]
+    detail_last_success_at: Mapped[str | None]
+    detail_checked: Mapped[int] = mapped_column(default=0)
 
 class Job(Base):
     __tablename__ = 'jobs'
@@ -60,6 +63,7 @@ class CrawlRun(Base):
     __tablename__ = 'crawl_runs'
     id: Mapped[int] = mapped_column(primary_key=True)
     source_id: Mapped[str] = mapped_column(ForeignKey('sources.id'))
+    kind: Mapped[str] = mapped_column(default='front')
     started_at: Mapped[str] = mapped_column(default=now)
     ended_at: Mapped[str | None]
     state: Mapped[str] = mapped_column(default='running')
@@ -127,6 +131,7 @@ class Subscription(Base):
     filters: Mapped[dict] = mapped_column(JSON)
     unknown_policy: Mapped[str] = mapped_column(default='review_digest')
     enabled: Mapped[bool] = mapped_column(default=True)
+    reminder_hours: Mapped[list] = mapped_column(JSON, default=lambda: [72, 24])
     created_at: Mapped[str] = mapped_column(default=now)
 
 class Event(Base):
@@ -135,12 +140,26 @@ class Event(Base):
     version_id: Mapped[int] = mapped_column(ForeignKey('listing_versions.id'), unique=True)
     kind: Mapped[str]
 
-class Outbox(Base):
-    __tablename__ = 'notification_outbox'
-    __table_args__ = (UniqueConstraint('subscription_id', 'event_id', 'channel'),)
+class DeadlineReminder(Base):
+    __tablename__ = 'deadline_reminders'
+    __table_args__ = (UniqueConstraint('subscription_id', 'listing_id', 'deadline', 'lead_hours'),)
     id: Mapped[int] = mapped_column(primary_key=True)
     subscription_id: Mapped[int] = mapped_column(ForeignKey('subscriptions.id'))
-    event_id: Mapped[int] = mapped_column(ForeignKey('change_events.id'))
+    listing_id: Mapped[int] = mapped_column(ForeignKey('listing_rounds.id'))
+    version_id: Mapped[int] = mapped_column(ForeignKey('listing_versions.id'))
+    deadline: Mapped[str] = mapped_column(String(50))
+    lead_hours: Mapped[int]
+    created_at: Mapped[str] = mapped_column(default=now)
+
+class Outbox(Base):
+    __tablename__ = 'notification_outbox'
+    __table_args__ = (UniqueConstraint('subscription_id', 'event_id', 'channel'),
+                     UniqueConstraint('reminder_id', 'channel'),
+                     CheckConstraint('(event_id IS NOT NULL AND reminder_id IS NULL) OR (event_id IS NULL AND reminder_id IS NOT NULL)', name='outbox_one_origin'))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey('subscriptions.id'))
+    event_id: Mapped[int | None] = mapped_column(ForeignKey('change_events.id'))
+    reminder_id: Mapped[int | None] = mapped_column(ForeignKey('deadline_reminders.id'))
     channel: Mapped[str] = mapped_column(default='in_app')
     state: Mapped[str] = mapped_column(default='queued')
     payload: Mapped[dict] = mapped_column(JSON)

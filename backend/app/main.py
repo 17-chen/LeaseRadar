@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StrictInt, model_validator
 from sqlalchemy import select, text
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.0')
+app = FastAPI(title='LeaseRadar', version='0.1.2')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -173,6 +173,8 @@ def followup(listing_id: int, data: FollowupInput, user=Depends(current_user), d
     row = db.scalar(select(Followup).where(Followup.user_id == user.id, Followup.listing_id == listing_id))
     if not row: row = Followup(user_id=user.id, listing_id=listing_id); db.add(row)
     for k, v in data.model_dump().items(): setattr(row, k, v)
+    from .notifications import cancel_invalid_reminders
+    cancel_invalid_reminders(db)
     db.commit(); return {'ok': True}
 
 class SubscriptionInput(BaseModel):
@@ -180,14 +182,22 @@ class SubscriptionInput(BaseModel):
     filters: Filters = Field(default_factory=Filters)
     unknown_policy: Literal['review_digest', 'exclude'] = 'review_digest'
     enabled: bool = True
+    reminder_hours: list[StrictInt] = Field(default_factory=lambda: [72, 24], max_length=3)
+
+    @model_validator(mode='after')
+    def valid_reminders(self):
+        if any(not 1 <= hour <= 168 for hour in self.reminder_hours) or len(set(self.reminder_hours)) != len(self.reminder_hours):
+            raise ValueError('报名提醒须为1–168小时，最多3个不重复时间；空列表关闭提醒')
+        self.reminder_hours.sort(reverse=True)
+        return self
 
 @app.get('/api/v1/subscriptions')
 def subscriptions(user=Depends(current_user), db=Depends(database)):
-    return [{'id': s.id, 'name': s.name, 'filters': s.filters, 'unknown_policy': s.unknown_policy, 'enabled': s.enabled} for s in db.scalars(select(Subscription).where(Subscription.user_id == user.id))]
+    return [{'id': s.id, 'name': s.name, 'filters': s.filters, 'unknown_policy': s.unknown_policy, 'enabled': s.enabled, 'reminder_hours': s.reminder_hours} for s in db.scalars(select(Subscription).where(Subscription.user_id == user.id))]
 
 @app.post('/api/v1/subscriptions')
 def subscribe(data: SubscriptionInput, user=Depends(current_user), db=Depends(database)):
-    row = Subscription(user_id=user.id, name=data.name, filters=data.filters.model_dump(mode='json', exclude_none=True), unknown_policy=data.unknown_policy, enabled=data.enabled)
+    row = Subscription(user_id=user.id, name=data.name, filters=data.filters.model_dump(mode='json', exclude_none=True), unknown_policy=data.unknown_policy, enabled=data.enabled, reminder_hours=data.reminder_hours)
     db.add(row); db.commit()
     # Baseline shown as summary count, never enqueued as individual new events.
     counts = {'pass': 0, 'unknown': 0, 'fail': 0}
@@ -201,6 +211,9 @@ def update_subscription(sid: int, data: SubscriptionInput, user=Depends(current_
     row = db.get(Subscription, sid)
     if not row or row.user_id != user.id: raise HTTPException(404)
     row.name, row.filters, row.unknown_policy, row.enabled = data.name, data.filters.model_dump(mode='json', exclude_none=True), data.unknown_policy, data.enabled
+    row.reminder_hours = data.reminder_hours
+    from .notifications import cancel_invalid_reminders
+    cancel_invalid_reminders(db)
     db.commit(); return {'ok': True}
 
 @app.get('/api/v1/notifications')
@@ -221,7 +234,8 @@ def sources(user=Depends(current_user), db=Depends(database)):
         job = db.scalar(select(Job).where(Job.source_id == s.id).order_by(Job.id.desc()).limit(1))
         result.append({'id': s.id, 'name': s.name, 'status': s.status, 'enabled': s.enabled,
                        'last_success_at': s.last_success_at, 'error': s.error, 'coverage': s.coverage,
-                       'backfill_page': s.backfill_page, 'total_pages': s.total_pages, 'next_run_at': s.next_run_at,
+                       'detail_last_success_at': s.detail_last_success_at, 'detail_checked': s.detail_checked,
+                       'detail_next_run_at': s.detail_next_run_at, 'backfill_page': s.backfill_page, 'total_pages': s.total_pages, 'next_run_at': s.next_run_at,
                        'job': {'id': job.id, 'state': job.state, 'kind': job.kind, 'attempts': job.attempts,
                                'retry_at': job.retry_at, 'error': job.error} if job else None})
     return result
@@ -238,11 +252,17 @@ def configure_source(sid: str, data: SourceInput, user=Depends(admin), db=Depend
 
 @app.post('/api/v1/sources/{sid}/runs')
 def source_run(sid: str, kind: str = 'front', user=Depends(admin), db=Depends(database)):
-    if kind not in ('front', 'backfill'): raise HTTPException(422, '任务类型不支持')
+    if kind not in ('front', 'backfill', 'details'): raise HTTPException(422, '任务类型不支持')
     if sid not in ('nongjy', 'wzpt'): raise HTTPException(422, '适配器未实现')
     from .service import enqueue
-    jid = enqueue(db, sid, kind); db.commit()
-    return {'job_id': jid, 'state': 'queued'}
+    from .collectors import SourceError
+    try:
+        jid = enqueue(db, sid, kind)
+    except SourceError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    db.commit()
+    row = db.get(Job, jid)
+    return {'job_id': jid, 'state': row.state, 'kind': row.kind}
 
 @app.get('/api/v1/jobs/{jid}')
 def job_status(jid: int, user=Depends(admin), db=Depends(database)):

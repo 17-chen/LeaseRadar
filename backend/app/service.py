@@ -1,12 +1,12 @@
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from sqlalchemy import select, update
-from .db import Session, Source, Job, CrawlRun, RawDocument, Asset, Listing, SourceRecord, Version, Evidence, Subscription, Event, Outbox, now
+from .db import Session, Source, Job, CrawlRun, RawDocument, Asset, Listing, SourceRecord, Version, Evidence, Subscription, Event, Outbox, Followup, now
 from .config import DATA, MODE
-from .domain import normalize_price, match, decimal
+from .domain import normalize_price, decimal
 from .collectors import fetch, PARSERS, DISCOVERERS, SourceError
+from .notifications import aware_time, queue_change, cancel_invalid_reminders, generate_deadline_reminders, TERMINAL_STATES, STOPPED_FOLLOWUPS
 
 def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
     fields, evidence, text = PARSERS[source_id](html, url)
@@ -56,20 +56,13 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
         old = previous.fields
         if old.get('status') != fields.get('status'):
             kind = 'status_changed'
-        elif old.get('registration_deadline') and fields.get('registration_deadline') and fields['registration_deadline'] > old['registration_deadline']:
+        elif aware_time(old.get('registration_deadline')) and aware_time(fields.get('registration_deadline')) and aware_time(fields['registration_deadline']) > aware_time(old['registration_deadline']):
             kind = 'deadline_extended'
-        elif old.get('period_basis') == fields.get('period_basis') and old.get('price_kind') == fields.get('price_kind') and decimal(old.get('raw_amount')) is not None and decimal(fields.get('raw_amount')) is not None and decimal(fields['raw_amount']) < decimal(old['raw_amount']):
+        elif old.get('period_basis') in ('first_year', 'monthly') and old.get('period_basis') == fields.get('period_basis') and old.get('price_kind') in ('starting_bid', 'asking') and old.get('price_kind') == fields.get('price_kind') and decimal(old.get('raw_amount')) is not None and decimal(fields.get('raw_amount')) is not None and decimal(fields['raw_amount']) < decimal(old['raw_amount']):
             kind = 'price_drop'
     event = Event(version_id=version.id, kind=kind); db.add(event); db.flush()
-    if kind == 'reprocessing': return listing.id, True
-    for sub in db.scalars(select(Subscription).where(Subscription.enabled.is_(True))):
-        result = match(fields, {**sub.filters, 'registration_open': True})
-        if result['verdict'] == 'fail' or (result['verdict'] == 'unknown' and sub.unknown_policy == 'exclude'):
-            continue
-        db.add(Outbox(subscription_id=sub.id, event_id=event.id, payload={
-            'listing_id': listing.id, 'title': fields['title'], 'kind': kind,
-            'match': result, 'delivery_class': 'review_digest' if result['verdict'] == 'unknown' else 'instant',
-            'source_url': url, 'mode': MODE}))
+    cancel_invalid_reminders(db)
+    if kind != 'reprocessing': queue_change(db, listing, version, event, previous, url)
     return listing.id, True
 
 def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
@@ -83,7 +76,7 @@ def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
         # Atomic compare-and-set works on PostgreSQL and local SQLite.
         claim = db.execute(update(Source).where(Source.id == source_id, (Source.lease_until.is_(None)) | (Source.lease_until < now())).values(lease_until=lease_time, last_attempt_at=now()))
         if not claim.rowcount: raise SourceError('来源任务已运行', retryable=True)
-        run = CrawlRun(source_id=source_id); db.add(run); db.commit()
+        run = CrawlRun(source_id=source_id, kind="backfill" if backfill else "front"); db.add(run); db.commit()
         run_id, seed = run.id, source.seed_url
         start_page = source.backfill_page if backfill else 1
     try:
@@ -132,16 +125,93 @@ def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
             run.state = 'failed'; run.error = source.error; run.ended_at = now(); db.commit()
         raise
 
+def detail_targets(db, source_id, at, limit=5):
+    watched = set(db.scalars(select(Followup.listing_id).where(
+        Followup.status.not_in(STOPPED_FOLLOWUPS),
+        Followup.favorite.is_(True) | Followup.status.in_(['待联系', '已联系', '预约看铺']))))
+    records = db.execute(select(SourceRecord, Listing, Version).join(Listing, SourceRecord.listing_id == Listing.id)
+        .join(Version, Listing.current_version_id == Version.id).where(SourceRecord.source_id == source_id)
+        .order_by(SourceRecord.last_checked_at, SourceRecord.id))
+    targets = []
+    for record, listing, version in records:
+        fields = version.fields
+        deadline = aware_time(fields.get('registration_deadline'))
+        inactive = fields.get('status') in TERMINAL_STATES or (deadline and deadline < at - timedelta(hours=72))
+        disclosure = fields.get('disclosure_deadline')
+        if disclosure:
+            from zoneinfo import ZoneInfo
+            inactive = inactive or disclosure < (at.astimezone(ZoneInfo('Asia/Shanghai')) - timedelta(days=3)).date().isoformat()
+        elif not deadline:
+            created = aware_time(listing.created_at)
+            inactive = inactive or (created and created < at - timedelta(days=30))
+        is_watched = listing.id in watched
+        if inactive and not is_watched: continue
+        checked = aware_time(record.last_checked_at)
+        interval = timedelta(hours=24) if inactive else timedelta(minutes=30)
+        if checked and at - checked < interval: continue
+        targets.append((record.id, record.url))
+        if len(targets) >= limit: break
+    return targets
+
+def refresh_details(source_id, limit=5, delay=2.5):
+    """Revisit stored details independently of their presence on the current list."""
+    if source_id not in PARSERS: raise SourceError('该来源尚未实现适配器')
+    if not 1 <= limit <= 5: raise ValueError('单次详情复查限1–5条')
+    at = datetime.now(timezone.utc)
+    with Session() as db:
+        source = db.get(Source, source_id)
+        if not source: raise SourceError('来源不存在')
+        claimed = db.execute(update(Source).where(Source.id == source_id,
+            Source.lease_until.is_(None) | (Source.lease_until < now())).values(
+            lease_until=(at + timedelta(minutes=60)).isoformat(), last_attempt_at=now()))
+        if not claimed.rowcount: raise SourceError('来源任务已运行', retryable=True)
+        targets = detail_targets(db, source_id, at, limit)
+        run = CrawlRun(source_id=source_id, kind='details'); db.add(run); db.commit(); run_id = run.id
+    changed = 0
+    try:
+        import time
+        cache = {}
+        for _, url in targets:
+            time.sleep(delay)
+            body = fetch(url)
+            with Session() as db:
+                _, updated = ingest(db, source_id, url, body, attachment_cache=cache)
+                changed += int(updated)
+                run = db.get(CrawlRun, run_id); run.discovered += 1; run.stored += 1
+                db.get(Source, source_id).lease_until = (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat()
+                db.commit()
+        with Session() as db:
+            source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
+            source.detail_last_success_at = now(); source.detail_checked = run.stored; source.lease_until = None
+            if targets:
+                source.last_success_at = now(); source.error = None
+                if source.status != 'healthy': source.status = 'partial'
+            run.state = 'complete'; run.ended_at = now(); db.commit()
+        return {'run_id': run_id, 'kind': 'details', 'checked': len(targets), 'updated_versions': changed}
+    except Exception as exc:
+        with Session() as db:
+            source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
+            source.status = 'blocked' if getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc) else 'degraded'
+            source.error = str(exc)[:500]; source.lease_until = None
+            if source.status == 'blocked': source.enabled = False
+            run.state = 'failed'; run.error = source.error; run.ended_at = now(); db.commit()
+        raise
+
 def deliver_local():
     with Session() as db:
+        cancel_invalid_reminders(db)
+        db.execute(update(Outbox).where(Outbox.state == 'queued', Outbox.channel == 'in_app',
+            Outbox.subscription_id.in_(select(Subscription.id).where(Subscription.enabled.is_(False)))).values(state='cancelled'))
         # In-app acceptance is an atomic database state transition; no external send.
         db.execute(update(Outbox).where(Outbox.state == 'queued', Outbox.channel == 'in_app').values(state='accepted'))
         db.commit()
 
 def enqueue(db, source_id, kind="front"):
-    if kind not in ("front", "backfill"): raise ValueError("未知采集任务类型")
+    if kind not in ("front", "backfill", "details"): raise ValueError("未知采集任务类型")
     pending = db.scalar(select(Job).where(Job.source_id == source_id, Job.state.in_(['queued', 'running', 'retry_wait'])))
-    if pending: return pending.id
+    if pending:
+        if pending.kind != kind: raise SourceError('该来源已有其他类型任务，完成后再试', retryable=True)
+        return pending.id
     row = Job(source_id=source_id, kind=kind); db.add(row); db.flush()
     return row.id
 
@@ -158,6 +228,9 @@ def poll_jobs():
             if not source.next_run_at or source.next_run_at <= now():
                 enqueue(db, source.id)
                 source.next_run_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+            elif not source.detail_next_run_at or source.detail_next_run_at <= now():
+                enqueue(db, source.id, 'details')
+                source.detail_next_run_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
             elif not source.backfill_at or source.backfill_at <= now():
                 enqueue(db, source.id, 'backfill')
                 source.backfill_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
@@ -170,7 +243,7 @@ def poll_jobs():
             if not claimed.rowcount: continue
             job = db.get(Job, jid); sid, kind = job.source_id, job.kind
         try:
-            result = crawl(sid, backfill=True) if kind == 'backfill' else crawl(sid)
+            result = refresh_details(sid) if kind == 'details' else crawl(sid, backfill=True) if kind == 'backfill' else crawl(sid)
             with Session() as db:
                 job = db.get(Job, jid); job.state = 'complete'; job.result = result; job.error = None; job.lease_until = None; db.commit()
         except Exception as exc:
@@ -187,6 +260,7 @@ def poll_jobs():
                     # Exhausted or invalid sources require explicit admin resumption.
                     db.get(Source, sid).enabled = False
                 job.error = str(exc)[:500]; job.lease_until = None; db.commit()
+    generate_deadline_reminders()
     deliver_local()
 
 def listing_data(db, listing, user_id=None):

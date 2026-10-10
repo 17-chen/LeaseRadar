@@ -16,12 +16,15 @@
 | 附件 | backend/app/attachments.py | 限额DOCX、精确标的表格价据 | zipfile/XML |
 | 领域 | backend/app/domain.py | Decimal换算和pass/fail/unknown | Python |
 | 流水线 | backend/app/service.py | 版本/事件/匹配同事务、任务领取 | 数据库 |
+| 通知规则 | backend/app/notifications.py | 变更信息、报名提醒身份/作废与事务outbox | 数据库/领域 |
 | worker | backend/app/local_worker.py、tasks.py | 本地队列/Celery轮询 | 数据库/Redis |
 | 界面 | frontend | 自由筛选、证据、比较与跟进 | 同域API |
 
 ## 数据流
 
 来源列表→详情/附件→私有快照→规则字段/证据→保守资产和挂牌→不可变版本→订阅三值匹配→事务outbox→站内收件箱。
+
+列表查新、分页回扫与已存详情复查为三种同源互斥任务。详情复查按最后核验时间轮转，单批最多5条，成功记录逐条提交。提醒独立于商业变更事件：deadline_reminders保存订阅/挂牌/UTC截止/提前小时数唯一身份；outbox检查约束要求恰好关联一个事件或提醒。版本更新不重发同一截止窗口提醒。
 
 ## 外部服务
 
@@ -33,4 +36,4 @@ backend/requirements.lock锁定依赖；PYTHONPATH=backend pytest -q backend/tes
 
 ## 架构约束与风险
 
-未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、全量回扫、精确附件定位与生产安全仍是后续工作。
+未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、完整每日覆盖、关键PDF/OCR与生产安全仍是后续工作。
