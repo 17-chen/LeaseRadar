@@ -16,6 +16,7 @@ def main():
     crawl = sub.add_parser('crawl-once'); crawl.add_argument('source', choices=['nongjy', 'wzpt']); crawl.add_argument('--pages', type=int, default=1); crawl.add_argument('--backfill', action='store_true')
     details = sub.add_parser('refresh-details'); details.add_argument('source', choices=['nongjy', 'wzpt']); details.add_argument('--limit', type=int, default=5)
     sub.add_parser('remind-once')
+    sub.add_parser('email-once')
     check = sub.add_parser('source-check'); check.add_argument('source', choices=['nongjy', 'wzpt'])
     ingest = sub.add_parser('import-html'); ingest.add_argument('source', choices=['nongjy', 'wzpt']); ingest.add_argument('path'); ingest.add_argument('--url', required=True)
     args = parser.parse_args()
@@ -36,6 +37,9 @@ def main():
             original.backup(backup)
         if (DATA / 'snapshots').exists(): shutil.copytree(DATA / 'snapshots', folder / 'snapshots')
         print(f'备份写入 {folder}；包含私有数据，不入Git')
+    elif args.command == 'email-once':
+        from .email_delivery import deliver_email
+        print(json.dumps({'attempted': deliver_email()}))
     elif args.command == 'create-admin':
         password = getpass.getpass('Password (12+ characters): ')
         if len(password) < 12: parser.error('密码至少12位')

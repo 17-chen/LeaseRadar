@@ -39,3 +39,11 @@ GitHub首次CI在Python3.12上通过23项测试与新库迁移；随后补充未
 - 独立DEMO库验证订阅48/12小时设置保存、自定义12小时窗口入箱、关闭信息与延期/作废显示；所有合成公告标题带“合成演示”，桌面与手机均有DEMO标识。390px页面scrollWidth=375，无横向溢出；浏览器error/warn为空。截图留在私有screenshots目录，不上传源公告或账户数据。
 - node语法与git diff检查通过；未新增依赖。仍有上游Starlette/AnyIO弃用提示。
 - 本轮不验证真实外部发送、Docker/PostgreSQL/Celery部署、长时间多worker/大规模记录量、每日全量覆盖、P95或用户业绩；本地SQL查询与单worker长任务对提醒延迟的影响仍需后续专项检查。
+
+## 2026-10-11：SMTP发送记录与当前来源告警
+
+- 76项pytest通过（Python3.13），含本地127.0.0.1真实SMTP协议接收、发送去重、用户隔离、三次退避后dead_letter、MAIL/RCPT/DATA返回码、DATA断连ambiguous、过期发送租约不重发、旧消息启用时间排除、关闭公告与暂停订阅不发送；node语法与diff检查通过。
+- 新迁移0005及已有0003至head升级回归通过。真实库先备份到private/backups/20261011T050513Z，升级后25挂牌、40版本、0邮件回执、0开启来源；PRAGMA integrity_check=ok。
+- 浏览器真实工作空间确认邮件未配置、收件箱发送记录空态、来源健康页面可用；截图private/screenshots/email-desktop.png。不以空态截图证明外部发送成功；协议发送证据来自隔离合成测试。
+- 公开高校外链 https://www.zjpse.com/prjs/lease/detail/235950.html 返回302到同站/history/prjs/lease/detail/235950.html；该明确目标200（78114字节），只读保存private/zjpse-history-235950.html，HTML文本为导航/框架，无公告正文可验证。未扩大白名单、未绕过访问控制，不计完整第二来源。
+- 无真实SMTP服务商验证、最终邮箱回执、生产容器/多worker验证；静默与每日摘要、持久告警历史未实现。

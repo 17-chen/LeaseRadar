@@ -37,3 +37,5 @@ backend/requirements.lock锁定依赖；PYTHONPATH=backend pytest -q backend/tes
 ## 架构约束与风险
 
 未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、完整每日覆盖、关键PDF/OCR与生产安全仍是后续工作。
+
+SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliveries；按接收用户、地址与启用时间配置，由worker有界处理。SMTP结果不明不自动重发，所有邮件默认关闭。来源告警为管理员当前状态视图，暂无历史存储。

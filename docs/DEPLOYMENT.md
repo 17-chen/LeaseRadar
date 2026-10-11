@@ -89,3 +89,15 @@ PYTHONPATH=backend .venv/bin/python -m app.cli remind-once
 延期、关闭、暂停订阅、取消提醒配置、放弃/已成交、过期后，旧提醒在收件箱标为作废并保留历史，作废项不计入未读数。尚未被站内接受的提醒恢复条件后复用原outbox；已接受过或回执未知的旧提醒不自动重发。同一期限回退到已有身份也遵循此规则。无静默/每日摘要及外部SMTP/Webhook实现。生成依赖本地worker轮询；长采集任务、电脑休眠和暂停监测可能造成延迟。
 
 升级前停止旧API和worker，备份后执行migrate。0004增加提醒表及outbox二选一来源约束，旧crawl_runs类型无法可靠恢复，标为legacy。只验证SQLite旧库和新库迁移，PostgreSQL仍需部署演练。
+
+## 邮件通道（0.1.3开发版）
+
+默认 `EMAIL_ENABLED=false`。仅在已授权接收地址上启用；本阶段只有本地合成SMTP接收验证，没有真实外部邮件。管理员通过环境变量指定一个 `EMAIL_USER_ID` 与该用户的 `EMAIL_RECIPIENT`，不会发送其他用户通知。配置 `EMAIL_START_AT` 为启用时间的带时区ISO时间，之前的历史通知不补发。配置示例字段见 `.env.example`；本地启动不会自动读取该文件，需在API和worker启动环境中导出相同配置。SMTP_PASSWORD只进入私有环境，不进入Git或日志。
+
+生产通道要求 `SMTP_SECURITY=starttls` 或 `ssl`，默认端口587需按服务商调整；`local`只允许127.0.0.1/::1的合成接收端。设置 SMTP_HOST、SMTP_PORT、SMTP_FROM；服务商要求认证时设置SMTP_USERNAME/SMTP_PASSWORD。配置错误在ready接口显示invalid_configuration，站内通知仍可用。
+
+worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/python -m app.cli email-once`。每轮最多20条，网络超时15秒；暂时错误最多3次，退避60/120秒，永久错误进入dead_letter。DATA阶段断连或发送租约超时进入ambiguous，不自动重发，需先核验服务商回执。稳定Message-ID有助查找，不保证SMTP外部绝对一次；accepted仅表示SMTP服务器接受，不证明最终邮箱投递。
+
+发送记录引用原站内outbox，按outbox唯一键去重；发送前复核订阅启用、报名提醒有效性和接收用户/地址。暂停、作废或地址改变的待发记录取消；已接受记录不会撤回。邮件不包含私人跟进笔记。当前一个配置对应一个用户地址，尚无自助邮箱验证、批量订阅摘要、静默时间或失败记录人工重发入口。未知条件提醒目前逐条发送，不是每日合并摘要。
+
+`/api/v1/email-deliveries`只返回当前用户回执，不暴露地址；管理员 `/api/v1/source-alerts` 返回当前来源异常，页面按来源显示告警，恢复后移除。它是当前状态视图，尚无持久告警历史、过久未检查告警或外部来源告警邮件。

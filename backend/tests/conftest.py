@@ -8,7 +8,11 @@ from app.db import Base, engine, Session, User, seed_sources
 from argon2 import PasswordHasher
 
 @pytest.fixture(autouse=True)
-def clean_db():
+def clean_db(monkeypatch):
+    # Tests never inherit a real recipient or SMTP credential from the host.
+    monkeypatch.setenv('EMAIL_ENABLED', 'false')
+    monkeypatch.setenv('SMTP_USERNAME', '')
+    monkeypatch.setenv('SMTP_PASSWORD', '')
     Base.metadata.drop_all(engine); Base.metadata.create_all(engine)
     with Session() as db:
         seed_sources(db)

@@ -262,6 +262,8 @@ def poll_jobs():
                 job.error = str(exc)[:500]; job.lease_until = None; db.commit()
     generate_deadline_reminders()
     deliver_local()
+    from .email_delivery import deliver_email
+    deliver_email()
 
 def listing_data(db, listing, user_id=None):
     version = db.get(Version, listing.current_version_id)

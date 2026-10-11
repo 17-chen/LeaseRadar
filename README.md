@@ -48,3 +48,5 @@ PYTHONPATH=backend .venv/bin/python -m app.local_worker
 LeaseRadar helps retail expansion teams discover public leasing announcements, filter candidates, inspect field evidence, compare rent on verified bases, and track follow-ups. This initial local development release includes a FastAPI backend, a responsive HTML/JavaScript frontend, deterministic HTML/DOCX extraction and a durable database job queue. It does not yet satisfy the full production specification. Unknown terms remain unknown; sample replay and live data must stay separate. See the deployment guide and roadmap for setup and current limitations.
 
 Code license: MIT. Public source content and original handoff material are not relicensed by this repository; see[数据政策](docs/DATA_POLICY.md)。
+
+SMTP通知与来源异常：可配置单用户邮件通道已通过本地协议测试，真实邮件默认关闭。邮件回执与站内通知分别显示；来源页提供管理员当前异常视图。启用与状态语义见 [运行与部署](docs/DEPLOYMENT.md)。

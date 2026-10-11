@@ -166,6 +166,19 @@ class Outbox(Base):
     created_at: Mapped[str] = mapped_column(default=now)
     read: Mapped[bool] = mapped_column(default=False)
 
+class EmailDelivery(Base):
+    __tablename__ = 'email_deliveries'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    outbox_id: Mapped[int] = mapped_column(ForeignKey('notification_outbox.id'), unique=True)
+    recipient: Mapped[str]
+    state: Mapped[str] = mapped_column(default='queued')
+    attempts: Mapped[int] = mapped_column(default=0)
+    retry_at: Mapped[str | None]
+    lease_until: Mapped[str | None]
+    token: Mapped[str | None]
+    error: Mapped[str | None]
+    accepted_at: Mapped[str | None]
+
 class Followup(Base):
     __tablename__ = 'followups'
     __table_args__ = (UniqueConstraint('user_id', 'listing_id'),)

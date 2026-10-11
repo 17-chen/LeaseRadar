@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.2')
+app = FastAPI(title='LeaseRadar', version='0.1.3')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -275,7 +275,28 @@ def live(): return {'ok': True, 'mode': MODE}
 
 @app.get('/api/v1/health/ready')
 def ready(db=Depends(database)):
-    db.execute(text('SELECT 1')); return {'database': 'ready', 'external_notifications': 'disabled'}
+    from .email_delivery import settings
+    db.execute(text('SELECT 1'))
+    try: status = 'configured' if settings() else 'disabled'
+    except (ValueError, TypeError): status = 'invalid_configuration'
+    return {'database': 'ready', 'external_notifications': status}
+
+@app.get('/api/v1/email-deliveries')
+def email_deliveries(user=Depends(current_user), db=Depends(database)):
+    from .db import EmailDelivery
+    rows = db.scalars(select(EmailDelivery).join(Outbox).join(Subscription).where(
+        Subscription.user_id == user.id).order_by(EmailDelivery.id.desc()).limit(100))
+    return [{'id': r.id, 'notice_id': r.outbox_id, 'state': r.state, 'attempts': r.attempts,
+             'retry_at': r.retry_at, 'accepted_at': r.accepted_at, 'error': r.error} for r in rows]
+
+@app.get('/api/v1/source-alerts')
+def source_alerts(user=Depends(current_user), db=Depends(database)):
+    if user.role != 'admin': raise HTTPException(403)
+    # Current incidents: stable source identity, no duplicate notices per polling cycle.
+    return [{'id': 'source:' + row.id, 'source_id': row.id, 'status': row.status,
+             'error': row.error, 'last_attempt_at': row.last_attempt_at,
+             'last_success_at': row.last_success_at, 'paused': not row.enabled}
+            for row in db.scalars(select(Source).where(Source.error.is_not(None)))]
 
 web = ROOT / 'frontend'
 app.mount('/static', StaticFiles(directory=web), name='static')
