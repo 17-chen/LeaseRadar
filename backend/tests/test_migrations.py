@@ -26,8 +26,11 @@ with engine.begin() as connection:
         "INSERT INTO change_events VALUES (1,1,'new')",
         "INSERT INTO notification_outbox VALUES (1,1,1,'in_app','accepted','{}','2026-10-10T00:00:00+00:00',0)",
     ]: connection.execute(text(statement))
+with engine.begin() as connection:
+    connection.execute(text('UPDATE raw_documents SET sha256=:sha,snapshot_path=:path WHERE id=1'), {'sha':'a'*64,'path':'/old/private/snapshots/'+'a'*64+'.html'})
 command.upgrade(cfg,'head')
 with Session() as db:
+    assert db.execute(text('SELECT snapshot_path FROM raw_documents WHERE id=1')).scalar()=='snapshots/'+'a'*64+'.html'
     assert db.get(Subscription,1).reminder_hours==[72,24]
     assert db.get(Outbox,1).event_id==1 and db.get(Outbox,1).reminder_id is None
     assert db.get(Outbox,1).state=='accepted'

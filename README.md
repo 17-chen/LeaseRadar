@@ -50,3 +50,5 @@ LeaseRadar helps retail expansion teams discover public leasing announcements, f
 Code license: MIT. Public source content and original handoff material are not relicensed by this repository; see[数据政策](docs/DATA_POLICY.md)。
 
 SMTP通知与来源异常：可配置单用户邮件通道已通过本地协议测试，真实邮件默认关闭。邮件回执与站内通知分别显示；来源页提供管理员当前异常视图。启用与状态语义见 [运行与部署](docs/DEPLOYMENT.md)。
+
+最新审查：0.1.4-dev，102项本机回归、异目录恢复及桌面/手机界面验证。发现的问题、修复和待补齐原因见 [代码与状态审查](docs/CODE_STATE_AUDIT.md)。升级先备份、migrate至0006，再重启API/worker。

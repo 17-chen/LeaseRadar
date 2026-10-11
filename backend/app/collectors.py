@@ -5,6 +5,7 @@ import re
 import socket
 import time
 from datetime import datetime
+from decimal import Decimal
 from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo
 import httpx
@@ -70,6 +71,13 @@ def soup_text(html):
 def iso_date(value):
     return datetime.fromisoformat(value).replace(tzinfo=ZoneInfo('Asia/Shanghai')).isoformat()
 
+def location_parts(value):
+    city = re.search(r'(?:^|省|自治区)([^省市区县]{2,8}市)', value)
+    district = re.match(r'([^区县]{1,6}[区县])', value[city.end():]) if city else re.fullmatch(r'([^区县]{1,6}[区县])', value)
+    name = district.group(1) if district else None
+    if name and name.endswith(('社区', '开发区', '园区')): name = None
+    return city.group(1) if city else None, name
+
 def nongjy_discover(html, page=1):
     soup = BeautifulSoup(html, 'html.parser')
     paths = list(dict.fromkeys(a['href'] for a in soup.select('a[href]') if re.fullmatch(r'/web/propertyBid/detail/\d+', a['href'])))
@@ -88,8 +96,8 @@ def nongjy_parse(html, url):
         raise SourceError('详情标题选择器失效')
     fields = {'title': title_node.get_text(' ', strip=True), 'source_url': url,
               'property_type': None, 'environment': None, 'operation': None,
-              'period_basis': None, 'price_kind': 'starting_bid', 'status': 'unknown',
-              'parser_version': 'nongjy-html-v2', 'warnings': []}
+              'period_basis': None, 'price_kind': None, 'status': 'unknown',
+              'parser_version': 'nongjy-html-v3', 'warnings': []}
     evidence = {'title': fields['title']}
     for label, key in [('项目位置：', 'address'), ('项目编号：', 'project_code'), ('交易单位：', 'area_m2'), ('保证金：', 'deposit')]:
         node = next((n for n in soup.select('.cont-info-left-bt') if n.get_text(strip=True) == label), None)
@@ -97,18 +105,23 @@ def nongjy_parse(html, url):
             value = node.parent.get_text(' ', strip=True).replace(label, '', 1).strip()
             evidence[key] = label + value
             if key in ('area_m2', 'deposit'):
-                found = re.search(r'(\d+(?:\.\d+)?)', value)
-                fields[key] = found.group(1) if found and (key != 'area_m2' or '㎡' in value) else None
+                number = r'(?<![\d,.])(\d+(?:,\d{3})*(?:\.\d+)?)'
+                unit = r'\s*(㎡|平方米)' if key == 'area_m2' else r'\s*(万元|元)'
+                found = re.findall(number + unit, value)
+                fields[key] = None
+                if len(found) == 1:
+                    amount = Decimal(found[0][0].replace(',', ''))
+                    fields[key] = str(amount * (10000 if found[0][1] == '万元' else 1))
                 if key == 'area_m2': fields['area_approx'] = '约' in value
             else:
                 fields[key] = value
     amount = soup.select_one('.cont-info-left-timebox-price')
     if amount:
         value = amount.get_text(strip=True)
-        if re.fullmatch(r'\d+(?:\.\d+)?', value):
-            fields['raw_amount'] = value
+        if re.fullmatch(r'\d+(?:,\d{3})*(?:\.\d+)?', value):
             evidence['raw_amount'] = amount.parent.get_text(' ', strip=True)
             label = evidence['raw_amount']
+            fields['raw_amount'] = str(Decimal(value.replace(',', '')) * (10000 if '万元' in label else 1)) if '元' in label else None
             fields['price_kind'] = 'sale' if '成交价' in label else 'asking' if '挂牌价' in label else 'starting_bid' if '起始价' in label else None
     for label, key in [('报名截止时间', 'registration_deadline'), ('竞价截止时间', 'auction_deadline')]:
         found = re.search(label + r'：\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', text)
@@ -126,10 +139,9 @@ def nongjy_parse(html, url):
         fields['status'] = 'open'
         evidence['status'] = soup.select_one('.signupButton').get_text(' ', strip=True)
     address = fields.get('address', '')
-    city = re.search(r'([\u4e00-\u9fff]{2,8}市)', address)
-    district = re.search(r'市([^市]{2,6}[区县])', address)
-    fields['city'] = city.group(1) if city else None
-    fields['district'] = district.group(1) if district else None
+    fields['city'], fields['district'] = location_parts(address)
+    for key in ('city', 'district'):
+        if fields[key]: evidence[key] = '项目位置：' + address
     for word, kind in [('商铺', 'shop'), ('店面', 'shop'), ('厂房', 'warehouse'), ('仓库', 'warehouse')]:
         if word in fields['title']:
             fields['property_type'] = kind
@@ -161,10 +173,10 @@ def wzpt_parse(html, url):
     if not article:
         raise SourceError('高校公告正文选择器失效')
     title = soup.title.get_text(strip=True)
-    fields = {'title': title, 'source_url': url, 'status': 'unknown', 'price_kind': 'asking',
-              'period_basis': None, 'property_type': None, 'environment': 'campus', 'operation': None,
-              'parser_version': 'wzpt-html-v2', 'warnings': ['经营许可与披露截止是否为报名截止待核对']}
-    evidence = {'title': title, 'environment': title}
+    fields = {'title': title, 'source_url': url, 'status': 'unknown', 'price_kind': None,
+              'period_basis': None, 'property_type': None, 'environment': None, 'operation': None,
+              'parser_version': 'wzpt-html-v3', 'warnings': ['经营许可与披露截止是否为报名截止待核对', '发布单位不代表标的位于校园，所在环境待核实']}
+    evidence = {'title': title}
     if not article.select('tr'):
         fields['warnings'].append('链接型公告：正文未提供结构化字段，需核验所链接交易平台')
     # Restrict extraction to known labeled table rows.
@@ -177,6 +189,7 @@ def wzpt_parse(html, url):
                 if m:
                     from decimal import Decimal
                     fields['raw_amount'] = str(Decimal(m.group(1)) * (10000 if m.group(2) == '万元' else 1))
+                    fields['price_kind'] = 'asking'
                     # 年租金可以作一年口径，仅作为当前公布年租基准。
                     fields['period_basis'] = 'first_year' if m.group(3) == '年' else 'monthly'
                     evidence['raw_amount'] = evidence['period_basis'] = label + ' ' + value
@@ -186,10 +199,9 @@ def wzpt_parse(html, url):
             elif label == '出租标的地址':
                 fields['address'] = value; evidence['address'] = value
             elif label == '所在地区':
-                city = re.search(r'(\S+市)', value)
-                district = re.search(r'(\S+[区县])', value)
-                fields['city'] = city.group(1) if city else None
-                fields['district'] = district.group(1) if district else None
+                fields['city'], fields['district'] = location_parts(value)
+                for key in ('city', 'district'):
+                    if fields[key]: evidence[key] = label + ' ' + value
             elif label == '信息披露截止日期':
                 fields['disclosure_deadline'] = value
                 evidence['disclosure_deadline'] = value

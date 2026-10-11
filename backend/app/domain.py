@@ -1,5 +1,14 @@
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+def aware_time(value):
+    if not value: return None
+    try:
+        result = datetime.fromisoformat(value)
+        return result.astimezone(timezone.utc) if result.tzinfo is not None else None
+    except (ValueError, TypeError):
+        return None
 
 def decimal(value):
     if value is None or value == '':
@@ -30,11 +39,15 @@ def normalize_price(fields):
     return result
 
 def match(fields, filters, at=None):
+    at = at or datetime.now(timezone.utc)
     checks = {}
     for field in ['city', 'district', 'property_type', 'environment', 'operation', 'status', 'price_kind']:
         wanted = filters.get(field)
         if wanted:
             actual = fields.get(field)
+            if field == 'status' and actual in (None, '', 'unknown', 'open'):
+                cutoff = aware_time(fields.get('registration_deadline'))
+                if cutoff and cutoff <= at: actual = 'closed'
             checks[field] = 'unknown' if actual in (None, '', 'unknown') else ('pass' if actual == wanted else 'fail')
     for field in ['area_m2', 'first_year_monthly']:
         value = decimal(fields.get(field))
@@ -45,15 +58,15 @@ def match(fields, filters, at=None):
     keyword = filters.get('keyword')
     if keyword:
         checks['keyword'] = 'pass' if keyword in str(fields.get('title', '')) + str(fields.get('address', '')) else 'fail'
-    if filters.get('registration_open'):
+    if filters.get('registration_open') or filters.get('status') == 'open':
         deadline = fields.get('registration_deadline')
         disclosure = fields.get('disclosure_deadline')
-        historical = disclosure and disclosure < (at or datetime.now(timezone.utc)).date().isoformat()
+        historical = disclosure and disclosure < at.astimezone(ZoneInfo('Asia/Shanghai')).date().isoformat()
         if historical or fields.get('status') in ('closed', 'withdrawn', 'sold', 'failed'):
             checks['registration_open'] = 'fail'
         elif deadline:
-            cutoff = datetime.fromisoformat(deadline)
-            checks['registration_open'] = 'pass' if cutoff > (at or datetime.now(timezone.utc)) else 'fail'
+            cutoff = aware_time(deadline)
+            checks['registration_open'] = 'unknown' if cutoff is None else 'pass' if cutoff > at else 'fail'
         else:
             checks['registration_open'] = 'unknown'
     verdict = 'fail' if 'fail' in checks.values() else ('unknown' if 'unknown' in checks.values() else 'pass')

@@ -18,7 +18,7 @@ def main():
     sub.add_parser('remind-once')
     sub.add_parser('email-once')
     check = sub.add_parser('source-check'); check.add_argument('source', choices=['nongjy', 'wzpt'])
-    ingest = sub.add_parser('import-html'); ingest.add_argument('source', choices=['nongjy', 'wzpt']); ingest.add_argument('path'); ingest.add_argument('--url', required=True)
+    ingest = sub.add_parser('import-html'); ingest.add_argument('source', choices=['nongjy', 'wzpt']); ingest.add_argument('path'); ingest.add_argument('--url', required=True); ingest.add_argument('--observed-at', required=True, help='原抓取时间，带时区ISO格式；离线回放不冒充新核验')
     args = parser.parse_args()
     if args.command == 'migrate':
         from alembic import command
@@ -71,7 +71,7 @@ def main():
         from .collectors import validate_url
         validate_url(args.url)
         with Session() as db:
-            result = ingest(db, args.source, args.url, Path(args.path).read_text()); db.commit()
+            result = ingest(db, args.source, args.url, Path(args.path).read_text(), observed_at=args.observed_at); db.commit()
         print(result); deliver_local()
 
 if __name__ == '__main__': main()

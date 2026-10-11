@@ -28,8 +28,10 @@ def settings():
         raise ValueError('邮件通道配置不完整')
     if security == 'local' and host not in ('127.0.0.1', '::1'):
         raise ValueError('明文SMTP仅允许本地测试接收端')
+    port = int(os.getenv('SMTP_PORT', '587'))
+    if not 1 <= port <= 65535: raise ValueError('SMTP端口必须为1–65535')
     return dict(sender=sender, recipient=recipient, start=start, user_id=user_id, host=host,
-                security=security, port=int(os.getenv('SMTP_PORT', '587')))
+                security=security, port=port)
 
 
 def eligible(db, notice, at):
@@ -43,7 +45,8 @@ def smtp_send(config, message):
     data_started = False
     try:
         cls = smtplib.SMTP_SSL if config['security'] == 'ssl' else smtplib.SMTP
-        client = cls(config['host'], config['port'], timeout=15)
+        kwargs = {'context': ssl.create_default_context()} if config['security'] == 'ssl' else {}
+        client = cls(config['host'], config['port'], timeout=15, **kwargs)
         client.ehlo()
         if config['security'] == 'starttls':
             client.starttls(context=ssl.create_default_context()); client.ehlo()
@@ -69,6 +72,7 @@ def smtp_send(config, message):
 def deliver_email(at=None, sender=smtp_send):
     config = settings()
     if not config: return 0
+    fixed_at = at
     at = at or datetime.now(timezone.utc)
     with Session() as db:
         # An expired send lease may have crossed the SMTP acceptance boundary.
@@ -80,16 +84,25 @@ def deliver_email(at=None, sender=smtp_send):
             Outbox.created_at >= config['start'].isoformat()))
         for notice in notices:
             if not eligible(db, notice, at): continue
-            if db.scalar(select(EmailDelivery.id).where(EmailDelivery.outbox_id == notice.id)): continue
+            existing = db.scalar(select(EmailDelivery).where(EmailDelivery.outbox_id == notice.id))
+            if existing:
+                # Only cancelled, known-unsent records may resume; accepted/ambiguous never do.
+                if existing.state == 'cancelled' and existing.recipient == config['recipient'] and existing.accepted_at is None:
+                    db.execute(update(EmailDelivery).where(EmailDelivery.id == existing.id,
+                        EmailDelivery.state == 'cancelled').values(state='queued', retry_at=None, error=None))
+                continue
             try:
                 with db.begin_nested():
                     db.add(EmailDelivery(outbox_id=notice.id, recipient=config['recipient'])); db.flush()
             except IntegrityError:
                 if not db.scalar(select(EmailDelivery.id).where(EmailDelivery.outbox_id == notice.id)): raise
         db.commit()
-        ids = list(db.scalars(select(EmailDelivery.id).where(EmailDelivery.state.in_(['queued', 'retry_wait'])).limit(20)))
+        ids = list(db.scalars(select(EmailDelivery.id).where(EmailDelivery.state.in_(['queued', 'retry_wait']),
+            or_(EmailDelivery.retry_at.is_(None), EmailDelivery.retry_at <= at.isoformat()))
+            .order_by(EmailDelivery.id).limit(20)))
     sent = 0
     for identity in ids:
+        at = fixed_at or datetime.now(timezone.utc)
         token = secrets.token_hex(16)
         with Session() as db:
             row = db.get(EmailDelivery, identity)

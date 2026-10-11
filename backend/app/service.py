@@ -1,5 +1,7 @@
 import hashlib
 import json
+import re
+from urllib.parse import urlsplit
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 from .db import Session, Source, Job, CrawlRun, RawDocument, Asset, Listing, SourceRecord, Version, Evidence, Subscription, Event, Outbox, Followup, now
@@ -8,22 +10,37 @@ from .domain import normalize_price, decimal
 from .collectors import fetch, PARSERS, DISCOVERERS, SourceError
 from .notifications import aware_time, queue_change, cancel_invalid_reminders, generate_deadline_reminders, TERMINAL_STATES, STOPPED_FOLLOWUPS
 
-def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
+def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, observed_at=None):
+    parsed = urlsplit(url)
+    expected = {'nongjy': 'www.nongjy.cn', 'wzpt': 'www.wzpt.edu.cn'}.get(source_id)
+    if parsed.scheme != 'https' or parsed.hostname != expected or parsed.username or parsed.password or parsed.port not in (None, 443):
+        raise SourceError('详情URL与来源不一致')
+    identity = re.fullmatch(r'/web/propertyBid/detail/(\d+)', parsed.path) if source_id == 'nongjy' else re.search(r'/c\d+a(\d+)/page\.htm$', parsed.path)
+    if not identity: raise SourceError('详情URL中未识别公告编号')
+    record_id = identity.group(1)
+    observation = aware_time(observed_at) if observed_at is not None else datetime.now(timezone.utc)
+    if observation is None: raise ValueError('观测时间必须明确且带时区')
+    observation = observation.isoformat()
     fields, evidence, text = PARSERS[source_id](html, url)
     if attachment_cache is not None and source_id == 'nongjy':
         from .attachments import enrich_docx
         enrich_docx(fields, evidence, attachment_cache)
-        fields['parser_version'] = 'nongjy-html-docx-v3'
+        fields['parser_version'] = 'nongjy-html-docx-v4'
     fields.update(normalize_price(fields))
     content_hash = hashlib.sha256(html.encode()).hexdigest()
     snapshot_dir = DATA / 'snapshots'
     snapshot_dir.mkdir(exist_ok=True)
     path = snapshot_dir / (content_hash + '.html')
     path.write_text(html)
-    raw = RawDocument(url=url, sha256=content_hash, text=text, snapshot_path=str(path))
+    raw = RawDocument(url=url, fetched_at=observation, sha256=content_hash, text=text,
+                      snapshot_path=str(path.relative_to(DATA)))
     db.add(raw); db.flush()
-    record_id = url.rstrip('/').split('/')[-1]
     record = db.scalar(select(SourceRecord).where(SourceRecord.source_id == source_id, SourceRecord.record_id == record_id, SourceRecord.lot_code == '1'))
+    if not record and source_id == 'wzpt':
+        # Repair legacy page.htm identity only when this exact stored URL agrees.
+        record = db.scalar(select(SourceRecord).where(SourceRecord.source_id == source_id,
+            SourceRecord.record_id == 'page.htm', SourceRecord.url == url, SourceRecord.lot_code == '1'))
+        if record: record.record_id = record_id
     is_new = record is None
     if is_new:
         # Conservative: cross-source association is a later human-reviewed operation.
@@ -33,7 +50,7 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None):
         db.add(record)
     else:
         listing = db.get(Listing, record.listing_id)
-    record.last_checked_at = now()
+    record.last_checked_at = observation
     business_hash = hashlib.sha256(json.dumps(fields, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     previous = db.get(Version, listing.current_version_id) if listing.current_version_id else None
     if previous and previous.business_hash == business_hash:

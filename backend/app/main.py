@@ -16,9 +16,15 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.3')
+app = FastAPI(title='LeaseRadar', version='0.1.4')
 hasher = PasswordHasher()
 login_attempts = {}
+
+@app.middleware('http')
+async def cache_policy(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['Cache-Control'] = 'no-store' if request.url.path.startswith('/api/v1/') else 'no-cache'
+    return response
 
 def database():
     with Session() as db:
@@ -156,7 +162,7 @@ def export(user=Depends(current_user), db=Depends(database)):
         if not fields: continue
         values = []
         for key in keys:
-            value = str(fields.get(key) or '')
+            value = '' if fields.get(key) is None else str(fields[key])
             if value.lstrip().startswith(('=', '+', '-', '@')) or value.startswith(('\t','\r','\n')): value = "'" + value
             values.append(value)
         writer.writerow(values)
@@ -302,4 +308,4 @@ web = ROOT / 'frontend'
 app.mount('/static', StaticFiles(directory=web), name='static')
 
 @app.get('/')
-def index(): return FileResponse(web / 'index.html')
+def index(): return FileResponse(web / 'index.html', headers={'Cache-Control':'no-cache'})

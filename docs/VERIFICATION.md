@@ -47,3 +47,9 @@ GitHub首次CI在Python3.12上通过23项测试与新库迁移；随后补充未
 - 浏览器真实工作空间确认邮件未配置、收件箱发送记录空态、来源健康页面可用；截图private/screenshots/email-desktop.png。不以空态截图证明外部发送成功；协议发送证据来自隔离合成测试。
 - 公开高校外链 https://www.zjpse.com/prjs/lease/detail/235950.html 返回302到同站/history/prjs/lease/detail/235950.html；该明确目标200（78114字节），只读保存private/zjpse-history-235950.html，HTML文本为导航/框架，无公告正文可验证。未扩大白名单、未绕过访问控制，不计完整第二来源。
 - 无真实SMTP服务商验证、最终邮箱回执、生产容器/多worker验证；静默与每日摘要、持久告警历史未实现。
+
+## 2026-10-11：完整代码/状态/界面审查
+
+102项pytest、node语法、pip check、Compose配置和diff检查通过。补高校多公告ID、unknown依据、时区/失效状态、单位/地区、TLS/队列、外键/零值和便携快照回归。25条保存HTML逐项复核；真实25挂牌/41版本，新增1个纠正reprocessing且不刷新核验时间；独立恢复到新DATA_DIR，41条原文引用和6个DOCX摘要全部hash一致，迁移0006。
+
+浏览器验证草稿不生效、已知月租6条筛选、跨页比较与依据往返、390px无页面溢出、DEMO订阅跳转与账号切换清理。详细证据及未验证范围见CODE_STATE_AUDIT.md。

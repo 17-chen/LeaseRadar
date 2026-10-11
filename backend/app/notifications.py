@@ -3,21 +3,13 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from .db import Session, Subscription, Listing, Version, SourceRecord, Followup, Outbox, DeadlineReminder, Event, RawDocument
-from .domain import match
+from .domain import match, aware_time
 from .config import MODE
 
 TERMINAL_STATES = {'closed', 'withdrawn', 'sold', 'failed'}
 STOPPED_FOLLOWUPS = {'放弃', '已成交'}
 CHANGE_FIELDS = ('status', 'raw_amount', 'price_kind', 'period_basis', 'area_m2', 'address',
                  'registration_deadline', 'auction_deadline', 'operation', 'property_type', 'environment')
-
-def aware_time(value):
-    if not value: return None
-    try:
-        result = datetime.fromisoformat(value)
-        return result.astimezone(timezone.utc) if result.tzinfo is not None else None
-    except (ValueError, TypeError):
-        return None
 
 def stopped(db, user_id, listing_id):
     row = db.scalar(select(Followup).where(Followup.user_id == user_id, Followup.listing_id == listing_id))

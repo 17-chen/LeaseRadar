@@ -53,7 +53,7 @@ SQLite：
 PYTHONPATH=backend .venv/bin/python -m app.cli backup
 ```
 
-数据库与快照进入private/backups，均包含私有数据。备份期间暂停worker以确保数据库与文件一致。恢复时复制database.db与snapshots到新的DATA_DIR，设置DATABASE_URL=sqlite:///新目录/database.db，先运行完整性检查与记录计数再切换服务，禁止直接覆盖运行库。
+数据库与快照进入private/backups，均包含私有数据。备份期间暂停worker以确保数据库与文件一致。恢复时复制database.db与snapshots到新的DATA_DIR，设置DATABASE_URL=sqlite:///新目录/database.db，先运行migrate（0006将旧绝对快照路径转为相对路径），核对完整性、记录计数和原文hash再切换服务，禁止直接覆盖运行库。
 
 PostgreSQL：暂停worker/beat；执行docker compose exec -T db pg_dump -U leaseradar -Fc leaseradar，将输出保存到私有备份文件；同时间备份snapshots卷。使用独立新库pg_restore，并核对表计数、附件hash及权限后再切换。当前机器未执行PostgreSQL恢复演练。
 
@@ -86,7 +86,7 @@ PYTHONPATH=backend .venv/bin/python -m app.cli remind-once
 
 用户在保存订阅或“编辑设置”中配置提前小时数，默认72/24；允许1–168小时，最多3个不重复值，留空关闭。只使用有时区的明确报名截止，不用竞价时间或日期型披露推算。最近核验超过24小时不生成/接受新的催办提醒；worker恢复后只生成当前最近的提醒窗口，例如仅剩10小时且设置72/24时生成24小时提醒，不补发72小时消息。已有一般字段更新不会重发同一截止窗口。
 
-延期、关闭、暂停订阅、取消提醒配置、放弃/已成交、过期后，旧提醒在收件箱标为作废并保留历史，作废项不计入未读数。尚未被站内接受的提醒恢复条件后复用原outbox；已接受过或回执未知的旧提醒不自动重发。同一期限回退到已有身份也遵循此规则。无静默/每日摘要及外部SMTP/Webhook实现。生成依赖本地worker轮询；长采集任务、电脑休眠和暂停监测可能造成延迟。
+延期、关闭、暂停订阅、取消提醒配置、放弃/已成交、过期后，旧提醒在收件箱标为作废并保留历史，作废项不计入未读数。尚未被站内接受的提醒恢复条件后复用原outbox；已接受过或回执未知的旧提醒不自动重发。同一期限回退到已有身份也遵循此规则。静默/每日摘要及Webhook未实现；SMTP单用户通道自0.1.3提供，默认关闭，见后文。生成依赖本地worker轮询；长采集任务、电脑休眠和暂停监测可能造成延迟。
 
 升级前停止旧API和worker，备份后执行migrate。0004增加提醒表及outbox二选一来源约束，旧crawl_runs类型无法可靠恢复，标为legacy。只验证SQLite旧库和新库迁移，PostgreSQL仍需部署演练。
 
@@ -101,3 +101,7 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 发送记录引用原站内outbox，按outbox唯一键去重；发送前复核订阅启用、报名提醒有效性和接收用户/地址。暂停、作废或地址改变的待发记录取消；已接受记录不会撤回。邮件不包含私人跟进笔记。当前一个配置对应一个用户地址，尚无自助邮箱验证、批量订阅摘要、静默时间或失败记录人工重发入口。未知条件提醒目前逐条发送，不是每日合并摘要。
 
 `/api/v1/email-deliveries`只返回当前用户回执，不暴露地址；管理员 `/api/v1/source-alerts` 返回当前来源异常，页面按来源显示告警，恢复后移除。它是当前状态视图，尚无持久告警历史、过久未检查告警或外部来源告警邮件。
+
+## 0.1.4审查修复升级
+
+停止旧API/worker，backup后migrate到0006，再启动新进程。快照路径按DATA_DIR解析；import-html新增必填 --observed-at（原抓取带时区ISO时间）。保持单worker，过期来源/任务租约的多进程归属校验仍待补强。完整审查、独立恢复与界面证据见docs/CODE_STATE_AUDIT.md。

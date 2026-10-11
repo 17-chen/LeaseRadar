@@ -39,3 +39,5 @@ backend/requirements.lock锁定依赖；PYTHONPATH=backend pytest -q backend/tes
 未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、完整每日覆盖、关键PDF/OCR与生产安全仍是后续工作。
 
 SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliveries；按接收用户、地址与启用时间配置，由worker有界处理。SMTP结果不明不自动重发，所有邮件默认关闭。来源告警为管理员当前状态视图，暂无历史存储。
+
+0006将hash命名HTML快照存为DATA_DIR下相对路径，保证换目录恢复；离线import-html须传明确观测时间，不冒充新核验。高校记录ID取公告编号而非page.htm，按同URL兼容旧ID。SQLite每连接启用外键；浏览器区分应用条件与草稿、对过期会话清理缓存并丢弃旧请求。

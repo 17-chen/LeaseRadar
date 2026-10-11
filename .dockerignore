@@ -4,3 +4,10 @@ private
 node_modules
 docs
 *.zip
+
+.env
+.env.*
+raw_snapshots
+.codex
+.agents
+*.log
