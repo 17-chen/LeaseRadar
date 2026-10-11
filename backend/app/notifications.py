@@ -18,6 +18,13 @@ def stopped(db, user_id, listing_id):
 def queue_change(db, listing, version, event, previous, url):
     """A former candidate becoming ineligible is information, not a new match."""
     fields = version.fields
+    from .resolution import groups, grouped_rows
+    mapping = groups(db)
+    related = [lid for lid, canonical in mapping.items() if canonical == mapping.get(listing.id, listing.id)]
+    if event.kind == 'new' and any(lid < listing.id for lid in related):
+        return
+    if related:
+        fields = next(g for g in grouped_rows(db) if listing.id in g['related_listing_ids'])
     changes = [{'field': key, 'before': previous.fields.get(key), 'after': fields.get(key)}
                for key in CHANGE_FIELDS if previous and previous.fields.get(key) != fields.get(key)]
     for sub in db.scalars(select(Subscription).where(Subscription.enabled.is_(True))):
@@ -55,7 +62,11 @@ def reminder_valid(db, reminder, at, *, pending=True):
     listing = db.get(Listing, reminder.listing_id)
     if not sub or not listing or not sub.enabled or stopped(db, sub.user_id, listing.id): return False
     version = db.get(Version, listing.current_version_id)
-    deadline = aware_time(version.fields.get('registration_deadline'))
+    from .resolution import groups, grouped_rows
+    mapping=groups(db)
+    if mapping.get(listing.id,listing.id) != listing.id: return False
+    fields=next(g for g in grouped_rows(db) if listing.id in g['related_listing_ids']) if listing.id in mapping else version.fields
+    deadline = aware_time(fields.get('registration_deadline'))
     if not deadline or deadline.isoformat() != reminder.deadline: return False
     if deadline <= at or version.fields.get('status') in TERMINAL_STATES: return False
     if reminder.lead_hours not in sub.reminder_hours: return False
@@ -64,7 +75,7 @@ def reminder_valid(db, reminder, at, *, pending=True):
         record = db.scalar(select(SourceRecord).where(SourceRecord.listing_id == listing.id))
         checked = aware_time(record.last_checked_at) if record else None
         if not checked or not timedelta(0) <= at - checked <= timedelta(hours=24): return False
-    result = match(version.fields, {**sub.filters, 'registration_open': True}, at)
+    result = match(fields, {**sub.filters, 'registration_open': True}, at)
     return result['verdict'] != 'fail' and (result['verdict'] != 'unknown' or sub.unknown_policy != 'exclude')
 
 def cancel_invalid_reminders(db, at=None):
@@ -80,13 +91,16 @@ def generate_deadline_reminders(at=None):
     with Session() as db:
         cancel_invalid_reminders(db, at)
         subscriptions = list(db.scalars(select(Subscription).where(Subscription.enabled.is_(True))))
+        from .resolution import groups, grouped_rows
+        mapping=groups(db); merged={r['id']:r for r in grouped_rows(db)}
         for listing in db.scalars(select(Listing)):
+            if mapping.get(listing.id,listing.id)!=listing.id: continue
             version = db.get(Version, listing.current_version_id)
             record = db.scalar(select(SourceRecord).where(SourceRecord.listing_id == listing.id))
             # Avoid fresh-sounding reminders based on stale or time-unknown observations.
             checked = aware_time(record.last_checked_at) if record else None
             if not version or not checked or not timedelta(0) <= at - checked <= timedelta(hours=24): continue
-            fields = version.fields
+            fields = merged[listing.id]
             for sub in subscriptions:
                 hour = lead_for(fields, sub.reminder_hours, at)
                 if hour is None or stopped(db, sub.user_id, listing.id): continue

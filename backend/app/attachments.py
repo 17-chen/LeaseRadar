@@ -5,7 +5,7 @@ import re
 import zipfile
 import xml.etree.ElementTree as ET
 from decimal import Decimal
-from .collectors import validate_url, SourceError
+from .collectors import stream_public, SourceError
 from .config import DATA
 import httpx
 
@@ -60,14 +60,12 @@ def enrich_tables(fields, evidence, tables, url):
     return True
 
 def fetch_docx(url):
-    validate_url(url)
-    with httpx.Client(timeout=25, follow_redirects=False, trust_env=False) as client:
-        with client.stream('GET', url) as response:
-            if response.status_code != 200: raise SourceError(f'附件HTTP {response.status_code}')
-            data = bytearray()
-            for chunk in response.iter_bytes():
-                data.extend(chunk)
-                if len(data) > 20_000_000: raise SourceError('附件超过20MB限制')
+    with stream_public(url) as response:
+        if response.status_code != 200: raise SourceError(f'附件HTTP {response.status_code}')
+        data = bytearray()
+        for chunk in response.iter_bytes():
+            data.extend(chunk)
+            if len(data) > 20_000_000: raise SourceError('附件超过20MB限制')
     return bytes(data)
 
 def enrich_docx(fields, evidence, cache):

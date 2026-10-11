@@ -35,9 +35,12 @@ def settings():
 
 
 def eligible(db, notice, at):
+    from .scheduling import email_origins
+    from .db import DigestItem
     sub = db.get(Subscription, notice.subscription_id)
+    if db.get(DigestItem, notice.id): return bool(email_origins(db, notice, at))
     return bool(sub and sub.enabled and notice.state in ('queued', 'accepted') and
-        (not notice.reminder_id or reminder_valid(db, db.get(DeadlineReminder, notice.reminder_id), at)))
+        (not notice.reminder_id or reminder_valid(db, db.get(DeadlineReminder, notice.reminder_id), at)) and email_origins(db, notice, at))
 
 
 def smtp_send(config, message):
@@ -120,15 +123,24 @@ def deliver_email(at=None, sender=smtp_send):
             db.commit()
             if not claimed.rowcount: continue
             row = db.get(EmailDelivery, identity); db.refresh(row)
-            payload = notice.payload
+            from .scheduling import email_origins
+            origins = email_origins(db, notice, at)
+            payload = origins[0].payload
             message = EmailMessage()
             message['From'] = config['sender']; message['To'] = row.recipient
-            message['Subject'] = 'LeaseRadar 公告提醒'
+            from .db import Digest, DigestItem
+            is_batch = db.get(DigestItem,notice.id) is not None
+            message['Subject'] = 'LeaseRadar 每日摘要' if is_batch else 'LeaseRadar 公告提醒'
             message['Message-ID'] = f'<leaseradar-{identity}@{config["sender"].split("@")[1]}>'
             message.set_content(f"模式：{payload.get('mode')}\n{payload.get('title', '')}\n"
                 f"类型：{payload.get('notice_class')}\n匹配：{payload.get('match', {}).get('verdict', 'unknown')}\n"
                 f"报名截止：{payload.get('registration_deadline') or '未知'}\n"
                 f"来源：{payload.get('source_url', '')}\n请核验公告原文和未确认条件。")
+            if is_batch:
+                digest = db.get(Digest, db.get(DigestItem, notice.id).digest_id)
+                message.set_content(f'摘要窗口：{digest.window_start} 至 {digest.window_end}\n' +
+                    '\n\n'.join(f"{n.payload.get('title','')}\n匹配：{n.payload.get('match',{}).get('verdict','unknown')}\n来源：{n.payload.get('source_url','')}" for n in origins) +
+                    '\n\n来源覆盖：\n' + '\n'.join(f"{s['id']}：{s['status']}；{s['coverage'] or '覆盖未知'}；监测{'启用' if s['enabled'] else '暂停'}" for s in digest.sources))
             state, error = sender(config, message)
             if state == 'retry_wait' and row.attempts >= 3: state = 'dead_letter'
             db.execute(update(EmailDelivery).where(EmailDelivery.id == identity,

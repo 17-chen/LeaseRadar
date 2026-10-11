@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.4')
+app = FastAPI(title='LeaseRadar', version='0.1.5')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -114,9 +114,8 @@ class SearchInput(BaseModel):
 @app.post('/api/v1/listings/search')
 def search(data: SearchInput, user=Depends(current_user), db=Depends(database)):
     rows = []
-    for listing in db.scalars(select(Listing).order_by(Listing.id.desc())):
-        row = listing_data(db, listing, user.id)
-        if not row: continue
+    from .resolution import grouped_rows
+    for row in grouped_rows(db, user.id):
         result = match(row, data.filters.model_dump(exclude_none=True))
         if result['verdict'] == 'fail' or (not data.include_unknown and result['verdict'] == 'unknown'): continue
         rows.append({**row, 'match': result})
@@ -135,6 +134,10 @@ def detail(listing_id: int, user=Depends(current_user), db=Depends(database)):
     row['evidence'] = [{'field': e.field, 'quote': e.quote} for e in db.scalars(select(Evidence).where(Evidence.version_id == listing.current_version_id))]
     row['versions'] = [{'id': v.id, 'created_at': v.created_at, 'fields': v.fields} for v in db.scalars(select(Version).where(Version.listing_id == listing.id).order_by(Version.id.desc()))]
     row['source_text'] = db.get(RawDocument, db.get(Version, listing.current_version_id).raw_id).text
+    from .resolution import grouped_rows
+    group = next((g for g in grouped_rows(db, user.id) if listing.id in g['related_listing_ids']), None)
+    row['source_variants'] = group['source_variants'] if group else []
+    row['source_conflicts'] = group['source_conflicts'] if group else []
     return row
 
 class CompareInput(BaseModel):
@@ -144,10 +147,14 @@ class CompareInput(BaseModel):
 def compare(data: CompareInput, user=Depends(current_user), db=Depends(database)):
     if len(set(data.listing_ids)) != len(data.listing_ids): raise HTTPException(422, '不能重复选择同一挂牌')
     rows = []
+    from .resolution import grouped_rows
+    resolved = grouped_rows(db, user.id)
     for lid in data.listing_ids:
         listing = db.get(Listing, lid)
         if not listing: raise HTTPException(404, '挂牌不存在')
-        rows.append(listing_data(db, listing, user.id))
+        group = next(g for g in resolved if lid in g['related_listing_ids'])
+        if any(r['id'] == group['id'] for r in rows): raise HTTPException(422, '选择包含已关联的同一挂牌，请选择不同机会')
+        rows.append(group)
     return {'items': rows, 'warning': '起始价、挂牌价分组比较；保证金不是租金，税费未知时无法得出最低总成本。'}
 
 @app.get('/api/v1/exports/listings.csv')
@@ -157,9 +164,8 @@ def export(user=Depends(current_user), db=Depends(database)):
     writer = csv.writer(buf)
     keys = ['id', 'title', 'address', 'area_m2', 'raw_amount', 'price_kind', 'period_basis', 'first_year_monthly', 'registration_deadline', 'source_url']
     writer.writerow(keys)
-    for listing in db.scalars(select(Listing)):
-        fields = listing_data(db, listing, user.id)
-        if not fields: continue
+    from .resolution import grouped_rows
+    for fields in grouped_rows(db, user.id):
         values = []
         for key in keys:
             value = '' if fields.get(key) is None else str(fields[key])
@@ -207,8 +213,8 @@ def subscribe(data: SubscriptionInput, user=Depends(current_user), db=Depends(da
     db.add(row); db.commit()
     # Baseline shown as summary count, never enqueued as individual new events.
     counts = {'pass': 0, 'unknown': 0, 'fail': 0}
-    for listing in db.scalars(select(Listing)):
-        fields = listing_data(db, listing)
+    from .resolution import grouped_rows
+    for fields in grouped_rows(db):
         if fields: counts[match(fields, {**row.filters, 'registration_open': True})['verdict']] += 1
     return {'id': row.id, 'baseline': counts, 'message': '历史候选仅统计摘要；此后采集变化进入收件箱'}
 
@@ -237,8 +243,9 @@ def read_notification(nid: int, user=Depends(current_user), db=Depends(database)
 def sources(user=Depends(current_user), db=Depends(database)):
     result = []
     for s in db.scalars(select(Source)):
+        from .coverage import metrics
         job = db.scalar(select(Job).where(Job.source_id == s.id).order_by(Job.id.desc()).limit(1))
-        result.append({'id': s.id, 'name': s.name, 'status': s.status, 'enabled': s.enabled,
+        result.append({'id': s.id, 'name': s.name, 'status': s.status, 'enabled': s.enabled, 'metrics': metrics(db, s),
                        'last_success_at': s.last_success_at, 'error': s.error, 'coverage': s.coverage,
                        'detail_last_success_at': s.detail_last_success_at, 'detail_checked': s.detail_checked,
                        'detail_next_run_at': s.detail_next_run_at, 'backfill_page': s.backfill_page, 'total_pages': s.total_pages, 'next_run_at': s.next_run_at,
@@ -303,6 +310,9 @@ def source_alerts(user=Depends(current_user), db=Depends(database)):
              'error': row.error, 'last_attempt_at': row.last_attempt_at,
              'last_success_at': row.last_success_at, 'paused': not row.enabled}
             for row in db.scalars(select(Source).where(Source.error.is_not(None)))]
+
+from .workflows_api import router as workflows_router
+app.include_router(workflows_router)
 
 web = ROOT / 'frontend'
 app.mount('/static', StaticFiles(directory=web), name='static')

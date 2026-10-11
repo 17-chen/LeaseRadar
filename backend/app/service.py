@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+import secrets
 from urllib.parse import urlsplit
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
@@ -52,7 +53,10 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
         listing = db.get(Listing, record.listing_id)
     record.last_checked_at = observation
     business_hash = hashlib.sha256(json.dumps(fields, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-    previous = db.get(Version, listing.current_version_id) if listing.current_version_id else None
+    previous_display = db.get(Version, listing.current_version_id) if listing.current_version_id else None
+    previous = previous_display
+    if previous and previous.fields.get('human_reviewed'):
+        previous = next((v for v in db.scalars(select(Version).where(Version.listing_id == listing.id).order_by(Version.id.desc())) if not v.fields.get('human_reviewed')), None)
     if previous and previous.business_hash == business_hash:
         return listing.id, False
     # A previous state can recur. Versions describe observations rather than globally unique hashes.
@@ -78,20 +82,34 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
         elif old.get('period_basis') in ('first_year', 'monthly') and old.get('period_basis') == fields.get('period_basis') and old.get('price_kind') in ('starting_bid', 'asking') and old.get('price_kind') == fields.get('price_kind') and decimal(old.get('raw_amount')) is not None and decimal(fields.get('raw_amount')) is not None and decimal(fields['raw_amount']) < decimal(old['raw_amount']):
             kind = 'price_drop'
     event = Event(version_id=version.id, kind=kind); db.add(event); db.flush()
+    from .review import retain_corrections
+    displayed = retain_corrections(db, listing, version)
     cancel_invalid_reminders(db)
-    if kind != 'reprocessing': queue_change(db, listing, version, event, previous, url)
+    if kind != 'reprocessing': queue_change(db, listing, displayed, event, previous_display, url)
     return listing.id, True
+
+def renew_source(db, source_id, token):
+    claimed = db.execute(update(Source).where(Source.id == source_id, Source.lease_token == token,
+        Source.lease_until > now()).values(lease_until=(datetime.now(timezone.utc)+timedelta(minutes=60)).isoformat()))
+    if not claimed.rowcount: raise SourceError('来源租约已失效；旧任务停止写入')
+
+
+def release_source(source, token):
+    if source.lease_token != token: raise SourceError('来源租约已被其他任务接管')
+    source.lease_until = None; source.lease_token = None
+
 
 def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
     if not 1 <= pages <= 10: raise ValueError("单次任务限1–10页")
     if source_id not in PARSERS:
         raise SourceError('该来源尚未实现适配器')
+    token = secrets.token_hex(16)
     lease_time = (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat()
     with Session() as db:
         source = db.get(Source, source_id)
         if not source: raise SourceError('来源不存在')
         # Atomic compare-and-set works on PostgreSQL and local SQLite.
-        claim = db.execute(update(Source).where(Source.id == source_id, (Source.lease_until.is_(None)) | (Source.lease_until < now())).values(lease_until=lease_time, last_attempt_at=now()))
+        claim = db.execute(update(Source).where(Source.id == source_id, (Source.lease_until.is_(None)) | (Source.lease_until < now())).values(lease_until=lease_time, lease_token=token, last_attempt_at=now()))
         if not claim.rowcount: raise SourceError('来源任务已运行', retryable=True)
         run = CrawlRun(source_id=source_id, kind="backfill" if backfill else "front"); db.add(run); db.commit()
         run_id, seed = run.id, source.seed_url
@@ -112,11 +130,15 @@ def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
                 seen.add(ref); time.sleep(delay)
                 body = fetch(ref)
                 with Session() as db:
+                    renew_source(db, source_id, token)
                     ingest(db, source_id, ref, body, attachment_cache=attachment_cache)
                     run = db.get(CrawlRun, run_id)
                     run.discovered += 1; run.stored += 1
                     db.commit()
             with Session() as db:
+                renew_source(db, source_id, token)
+                from .coverage import observe_page
+                observe_page(db, source_id, page)
                 run = db.get(CrawlRun, run_id); run.pages += 1
                 source = db.get(Source, source_id)
                 source.total_pages = total
@@ -128,16 +150,19 @@ def crawl(source_id, pages=1, delay=2.5, *, backfill=False):
             time.sleep(delay)
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
+            renew_source(db, source_id, token)
             source.status = 'partial' if run.pages < total else 'healthy'
             source.coverage = f'本次第{start_page}–{start_page + run.pages - 1}页 / {total}页；回扫下一页{source.backfill_page}（不保证列表快照完整）'
-            source.last_success_at = now(); source.error = None; source.lease_until = None
+            source.last_success_at = now(); source.error = None; release_source(source, token)
             run.state = source.status; run.ended_at = now(); db.commit()
         return {'run_id': run_id, 'pages': run.pages, 'start_page': start_page, 'total_pages': total, 'records': len(seen)}
     except Exception as exc:
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
+            owned = db.execute(update(Source).where(Source.id==source_id,Source.lease_token==token,Source.lease_until>now()).values(lease_token=token))
+            if not owned.rowcount: raise
             source.status = 'blocked' if getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc) else 'degraded'
-            source.error = str(exc)[:500]; source.lease_until = None
+            source.error = str(exc)[:500]; release_source(source, token)
             if source.status == 'blocked': source.enabled = False
             run.state = 'failed'; run.error = source.error; run.ended_at = now(); db.commit()
         raise
@@ -170,19 +195,20 @@ def detail_targets(db, source_id, at, limit=5):
         if len(targets) >= limit: break
     return targets
 
-def refresh_details(source_id, limit=5, delay=2.5):
+def refresh_details(source_id, limit=5, delay=2.5, target_url=None):
     """Revisit stored details independently of their presence on the current list."""
     if source_id not in PARSERS: raise SourceError('该来源尚未实现适配器')
     if not 1 <= limit <= 5: raise ValueError('单次详情复查限1–5条')
     at = datetime.now(timezone.utc)
+    token = secrets.token_hex(16)
     with Session() as db:
         source = db.get(Source, source_id)
         if not source: raise SourceError('来源不存在')
         claimed = db.execute(update(Source).where(Source.id == source_id,
             Source.lease_until.is_(None) | (Source.lease_until < now())).values(
-            lease_until=(at + timedelta(minutes=60)).isoformat(), last_attempt_at=now()))
+            lease_until=(at + timedelta(minutes=60)).isoformat(), lease_token=token, last_attempt_at=now()))
         if not claimed.rowcount: raise SourceError('来源任务已运行', retryable=True)
-        targets = detail_targets(db, source_id, at, limit)
+        targets = [(None,target_url)] if target_url else detail_targets(db, source_id, at, limit)
         run = CrawlRun(source_id=source_id, kind='details'); db.add(run); db.commit(); run_id = run.id
     changed = 0
     try:
@@ -192,6 +218,7 @@ def refresh_details(source_id, limit=5, delay=2.5):
             time.sleep(delay)
             body = fetch(url)
             with Session() as db:
+                renew_source(db, source_id, token)
                 _, updated = ingest(db, source_id, url, body, attachment_cache=cache)
                 changed += int(updated)
                 run = db.get(CrawlRun, run_id); run.discovered += 1; run.stored += 1
@@ -199,7 +226,8 @@ def refresh_details(source_id, limit=5, delay=2.5):
                 db.commit()
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
-            source.detail_last_success_at = now(); source.detail_checked = run.stored; source.lease_until = None
+            renew_source(db, source_id, token)
+            source.detail_last_success_at = now(); source.detail_checked = run.stored; release_source(source, token)
             if targets:
                 source.last_success_at = now(); source.error = None
                 if source.status != 'healthy': source.status = 'partial'
@@ -208,20 +236,17 @@ def refresh_details(source_id, limit=5, delay=2.5):
     except Exception as exc:
         with Session() as db:
             source = db.get(Source, source_id); run = db.get(CrawlRun, run_id)
+            owned = db.execute(update(Source).where(Source.id==source_id,Source.lease_token==token,Source.lease_until>now()).values(lease_token=token))
+            if not owned.rowcount: raise
             source.status = 'blocked' if getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc) else 'degraded'
-            source.error = str(exc)[:500]; source.lease_until = None
+            source.error = str(exc)[:500]; release_source(source, token)
             if source.status == 'blocked': source.enabled = False
             run.state = 'failed'; run.error = source.error; run.ended_at = now(); db.commit()
         raise
 
-def deliver_local():
-    with Session() as db:
-        cancel_invalid_reminders(db)
-        db.execute(update(Outbox).where(Outbox.state == 'queued', Outbox.channel == 'in_app',
-            Outbox.subscription_id.in_(select(Subscription.id).where(Subscription.enabled.is_(False)))).values(state='cancelled'))
-        # In-app acceptance is an atomic database state transition; no external send.
-        db.execute(update(Outbox).where(Outbox.state == 'queued', Outbox.channel == 'in_app').values(state='accepted'))
-        db.commit()
+def deliver_local(at=None):
+    from .scheduling import dispatch_local
+    return dispatch_local(at)
 
 def enqueue(db, source_id, kind="front"):
     if kind not in ("front", "backfill", "details"): raise ValueError("未知采集任务类型")
@@ -249,22 +274,37 @@ def poll_jobs():
                 enqueue(db, source.id, 'details')
                 source.detail_next_run_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
             elif not source.backfill_at or source.backfill_at <= now():
+                from .coverage import metrics
+                if metrics(db, source)['remaining_budget'] <= 0: continue
                 enqueue(db, source.id, 'backfill')
-                source.backfill_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+                source.backfill_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
         db.commit()
         jobs = list(db.scalars(select(Job.id).where(job_due())))
     for jid in jobs:
+        job_token = secrets.token_hex(16)
         with Session() as db:
-            claimed = db.execute(update(Job).where(Job.id == jid, job_due()).values(state='running', attempts=Job.attempts + 1, retry_at=None, lease_until=(datetime.now(timezone.utc)+timedelta(minutes=65)).isoformat()))
+            claimed = db.execute(update(Job).where(Job.id == jid, job_due()).values(state='running', lease_token=job_token, attempts=Job.attempts + 1, retry_at=None, lease_until=(datetime.now(timezone.utc)+timedelta(minutes=65)).isoformat()))
             db.commit()
             if not claimed.rowcount: continue
             job = db.get(Job, jid); sid, kind = job.source_id, job.kind
+            requested_url = (job.result or {}).get('requested_url')
         try:
-            result = refresh_details(sid) if kind == 'details' else crawl(sid, backfill=True) if kind == 'backfill' else crawl(sid)
+            if kind == 'backfill':
+                from .coverage import metrics
+                with Session() as db:
+                    source = db.get(Source, sid)
+                    pages = min(source.backfill_batch_pages, metrics(db, source)['remaining_budget'])
+                result = crawl(sid, pages=pages, backfill=True) if pages else {'skipped':'daily_budget'}
+            elif kind == 'import': result = refresh_details(sid,limit=1,target_url=requested_url)
+            else: result = refresh_details(sid) if kind == 'details' else crawl(sid)
             with Session() as db:
+                claimed = db.execute(update(Job).where(Job.id==jid,Job.lease_token==job_token,Job.lease_until>now()).values(lease_token=None))
+                if not claimed.rowcount: continue
                 job = db.get(Job, jid); job.state = 'complete'; job.result = result; job.error = None; job.lease_until = None; db.commit()
         except Exception as exc:
             with Session() as db:
+                claimed = db.execute(update(Job).where(Job.id==jid,Job.lease_token==job_token,Job.lease_until>now()).values(lease_token=None))
+                if not claimed.rowcount: continue
                 job = db.get(Job, jid)
                 retryable = getattr(exc, 'retryable', False) or isinstance(exc, httpx.TransportError)
                 blocked = getattr(exc, 'blocked', False) or 'HTTP 403' in str(exc)
@@ -277,6 +317,8 @@ def poll_jobs():
                     # Exhausted or invalid sources require explicit admin resumption.
                     db.get(Source, sid).enabled = False
                 job.error = str(exc)[:500]; job.lease_until = None; db.commit()
+    from .coverage import sync_incidents
+    sync_incidents()
     generate_deadline_reminders()
     deliver_local()
     from .email_delivery import deliver_email

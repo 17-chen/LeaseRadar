@@ -41,6 +41,8 @@ def normalize_price(fields):
 def match(fields, filters, at=None):
     at = at or datetime.now(timezone.utc)
     checks = {}
+    if fields.get('review_conflicts'):
+        checks['human_review'] = 'unknown'
     for field in ['city', 'district', 'property_type', 'environment', 'operation', 'status', 'price_kind']:
         wanted = filters.get(field)
         if wanted:

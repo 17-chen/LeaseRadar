@@ -9,6 +9,7 @@ from decimal import Decimal
 from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo
 import httpx
+from contextlib import contextmanager
 from bs4 import BeautifulSoup
 from .config import ALLOWED_HOSTS
 
@@ -36,31 +37,46 @@ def response_error(response):
     return SourceError(f'HTTP {status}; 不自动绕过访问控制', retryable=status in (408, 429, 500, 502, 503, 504),
                        retry_after=delay, blocked=status in (401, 403))
 
-def validate_url(url):
+def public_addresses(url):
     parsed = urlsplit(url)
     if parsed.scheme != 'https' or parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password or parsed.port not in (None, 443):
         raise SourceError('URL不在已核准HTTPS来源范围')
+    addresses = []
     for info in socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM):
         if not ipaddress.ip_address(info[4][0]).is_global:
             raise SourceError('拒绝非公网地址')
+        if info[4][0] not in addresses: addresses.append(info[4][0])
+    if not addresses: raise SourceError('来源未解析到公网地址')
+    return sorted(addresses, key=lambda a: ipaddress.ip_address(a).version)
+
+def validate_url(url):
+    public_addresses(url)
     return url
+
+@contextmanager
+def stream_public(url):
+    # Connect to the vetted IP itself; Host and TLS SNI still use the approved hostname.
+    addresses = public_addresses(url)
+    original = httpx.URL(url)
+    pinned = original.copy_with(host=addresses[0])
+    with httpx.Client(timeout=25, follow_redirects=False, trust_env=False,
+                      headers={'User-Agent':'LeaseRadar/0.1 (public source research)', 'Host':original.host}) as client:
+        with client.stream('GET', pinned, extensions={'sni_hostname':original.host}) as response:
+            yield response
 
 def fetch(url):
     # No redirects: new destinations must be explicitly reviewed.
-    validate_url(url)
-    with httpx.Client(timeout=25, follow_redirects=False, trust_env=False,
-                      headers={'User-Agent': 'LeaseRadar/0.1 (public source research)'}) as client:
-        with client.stream('GET', url) as response:
-            if response.status_code != 200:
-                raise response_error(response)
-            if 'text/html' not in response.headers.get('content-type', ''):
-                raise SourceError('非HTML响应')
-            body = bytearray()
-            for chunk in response.iter_bytes():
-                body.extend(chunk)
-                if len(body) > 2_000_000:
-                    raise SourceError('页面超过2MB限制')
-            return bytes(body).decode('utf-8', errors='replace')
+    with stream_public(url) as response:
+        if response.status_code != 200:
+            raise response_error(response)
+        if 'text/html' not in response.headers.get('content-type', ''):
+            raise SourceError('非HTML响应')
+        body = bytearray()
+        for chunk in response.iter_bytes():
+            body.extend(chunk)
+            if len(body) > 2_000_000:
+                raise SourceError('页面超过2MB限制')
+        return bytes(body).decode('utf-8', errors='replace')
 
 def soup_text(html):
     soup = BeautifulSoup(html, 'html.parser')

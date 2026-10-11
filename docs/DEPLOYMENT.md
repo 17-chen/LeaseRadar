@@ -105,3 +105,14 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 ## 0.1.4审查修复升级
 
 停止旧API/worker，backup后migrate到0006，再启动新进程。快照路径按DATA_DIR解析；import-html新增必填 --observed-at（原抓取带时区ISO时间）。保持单worker，过期来源/任务租约的多进程归属校验仍待补强。完整审查、独立恢复与界面证据见docs/CODE_STATE_AUDIT.md。
+
+
+## 0.1.5通知、审核与集中配置
+
+升级先停止旧API/worker，backup，migrate至0007，再启动。私有DATA_DIR/runtime.json加载集中SMTP/应用配置，环境变量优先；模板config.runtime.example.json，权限0600，勿提交Git。readiness-check仅报告状态，详见FINAL_SETUP_CHECKLIST.md。
+
+网页“我的订阅→通知节奏”保存每日/即时、时区、摘要时间、静默和报名催办例外；旧用户未保存时沿用原即时行为。保存后待确认每日汇总，每批最多100条。静默期间延后站内接受与SMTP，恢复worker汇总已到期事件，保留发现时间。摘要来源状态是组批时快照，不是全站覆盖保证。提醒/邮件/摘要全部历史可分页查询。
+
+管理员从详情创建有依据的纠正和挂牌关系，人工审核处理冲突或撤销；API要求当前版本，过时写入409。同挂牌聚合保留独立原始观察，冲突unknown；重挂和整体成员关系不拆价格、不合并私人笔记。来源页配置预算不会自动启用；告警有恢复历史但没有外发。
+
+核准详情/imports进入持久队列；只允许已适配两个来源，未适配外链不跟随。DEMO回放仅允许独立空库；evaluate接受私有人工标注JSONL，模板是合成示例，不能当真实效果。WORKFLOWS_VERIFICATION.md含实际命令和范围。Docker/PostgreSQL/Celery运行和真实SMTP投递仍待统一配置与验收。

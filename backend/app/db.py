@@ -49,6 +49,9 @@ class Source(Base):
     detail_next_run_at: Mapped[str | None]
     detail_last_success_at: Mapped[str | None]
     detail_checked: Mapped[int] = mapped_column(default=0)
+    lease_token: Mapped[str | None]
+    daily_page_budget: Mapped[int] = mapped_column(default=48)
+    backfill_batch_pages: Mapped[int] = mapped_column(default=3)
 
 class Job(Base):
     __tablename__ = 'jobs'
@@ -62,6 +65,7 @@ class Job(Base):
     retry_at: Mapped[str | None]
     result: Mapped[dict | None] = mapped_column(JSON)
     error: Mapped[str | None] = mapped_column(Text)
+    lease_token: Mapped[str | None]
 
 class CrawlRun(Base):
     __tablename__ = 'crawl_runs'
@@ -192,6 +196,87 @@ class Followup(Base):
     status: Mapped[str] = mapped_column(default='未查看')
     note: Mapped[str] = mapped_column(Text, default='')
     favorite: Mapped[bool] = mapped_column(default=False)
+
+class NotificationPreference(Base):
+    __tablename__ = 'notification_preferences'
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), primary_key=True)
+    mode: Mapped[str] = mapped_column(default='instant')
+    timezone: Mapped[str] = mapped_column(default='Asia/Shanghai')
+    digest_time: Mapped[str] = mapped_column(default='09:00')
+    quiet_start: Mapped[str | None]
+    quiet_end: Mapped[str | None]
+    urgent_override: Mapped[bool] = mapped_column(default=False)
+
+class Digest(Base):
+    __tablename__ = 'notification_digests'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[str] = mapped_column(default=now)
+    window_start: Mapped[str]
+    window_end: Mapped[str]
+    representative_id: Mapped[int] = mapped_column(ForeignKey('notification_outbox.id'), unique=True)
+    sources: Mapped[list] = mapped_column(JSON)
+
+class DigestItem(Base):
+    __tablename__ = 'notification_digest_items'
+    outbox_id: Mapped[int] = mapped_column(ForeignKey('notification_outbox.id'), primary_key=True)
+    digest_id: Mapped[int] = mapped_column(ForeignKey('notification_digests.id'))
+
+class Correction(Base):
+    __tablename__ = 'corrections'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    listing_id: Mapped[int] = mapped_column(ForeignKey('listing_rounds.id'))
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    field: Mapped[str]
+    value: Mapped[object | None] = mapped_column(JSON)
+    original: Mapped[object | None] = mapped_column(JSON)
+    quote: Mapped[str] = mapped_column(Text)
+    reason: Mapped[str] = mapped_column(Text)
+    base_version_id: Mapped[int] = mapped_column(ForeignKey('listing_versions.id'))
+    version_id: Mapped[int | None] = mapped_column(ForeignKey('listing_versions.id'))
+    state: Mapped[str] = mapped_column(default='active')
+    created_at: Mapped[str] = mapped_column(default=now)
+    resolved_at: Mapped[str | None]
+
+class ListingRelation(Base):
+    __tablename__ = 'listing_relations'
+    __table_args__ = (UniqueConstraint('left_id', 'right_id', 'kind'), CheckConstraint('left_id < right_id', name='relation_order'))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    left_id: Mapped[int] = mapped_column(ForeignKey('listing_rounds.id'))
+    right_id: Mapped[int] = mapped_column(ForeignKey('listing_rounds.id'))
+    kind: Mapped[str]
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    reason: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(default='active')
+    created_at: Mapped[str] = mapped_column(default=now)
+    resolved_at: Mapped[str | None]
+
+class AuditAction(Base):
+    __tablename__ = 'audit_actions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    kind: Mapped[str]
+    object_id: Mapped[int]
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(default=now)
+
+class SourceIncident(Base):
+    __tablename__ = 'source_incidents'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source_id: Mapped[str] = mapped_column(ForeignKey('sources.id'))
+    kind: Mapped[str]
+    state: Mapped[str] = mapped_column(default='open')
+    message: Mapped[str] = mapped_column(Text)
+    opened_at: Mapped[str] = mapped_column(default=now)
+    resolved_at: Mapped[str | None]
+
+class SourcePageObservation(Base):
+    __tablename__ = 'source_page_observations'
+    __table_args__ = (UniqueConstraint('source_id','page'),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source_id: Mapped[str] = mapped_column(ForeignKey('sources.id'))
+    page: Mapped[int]
+    checked_at: Mapped[str] = mapped_column(default=now)
 
 def seed_sources(db):
     for sid, name, url in [

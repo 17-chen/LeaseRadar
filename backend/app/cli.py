@@ -12,6 +12,10 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('migrate')
     sub.add_parser('backup')
+    sub.add_parser('readiness-check')
+    sub.add_parser('digest-once')
+    replay=sub.add_parser('replay');replay.add_argument('manifest')
+    evaluation=sub.add_parser('evaluate'); evaluation.add_argument('path'); evaluation.add_argument('--output',required=True)
     admin = sub.add_parser('create-admin'); admin.add_argument('--username', default='admin')
     crawl = sub.add_parser('crawl-once'); crawl.add_argument('source', choices=['nongjy', 'wzpt']); crawl.add_argument('--pages', type=int, default=1); crawl.add_argument('--backfill', action='store_true')
     details = sub.add_parser('refresh-details'); details.add_argument('source', choices=['nongjy', 'wzpt']); details.add_argument('--limit', type=int, default=5)
@@ -37,6 +41,33 @@ def main():
             original.backup(backup)
         if (DATA / 'snapshots').exists(): shutil.copytree(DATA / 'snapshots', folder / 'snapshots')
         print(f'备份写入 {folder}；包含私有数据，不入Git')
+    elif args.command == 'replay':
+        from .config import MODE
+        from .db import Listing
+        from .service import ingest,deliver_local
+        if MODE!='demo':parser.error('replay只允许明确的demo环境与独立空数据库')
+        manifest_path=Path(args.manifest).resolve()
+        manifest=json.loads(manifest_path.read_text())
+        if manifest.get('mode')!='demo' or not 1 <= len(manifest.get('records',[])) <= 20:parser.error('manifest必须标记demo，记录限1–20')
+        with Session() as db:
+            if db.scalar(select(Listing.id).limit(1)):parser.error('replay拒绝写入已有挂牌的数据库，请指定独立空DATA_DIR')
+            for item in manifest['records']:
+                path=(manifest_path.parent/item['path']).resolve()
+                if not path.is_relative_to(manifest_path.parent) or path.stat().st_size>2000000:parser.error('fixture路径或大小无效')
+                ingest(db,item['source'],item['url'],path.read_text(),observed_at=item['observed_at'],event_kind='reprocessing')
+            db.commit()
+        print('DEMO回放完成；不是实时采集，不进入真实试用数据')
+    elif args.command == 'evaluate':
+        from .evaluation import evaluate
+        rows=[json.loads(line) for line in Path(args.path).read_text().splitlines() if line.strip()]
+        Path(args.output).write_text(json.dumps(evaluate(rows),ensure_ascii=False,indent=2))
+        print('评测结果已写入指定路径；不代表真实试用效果')
+    elif args.command == 'readiness-check':
+        from .readiness import inventory
+        with Session() as db: print(json.dumps(inventory(db),ensure_ascii=False,indent=2))
+    elif args.command == 'digest-once':
+        from .scheduling import dispatch_local
+        print(json.dumps({'digest_users':dispatch_local()}))
     elif args.command == 'email-once':
         from .email_delivery import deliver_email
         print(json.dumps({'attempted': deliver_email()}))

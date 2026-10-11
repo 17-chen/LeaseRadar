@@ -1,0 +1,1 @@
+{"id":"synthetic-1","source":"synthetic","group":"example-1","split":"holdout","expected":{"area_m2":"60","raw_amount":"120000","period_basis":null,"operation":null},"predicted":{"area_m2":"60","raw_amount":"120000","period_basis":null,"operation":null}}
