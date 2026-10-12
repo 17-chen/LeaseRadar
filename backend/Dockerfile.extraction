@@ -1,0 +1,9 @@
+FROM python:3.12-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-chi-sim && rm -rf /var/lib/apt/lists/*
+COPY backend/requirements.lock /app/requirements.lock
+RUN pip install --no-cache-dir -r requirements.lock && useradd --create-home appuser
+COPY backend /app/backend
+ENV PYTHONPATH=/app/backend DATA_DIR=/tmp/leaseradar
+USER appuser
+CMD ["python","-m","app.document_worker","--queue","/queue"]

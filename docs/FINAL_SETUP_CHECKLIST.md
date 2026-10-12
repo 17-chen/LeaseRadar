@@ -29,7 +29,7 @@ PYTHONPATH=backend .venv/bin/python -m app.cli readiness-check
 
 ## 尚需开发与验证，不应由你补代码
 
-- PDF/OCR的自动提取、格式隔离和字段定位；完整租金递增/免租/费用计算。
+- PDF/OCR真实样本与容器运行、自动来源附件/DOCX正文/复杂条款候选提取。0.1.6已实现私有附件审核及隔离部署包、有依据的条款计算，见TERMS_ATTACHMENTS_VERIFICATION.md。
 - 第二来源关键字段与附件适配；未接通交易平台不能仅以高校外链计成功。
 - 对更大数据量的数据库筛选/索引与压力测试；当前批量加载去掉逐条SQL，但仍在内存按三值规则筛选。
 - 生产Docker/PostgreSQL/Celery/HTTPS实际运行和恢复、多worker压力验收；本机无Docker服务。

@@ -317,6 +317,9 @@ def poll_jobs():
                     # Exhausted or invalid sources require explicit admin resumption.
                     db.get(Source, sid).enabled = False
                 job.error = str(exc)[:500]; job.lease_until = None; db.commit()
+    from .document_jobs import reconcile
+    with Session() as db:
+        reconcile(db);db.commit()
     from .coverage import sync_incidents
     sync_incidents()
     generate_deadline_reminders()

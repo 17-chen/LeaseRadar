@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Literal, Any
 import re
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select, func, update
 from .main import database, current_user, admin
@@ -221,3 +221,44 @@ def audit_history(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user=De
     rows=db.scalars(select(AuditAction).order_by(AuditAction.id.desc()).offset((page-1)*limit).limit(limit))
     return {'total':db.scalar(select(func.count()).select_from(AuditAction)),'items':[
         {'id':r.id,'user_id':r.user_id,'kind':r.kind,'object_id':r.object_id,'reason':r.reason,'created_at':r.created_at} for r in rows]}
+
+from .lease_terms import LeasePlan, calculate
+@router.post('/lease-calculations')
+def lease_calculation(data:LeasePlan,user=Depends(current_user)):
+    # Read-only arithmetic: does not modify listings, subscriptions or send messages.
+    return calculate(data)
+
+class DocumentInput(BaseModel):
+    filename:str=Field(min_length=1,max_length=150)
+    content_base64:str=Field(max_length=6_666_668)
+    listing_id:int|None=None
+
+@router.post('/document-reviews')
+async def document_upload(request:Request,user=Depends(admin),db=Depends(database)):
+    import json
+    from pydantic import ValidationError
+    body=bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body)>6_700_000:raise HTTPException(413,'附件请求超过限制')
+    try:data=DocumentInput.model_validate(json.loads(body))
+    except (ValueError,ValidationError):raise HTTPException(422,'附件请求格式无效')
+    if data.listing_id is not None and not db.get(Listing,data.listing_id):raise HTTPException(404,'挂牌不存在')
+    from .db import DocumentReview
+    if db.scalar(select(func.count()).select_from(DocumentReview).where(DocumentReview.user_id==user.id,DocumentReview.state=='queued'))>=20:raise HTTPException(409,'待提取附件已达20份，请先处理队列')
+    from .document_jobs import upload,reconcile
+    try:row=upload(db,user.id,data.listing_id,data.filename,data.content_base64)
+    except ValueError as exc:raise HTTPException(422,str(exc))
+    db.commit();reconcile(db);db.commit()
+    return {'id':row.id,'state':row.state,'message':'附件已存入私有审核队列；提取结果须人工核验，不自动改挂牌字段'}
+
+@router.get('/document-reviews')
+def document_reviews(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user=Depends(admin),db=Depends(database)):
+    from .db import DocumentReview
+    from .document_jobs import reconcile
+    reconcile(db);db.commit()
+    query=select(DocumentReview).where(DocumentReview.user_id==user.id)
+    rows=db.scalars(query.order_by(DocumentReview.id.desc()).offset((page-1)*limit).limit(limit))
+    return {'total':db.scalar(select(func.count()).select_from(query.subquery())),
+        'worker_note':'提取需启动隔离worker；未配置时保留队列，不伪称完成',
+        'items':[{'id':r.id,'filename':r.filename,'listing_id':r.listing_id,'sha256':r.sha256,'state':r.state,'pages':r.pages,'error':r.error} for r in rows]}

@@ -1,0 +1,22 @@
+name: leaseradar-extraction
+# Optional isolated worker; host queue must exist and be writable by container UID 1000.
+services:
+  extraction:
+    profiles: [extraction]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.extraction
+    user: "${EXTRACTION_UID:-1000}:${EXTRACTION_GID:-1000}"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 64
+    tmpfs: [/tmp:size=128m,mode=1777]
+    volumes:
+      - ./private/document_queue/inputs:/queue/inputs:ro
+      - ./private/document_queue/requests:/queue/requests:ro
+      - ./private/document_queue/results:/queue/results
+    restart: unless-stopped

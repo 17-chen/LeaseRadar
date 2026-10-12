@@ -287,3 +287,16 @@ def seed_sources(db):
         if not db.get(Source, sid):
             db.add(Source(id=sid, name=name, seed_url=url))
     db.commit()
+
+class DocumentReview(Base):
+    __tablename__ = 'document_reviews'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    listing_id: Mapped[int | None] = mapped_column(ForeignKey('listing_rounds.id'))
+    filename: Mapped[str]
+    sha256: Mapped[str] = mapped_column(String(64))
+    format: Mapped[str]
+    state: Mapped[str] = mapped_column(default='queued')
+    pages: Mapped[list] = mapped_column(JSON,default=list)
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(default=now)

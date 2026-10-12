@@ -35,12 +35,12 @@ function renderSelection(){
 
 function toast(msg){$('toast').textContent=msg;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4500);}
 function clearWorkspace(){
- sessionGeneration++;noticePage=emailPage=digestPage=reviewPage=incidentPage=1;csrf='';user=null;activeDetail=null;editingSubscription=null;subscriptionFilters={};selected.clear();listingCache.clear();window.currentSubscriptions=[];listingRequest++;
+ sessionGeneration++;documentPage=1;noticePage=emailPage=digestPage=reviewPage=incidentPage=1;csrf='';user=null;activeDetail=null;editingSubscription=null;subscriptionFilters={};selected.clear();listingCache.clear();window.currentSubscriptions=[];listingRequest++;
  appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest'};
- for(const id of ['subscriptions','notifications','email-deliveries','detail-body','cards','filter-summary','source-alerts','digests','incidents','review-queue','sources'])$(id).innerHTML='';
+ for(const id of ['subscriptions','notifications','email-deliveries','detail-body','cards','filter-summary','source-alerts','digests','incidents','review-queue','sources','lease-result','document-reviews'])$(id).innerHTML='';
  for(const dialog of document.querySelectorAll('dialog'))if(dialog.open)dialog.close();
  for(const el of $('filter-form').elements){if(el.name){if(el.type==='checkbox')el.checked=false;else el.value='';}}
- $('include-unknown').checked=true;$('sort').value='newest';$('subscription-form').reset();$('preference-form').reset();$('import-form').reset();for(const id of ['stat-count','stat-notices','stat-sources'])$(id).textContent='—';for(const v of ['listings','subscriptions','notifications','sources','review'])$('view-'+v).hidden=v!=='listings';document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n.dataset.view==='listings'));$('page-title').textContent='候选铺位';renderSelection();
+ $('include-unknown').checked=true;$('sort').value='newest';$('subscription-form').reset();$('preference-form').reset();$('lease-form').reset();$('document-form').reset();$('import-form').reset();for(const id of ['stat-count','stat-notices','stat-sources'])$(id).textContent='—';for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!=='listings';document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n.dataset.view==='listings'));$('page-title').textContent='候选铺位';renderSelection();
 }
 async function api(path, options={}){
  const generation=sessionGeneration;
@@ -57,10 +57,10 @@ function filters(){
  return data;
 }
 async function boot(){
- try{user=await api('/auth/me');csrf=user.csrf;$('login').hidden=true;$('workspace').hidden=false;$('user-label').textContent=user.username;$('review-nav').hidden=$('import-form').hidden=user.role!=='admin';$('incident-heading').hidden=$('incident-pagination').hidden=user.role!=='admin';$('mode').textContent=user.mode==='live'?'LIVE':'DEMO';$('demo-banner').hidden=user.mode==='live';renderSelection();await refresh();}
+ try{user=await api('/auth/me');csrf=user.csrf;$('login').hidden=true;$('workspace').hidden=false;$('user-label').textContent=user.username;$('review-nav').hidden=$('import-form').hidden=$('document-upload-section').hidden=user.role!=='admin';$('incident-heading').hidden=$('incident-pagination').hidden=user.role!=='admin';$('mode').textContent=user.mode==='live'?'LIVE':'DEMO';$('demo-banner').hidden=user.mode==='live';renderSelection();await refresh();}
  catch(e){if(!user){$('login').hidden=false;$('workspace').hidden=true;}else toast(e.message);}
 }
-async function refresh(){await Promise.all([loadListings(),loadSources(),loadNotices(),loadSubscriptions(),loadPreferences(),...(user.role==='admin'?[loadReview(),loadIncidents()]:[])]);}
+async function refresh(){await Promise.all([loadListings(),loadSources(),loadNotices(),loadSubscriptions(),loadPreferences(),...(user.role==='admin'?[loadReview(),loadIncidents(),loadDocuments()]:[])]);}
 async function loadListings(query=appliedQuery){
  const request=++listingRequest;
  const data=await api('/listings/search',{method:'POST',body:JSON.stringify({...query,page,limit:24})});
@@ -151,7 +151,7 @@ $('subscription-form').onsubmit=async e=>{
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  try{
- if(b.dataset.view){document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));for(const v of ['listings','subscriptions','notifications','sources','review'])$('view-'+v).hidden=v!==b.dataset.view;$('page-title').textContent=b.textContent.trim().slice(1).trim();renderSelection();await refresh();}
+ if(b.dataset.view){document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!==b.dataset.view;$('page-title').textContent=b.textContent.trim().slice(1).trim();renderSelection();await refresh();}
  if(b.dataset.coverage)await openCoverage(b.dataset.coverage);
  if(b.dataset.compareBack)$('compare-selected').click();
  if(b.dataset.removeSelection){selected.delete(Number(b.dataset.removeSelection));renderSelection();}
@@ -213,3 +213,22 @@ function correctionValueField(r){
  const dateField=field.endsWith('_deadline');
  $('correction-value-label').innerHTML=`核验值${dateField?' · 北京时间':''}`+(options[field]?`<select name="value"><option value="">未知 / 清空</option>${options[field].map(v=>`<option value="${v}" ${r[field]===v?'selected':''}>${esc(changeValue(field,v))}</option>`).join('')}</select>`:`<input name="value" ${dateField?'type="datetime-local"':['area_m2','raw_amount','deposit'].includes(field)?'type="number" min="0" step="0.0001"':''} maxlength="2000" placeholder="留空表示未知" value="${esc(dateField?'':r[field]??'')}">`);
 }
+
+let documentPage=1;
+$('lease-form').onsubmit=async e=>{
+ e.preventDefault();const f=e.target;
+ try{
+  const values=Object.fromEntries(new FormData(f));if(values.basis!=='segments'&&!values.amount)throw new Error('请填写所选口径的金额');if(values.basis==='segments'&&!values.segments.trim())throw new Error('请填写完整的分段月租及依据');const body={basis:values.basis,term_months:Number(values.term_months)};
+  for(const key of ['amount','annual_escalation_percent','nonrefundable_fees','refundable_deposit'])body[key]=values[key]||null;
+  for(const key of ['annual_compound','fixed_rent','prorate_partial_year','amount_before_free'])body[key]=f.elements[key].checked;
+  body.free_months=values.free_months.trim()?values.free_months.replace(/，/g,',').split(',').map(x=>Number(x.trim())):[];
+  body.segments=values.segments.trim()?values.segments.split('\n').filter(x=>x.trim()).map(line=>{const [start,end,monthly,...quote]=line.replace(/，/g,',').split(',');return {start_month:Number(start),end_month:Number(end),monthly:monthly?.trim(),quote:quote.join(',').trim()};}):[];
+  body.evidence=Object.fromEntries(['basis','term_months','amount','escalation','free_months','fees','deposit','proration','fixed_rent','amount_before_free'].map(key=>[key,values.quote]));
+  const r=await api('/lease-calculations',{method:'POST',body:JSON.stringify(body)});
+  $('lease-result').innerHTML=`<article class="stack-item"><h3>已核验条款计算结果</h3><div class="detail-grid">${[['首年平均月租（含已知免租）',r.first_year_monthly],['租期平均月租',r.average_monthly],['已知租金总额',r.total_rent],['已核验不可退费用',r.nonrefundable_fees],['可退保证金现金占用',r.refundable_deposit]].map(([key,value])=>`<div><small>${esc(key)}</small>${money(value)} 元</div>`).join('')}</div><p class="warning">${r.warnings.map(esc).join('<br>')}</p>${r.formula?`<p>${esc(r.formula)}</p>`:''}<details><summary>查看计算月度明细及依据</summary><p>${esc(values.quote)}</p>${r.schedule.map(m=>`<p>第${m.month}月：${money(m.rent)} 元</p>`).join('')}</details></article>`;
+ }catch(e){$('lease-result').innerHTML='';toast(e.message);}
+};
+$('document-form').onsubmit=async e=>{e.preventDefault();try{const generation=sessionGeneration;const f=e.target;const file=f.elements.file.files[0];if(!file||file.size>5000000)throw new Error('请选择不超过5MB的PDF或DOCX');const bytes=new Uint8Array(await file.arrayBuffer());if(generation!==sessionGeneration||!user)throw new Error('会话已变化，附件未提交');let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));const r=await api('/document-reviews',{method:'POST',body:JSON.stringify({filename:file.name,content_base64:btoa(binary),listing_id:f.elements.listing_id.value?Number(f.elements.listing_id.value):null})});f.reset();toast(r.message);await loadDocuments();}catch(e){toast(e.message);}};
+async function loadDocuments(){const d=await api('/document-reviews?page='+documentPage);setPager('document',documentPage,d.total);$('document-reviews').innerHTML=`<p class="muted">${esc(d.worker_note)}</p>`+d.items.map(r=>`<article class="stack-item"><span class="badge">${{queued:'等待提取worker',review:'提取完成，待人工核验',failed:'提取失败，保留待复核'}[r.state]}</span><h3>${esc(r.filename)}</h3><p class="muted">附件 #${r.id} · ${r.listing_id?'挂牌 #'+r.listing_id:'未关联挂牌'} · SHA256 ${esc(r.sha256)}</p>${r.error?`<p class="warning">${esc(r.error)}</p>`:''}${r.pages.map(p=>`<details><summary>${esc(p.position)} · ${p.method==='ocr_review'?'OCR待人工复核':'提取文字'}</summary><p class="source-text">${esc(p.text)}</p></details>`).join('')}${r.listing_id?`<button class="link" data-detail="${r.listing_id}">核验后在挂牌详情创建有依据的纠正</button>`:''}</article>`).join('');}
+$('refresh-documents').onclick=()=>loadDocuments().catch(e=>toast(e.message));
+$('document-prev').onclick=()=>{documentPage--;loadDocuments().catch(e=>toast(e.message));};$('document-next').onclick=()=>{documentPage++;loadDocuments().catch(e=>toast(e.message));};

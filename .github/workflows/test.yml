@@ -12,3 +12,5 @@ jobs:
       - run: PYTHONPATH=backend pytest -q backend/tests
       - run: PYTHONPATH=backend python -m app.cli migrate
       - run: node --check frontend/app.js
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-chi-sim
+      - run: PYTHONPATH=backend pytest -q backend/integration/test_document_tools.py

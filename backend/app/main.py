@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.5')
+app = FastAPI(title='LeaseRadar', version='0.1.6')
 hasher = PasswordHasher()
 login_attempts = {}
 
