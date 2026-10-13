@@ -56,7 +56,7 @@ def history(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),state:str|Non
 def email_history(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user=Depends(current_user),db=Depends(database)):
     query=select(EmailDelivery).join(Outbox).join(Subscription).where(Subscription.user_id==user.id)
     total=db.scalar(select(func.count()).select_from(query.subquery()))
-    items=[{'id':r.id,'notice_id':r.outbox_id,'state':r.state,'attempts':r.attempts,'retry_at':r.retry_at,'accepted_at':r.accepted_at,'error':r.error} for r in db.scalars(query.order_by(EmailDelivery.id.desc()).offset((page-1)*limit).limit(limit))]
+    items=[{'id':r.id,'notice_id':r.outbox_id,'state':r.state,'attempts':r.attempts,'retry_at':r.retry_at,'accepted_at':r.accepted_at,'message_id':r.message_id,'error':r.error} for r in db.scalars(query.order_by(EmailDelivery.id.desc()).offset((page-1)*limit).limit(limit))]
     return {'items':items,'total':total,'page':page}
 
 @router.get('/digests')
@@ -262,3 +262,39 @@ def document_reviews(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user
     return {'total':db.scalar(select(func.count()).select_from(query.subquery())),
         'worker_note':'提取需启动隔离worker；未配置时保留队列，不伪称完成',
         'items':[{'id':r.id,'filename':r.filename,'listing_id':r.listing_id,'sha256':r.sha256,'state':r.state,'pages':r.pages,'error':r.error} for r in rows]}
+
+class DeliveryReviewInput(BaseModel):
+    expected_state:Literal['dead_letter','ambiguous']
+    action:Literal['retry','confirm_unsent','confirm_accepted','close']
+    reason:str=Field(min_length=5,max_length=1000)
+    receipt:str=Field(default='',max_length=2000)
+    accepted_at:str|None=None
+    @model_validator(mode='after')
+    def valid(self):
+        if len(self.reason.strip())<5:raise ValueError('审核原因不能只填空格')
+        return self
+
+@router.post('/email-deliveries/{identity}/review')
+def review_delivery(identity:int,data:DeliveryReviewInput,user=Depends(admin),db=Depends(database)):
+    from .delivery_review import review
+    try:state=review(db,EmailDelivery,identity,user.id,**data.model_dump())
+    except LookupError as exc:raise HTTPException(404,str(exc))
+    except ValueError as exc:raise HTTPException(409,str(exc))
+    db.commit();return {'state':state,'message':'审核已记录；若进入队列，由worker按原目标重试一次'}
+
+@router.get('/incident-emails')
+def incident_history(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user=Depends(admin),db=Depends(database)):
+    from .db import IncidentEmail
+    query=select(IncidentEmail).where(IncidentEmail.user_id==user.id)
+    return {'total':db.scalar(select(func.count()).select_from(query.subquery())),'items':[
+        {'id':r.id,'incident_id':r.incident_id,'phase':r.phase,'message_id':r.message_id,'state':r.state,'attempts':r.attempts,'error':r.error,'retry_at':r.retry_at,'accepted_at':r.accepted_at}
+        for r in db.scalars(query.order_by(IncidentEmail.id.desc()).offset((page-1)*limit).limit(limit))]}
+
+@router.post('/incident-emails/{identity}/review')
+def review_incident_delivery(identity:int,data:DeliveryReviewInput,user=Depends(admin),db=Depends(database)):
+    from .db import IncidentEmail
+    from .delivery_review import review
+    try:state=review(db,IncidentEmail,identity,user.id,**data.model_dump())
+    except LookupError as exc:raise HTTPException(404,str(exc))
+    except ValueError as exc:raise HTTPException(409,str(exc))
+    db.commit();return {'state':state,'message':'告警发送审核已记录'}

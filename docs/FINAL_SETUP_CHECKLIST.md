@@ -19,7 +19,7 @@
 
 把根目录的config.runtime.example.json复制为private/runtime.json后填写。文件只在本机/部署私有目录保存，设置权限0600；环境变量优先于JSON文件。更改后重启API及worker。COOKIE_SECURE只在HTTPS部署时设true，本地HTTP保持false。
 
-EMAIL_ENABLED先保持false。SMTP_SECURITY使用starttls或ssl；local仅用于回环地址合成测试。EMAIL_START_AT必须带时区，例如2026-10-11T21:00:00+08:00，示例不是自动启用时间。接收地址必须由你明确授权，不猜测负责人地址。ready配置通过不意味着最终邮箱已收到。
+EMAIL_ENABLED和SOURCE_ALERT_EMAIL_ENABLED先保持false。告警邮件使用同一明确授权地址，用户编号必须是管理员。SMTP_SECURITY使用starttls或ssl；local仅用于回环地址合成测试。EMAIL_START_AT必须带时区，例如2026-10-11T21:00:00+08:00，示例不是自动启用时间。接收地址必须由你明确授权，不猜测负责人地址。ready配置通过不意味着最终邮箱已收到。
 
 ```sh
 PYTHONPATH=backend .venv/bin/python -m app.cli readiness-check
@@ -34,6 +34,6 @@ PYTHONPATH=backend .venv/bin/python -m app.cli readiness-check
 - 对更大数据量的数据库筛选/索引与压力测试；当前批量加载去掉逐条SQL，但仍在内存按三值规则筛选。
 - 生产Docker/PostgreSQL/Celery/HTTPS实际运行和恢复、多worker压力验收；本机无Docker服务。
 - 真实评测及试用；比赛PDF、完整演示视频与公开发布。
-- 摘要与告警目前站内可查，SMTP只发送挂牌通知/摘要，来源告警外发通道与管理员死信重放仍需补齐。
+- 摘要与告警目前站内可查，SMTP只发送挂牌通知/摘要，来源告警SMTP与管理员发送审核已在0.1.7实现；真实通道/回执仍需配置验收。
 
 本阶段完成通知节奏、完整历史分页、人工纠正/撤销/源更新冲突、同挂牌出处聚合、重挂关联、覆盖预算/持久告警、核准链接导入、DEMO回放和评测工具。外部配置不会阻塞以上本地功能；其余开发缺口仍在TODO中保留。

@@ -116,3 +116,10 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 管理员从详情创建有依据的纠正和挂牌关系，人工审核处理冲突或撤销；API要求当前版本，过时写入409。同挂牌聚合保留独立原始观察，冲突unknown；重挂和整体成员关系不拆价格、不合并私人笔记。来源页配置预算不会自动启用；告警有恢复历史但没有外发。
 
 核准详情/imports进入持久队列；只允许已适配两个来源，未适配外链不跟随。DEMO回放仅允许独立空库；evaluate接受私有人工标注JSONL，模板是合成示例，不能当真实效果。WORKFLOWS_VERIFICATION.md含实际命令和范围。Docker/PostgreSQL/Celery运行和真实SMTP投递仍待统一配置与验收。
+
+
+## 0.1.7告警与发送审核
+
+先停止API/业务worker/附件worker，backup，migrate至0009，再启动。SQLite备份现在包括document_queue，恢复须与database.db、snapshots一并复制；配置/凭据另行保管。SOURCE_ALERT_EMAIL_ENABLED默认false，启用需EMAIL_ENABLED及明确授权的admin用户/地址/启用时间，环境变量优先于runtime.json。告警/恢复独立SMTP回执，非挂牌通知，不补启用前历史。
+
+来源页和邮件历史提供admin依据审核：失败可重试一次，ambiguous先核验服务商原日志，确认未接受才重试；确认接受须原接受时间，关闭终态保留历史不恢复。次数和Message-ID保留，发件或接收目标改变阻止旧记录重放。真实外部接受/生产仍需验收，详见DELIVERY_REVIEW_VERIFICATION.md。

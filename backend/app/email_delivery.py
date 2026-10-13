@@ -90,13 +90,13 @@ def deliver_email(at=None, sender=smtp_send):
             existing = db.scalar(select(EmailDelivery).where(EmailDelivery.outbox_id == notice.id))
             if existing:
                 # Only cancelled, known-unsent records may resume; accepted/ambiguous never do.
-                if existing.state == 'cancelled' and existing.recipient == config['recipient'] and existing.accepted_at is None:
+                if existing.state == 'cancelled' and existing.recipient == config['recipient'] and (not existing.sender_address or existing.sender_address == config['sender']) and existing.accepted_at is None:
                     db.execute(update(EmailDelivery).where(EmailDelivery.id == existing.id,
                         EmailDelivery.state == 'cancelled').values(state='queued', retry_at=None, error=None))
                 continue
             try:
                 with db.begin_nested():
-                    db.add(EmailDelivery(outbox_id=notice.id, recipient=config['recipient'])); db.flush()
+                    db.add(EmailDelivery(outbox_id=notice.id, recipient=config['recipient'],sender_address=config['sender'])); db.flush()
             except IntegrityError:
                 if not db.scalar(select(EmailDelivery.id).where(EmailDelivery.outbox_id == notice.id)): raise
         db.commit()
@@ -113,7 +113,7 @@ def deliver_email(at=None, sender=smtp_send):
             sub = db.get(Subscription, notice.subscription_id)
             if row.retry_at and aware_time(row.retry_at) > at: continue
             # Destination changes never redirect a previously queued message.
-            if sub.user_id != config['user_id'] or row.recipient != config['recipient'] or not eligible(db, notice, at):
+            if sub.user_id != config['user_id'] or row.recipient != config['recipient'] or row.sender_address and row.sender_address != config['sender'] or not eligible(db, notice, at):
                 db.execute(update(EmailDelivery).where(EmailDelivery.id == identity,
                     EmailDelivery.state.in_(['queued', 'retry_wait'])).values(state='cancelled')); db.commit(); continue
             claimed = db.execute(update(EmailDelivery).where(EmailDelivery.id == identity,
@@ -123,15 +123,21 @@ def deliver_email(at=None, sender=smtp_send):
             db.commit()
             if not claimed.rowcount: continue
             row = db.get(EmailDelivery, identity); db.refresh(row)
+            if not row.message_id:row.message_id=f'<leaseradar-{identity}@{config["sender"].split("@")[1]}>'
+            if not row.sender_address:row.sender_address=config['sender']
+            db.commit()
             from .scheduling import email_origins
             origins = email_origins(db, notice, at)
+            if not origins:
+                db.execute(update(EmailDelivery).where(EmailDelivery.id==identity,EmailDelivery.state=='sending',EmailDelivery.token==token).values(state='cancelled',token=None,lease_until=None,error='Eligibility changed before SMTP'))
+                db.commit();continue
             payload = origins[0].payload
             message = EmailMessage()
             message['From'] = config['sender']; message['To'] = row.recipient
             from .db import Digest, DigestItem
             is_batch = db.get(DigestItem,notice.id) is not None
             message['Subject'] = 'LeaseRadar 每日摘要' if is_batch else 'LeaseRadar 公告提醒'
-            message['Message-ID'] = f'<leaseradar-{identity}@{config["sender"].split("@")[1]}>'
+            message['Message-ID'] = row.message_id
             message.set_content(f"模式：{payload.get('mode')}\n{payload.get('title', '')}\n"
                 f"类型：{payload.get('notice_class')}\n匹配：{payload.get('match', {}).get('verdict', 'unknown')}\n"
                 f"报名截止：{payload.get('registration_deadline') or '未知'}\n"
@@ -142,7 +148,7 @@ def deliver_email(at=None, sender=smtp_send):
                     '\n\n'.join(f"{n.payload.get('title','')}\n匹配：{n.payload.get('match',{}).get('verdict','unknown')}\n来源：{n.payload.get('source_url','')}" for n in origins) +
                     '\n\n来源覆盖：\n' + '\n'.join(f"{s['id']}：{s['status']}；{s['coverage'] or '覆盖未知'}；监测{'启用' if s['enabled'] else '暂停'}" for s in digest.sources))
             state, error = sender(config, message)
-            if state == 'retry_wait' and row.attempts >= 3: state = 'dead_letter'
+            if state == 'retry_wait' and (row.manual_retry or row.attempts >= 3): state = 'dead_letter'
             db.execute(update(EmailDelivery).where(EmailDelivery.id == identity,
                 EmailDelivery.state == 'sending', EmailDelivery.token == token).values(
                     state=state, error=error, token=None, lease_until=None,

@@ -326,6 +326,8 @@ def poll_jobs():
     deliver_local()
     from .email_delivery import deliver_email
     deliver_email()
+    from .incident_email import deliver_incidents
+    deliver_incidents()
 
 def listing_data(db, listing, user_id=None):
     version = db.get(Version, listing.current_version_id)

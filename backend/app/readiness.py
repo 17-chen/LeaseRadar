@@ -8,7 +8,10 @@ from .email_delivery import settings
 def inventory(db):
     try:email='configured' if settings() else 'not_configured'
     except (ValueError,TypeError):email='invalid_configuration'
-    return {'email':email,'cookie_secure':os.getenv('COOKIE_SECURE','false').lower()=='true',
+    from .incident_email import configuration
+    try:alerts='configured' if configuration(db) else 'disabled'
+    except (ValueError,TypeError):alerts='invalid_configuration'
+    return {'email':email,'source_alert_email':alerts,'cookie_secure':os.getenv('COOKIE_SECURE','false').lower()=='true',
         'runtime_config':'private/runtime.json (optional; environment variables override)',
         'sources':[{'id':s.id,'enabled':s.enabled,'status':s.status,'last_success_at':s.last_success_at} for s in db.scalars(select(Source))],
         'external_validation_required':['真实SMTP指定地址投递','常驻服务器/HTTPS','PostgreSQL恢复与多worker压力验证','真实标注及用户试用','完整第二来源关键字段验收'],

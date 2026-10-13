@@ -38,10 +38,12 @@ backend/requirements.lock锁定依赖；PYTHONPATH=backend pytest -q backend/tes
 
 未知不当0；报名和竞价分开；价格性质分组；不拆整体出租价；模型和页面不能赋予执行权限。当前跨源身份审核、完整每日覆盖、关键PDF/OCR与生产安全仍是后续工作。
 
-SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliveries；按接收用户、地址与启用时间配置，由worker有界处理。SMTP结果不明不自动重发，所有邮件默认关闭。来源告警现在有持久事件及恢复时间，仍无告警外发。
+SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliveries；按接收用户、地址与启用时间配置，由worker有界处理。SMTP结果不明不自动重发，所有邮件默认关闭。来源告警现在有持久事件及恢复时间，告警SMTP模块已实现，默认独立关闭；真实投递未验收。
 
 0006将hash命名HTML快照存为DATA_DIR下相对路径，保证换目录恢复；离线import-html须传明确观测时间，不冒充新核验。高校记录ID取公告编号而非page.htm，按同URL兼容旧ID。SQLite每连接启用外键；浏览器区分应用条件与草稿、对过期会话清理缓存并丢弃旧请求。
 
 0007新增用户通知偏好、摘要/成员、纠正/关联/审计和来源告警/页观测。摘要不新增伪商业事件，成员仍对应原outbox；代表记录沿用独立SMTP回执，外部接受不等于最终投递。人工纠正发布不可变版本，无市场事件，源更新产生冲突保留人工值并进入unknown；same_round关系图合并检索展示并保留原来源字段，重挂是独立Listing。search批量加载后在内存三值匹配，大库数据库下推尚待基准。来源/任务token通过条件UPDATE取得归属，旧owner不能继续续租/入库/完成；DNS解析后连接IP并使用原Host/SNI。仍只宣称合成归属测试与有限真实GET，未做生产多worker/网络压力验收。
 
 0008 document_reviews为私有附件审核权威，独立worker通过限额文件协议通信、不连接DB/SMTP。结果需哈希/格式/结构校验；PDF/OCR采用独立禁网络容器和资源上限。lease_terms为有依据的只读Decimal算式，不改来源字段，不认为租金序列是实际付款计划。真实文档准确率与容器运行仍待验收。
+
+0009 incident_emails以异常/阶段唯一，独立于挂牌事件/outbox。EmailDelivery和IncidentEmail记录持久Message-ID、发件地址及manual_retry。依据审核与AuditAction同事务，状态CAS防重复审核；closed不自动恢复，人工排队仅再尝试一次。备份复制document_queue，附件worker/API须同时暂停。

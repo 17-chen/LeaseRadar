@@ -2,6 +2,7 @@
   "APP_MODE": "live",
   "COOKIE_SECURE": false,
   "EMAIL_ENABLED": false,
+  "SOURCE_ALERT_EMAIL_ENABLED": false,
   "EMAIL_USER_ID": 0,
   "EMAIL_RECIPIENT": "",
   "EMAIL_START_AT": "",

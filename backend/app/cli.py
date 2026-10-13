@@ -40,6 +40,7 @@ def main():
         with sqlite3.connect(DATABASE_URL.removeprefix('sqlite:///')) as original, sqlite3.connect(folder / 'database.db') as backup:
             original.backup(backup)
         if (DATA / 'snapshots').exists(): shutil.copytree(DATA / 'snapshots', folder / 'snapshots')
+        if (DATA / 'document_queue').exists(): shutil.copytree(DATA / 'document_queue', folder / 'document_queue')
         print(f'备份写入 {folder}；包含私有数据，不入Git')
     elif args.command == 'replay':
         from .config import MODE

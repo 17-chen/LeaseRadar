@@ -178,6 +178,9 @@ class EmailDelivery(Base):
     __tablename__ = 'email_deliveries'
     id: Mapped[int] = mapped_column(primary_key=True)
     outbox_id: Mapped[int] = mapped_column(ForeignKey('notification_outbox.id'), unique=True)
+    manual_retry: Mapped[bool] = mapped_column(default=False)
+    message_id: Mapped[str | None]
+    sender_address: Mapped[str | None]
     recipient: Mapped[str]
     state: Mapped[str] = mapped_column(default='queued')
     attempts: Mapped[int] = mapped_column(default=0)
@@ -300,3 +303,23 @@ class DocumentReview(Base):
     pages: Mapped[list] = mapped_column(JSON,default=list)
     error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(default=now)
+
+class IncidentEmail(Base):
+    __tablename__='incident_emails'
+    __table_args__=(UniqueConstraint('incident_id','phase'),)
+    id: Mapped[int]=mapped_column(primary_key=True)
+    incident_id: Mapped[int]=mapped_column(ForeignKey('source_incidents.id'))
+    manual_retry: Mapped[bool]=mapped_column(default=False)
+    message_id: Mapped[str | None]
+    sender_address: Mapped[str | None]
+    user_id: Mapped[int]=mapped_column(ForeignKey('users.id'))
+    phase: Mapped[str]
+    recipient: Mapped[str]
+    state: Mapped[str]=mapped_column(default='queued')
+    attempts: Mapped[int]=mapped_column(default=0)
+    retry_at: Mapped[str | None]
+    lease_until: Mapped[str | None]
+    token: Mapped[str | None]
+    error: Mapped[str | None]
+    accepted_at: Mapped[str | None]
+    created_at: Mapped[str]=mapped_column(default=now)

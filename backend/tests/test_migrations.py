@@ -10,7 +10,7 @@ def test_upgrade_populated_0003_database(tmp_path):
     script=r'''
 from alembic import command
 from alembic.config import Config
-from app.db import engine,Session,Subscription,Outbox,Source
+from app.db import engine,Session,Subscription,Outbox,Source,EmailDelivery
 from sqlalchemy import text
 cfg=Config('backend/alembic.ini')
 command.upgrade(cfg,'0003')
@@ -28,12 +28,18 @@ with engine.begin() as connection:
     ]: connection.execute(text(statement))
 with engine.begin() as connection:
     connection.execute(text('UPDATE raw_documents SET sha256=:sha,snapshot_path=:path WHERE id=1'), {'sha':'a'*64,'path':'/old/private/snapshots/'+'a'*64+'.html'})
+command.upgrade(cfg,'0008')
+with engine.begin() as connection:
+    connection.execute(text("INSERT INTO email_deliveries (id,outbox_id,recipient,state,attempts,accepted_at) VALUES (1,1,'synthetic@example.test','accepted',1,'2026-10-10T01:00:00+00:00')"))
 command.upgrade(cfg,'head')
 with Session() as db:
     assert db.execute(text('SELECT snapshot_path FROM raw_documents WHERE id=1')).scalar()=='snapshots/'+'a'*64+'.html'
     assert db.get(Subscription,1).reminder_hours==[72,24]
     assert db.get(Outbox,1).event_id==1 and db.get(Outbox,1).reminder_id is None
     assert db.get(Outbox,1).state=='accepted'
+    receipt=db.get(EmailDelivery,1)
+    assert receipt.state=='accepted' and receipt.attempts==1 and receipt.manual_retry is False
+    assert receipt.message_id is None and receipt.sender_address is None
     assert db.get(Source,'nongjy').backfill_page==2 and db.get(Source,'nongjy').detail_checked==0
     assert db.execute(text('PRAGMA integrity_check')).scalar()=='ok'
     assert db.execute(text('PRAGMA foreign_key_check')).all()==[]
