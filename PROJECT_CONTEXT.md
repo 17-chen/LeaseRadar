@@ -1,6 +1,6 @@
 # 项目上下文
 
-> 最后更新：2026-10-13（Asia/Shanghai）
+> 最后更新：2026-10-14（Asia/Shanghai）
 
 ## 项目基本信息
 
@@ -24,7 +24,7 @@
 
 ## 当前状态
 
-- 核心实现与161项测试完成；已补可续扫游标、活跃/关注详情复查、有限重试与可配置站内报名提醒；尚未满足交接包全部P0。
+- 核心实现与170项测试完成；已补可续扫游标、活跃/关注详情复查、有限重试与可配置站内报名提醒；尚未满足交接包全部P0。
 - 真实库25条：农交云24，高校链接型1。6条DOCX价格周期核实；本阶段真实复查3条，审查后41个版本（本次新增1个为纠正reprocessing，保留原核验时间）。
 - API与本地worker当前启动；来源enabled默认false，不自动长期采集。
 - Docker CLI存在，但Docker服务/桌面应用不可用；只做配置校验。
@@ -56,3 +56,5 @@ backend/app、backend/tests/test_core.py、docs/VERIFICATION.md、docs/SOURCE_AU
 0.1.6：0008附件表迁移与独立恢复通过；网页条款计算只读，合成DOCX上传/独立worker/审核闭环在DEMO通过。详细边界见docs/TERMS_ATTACHMENTS_VERIFICATION.md。
 
 0.1.7：来源告警/恢复独立回执、管理员依据审核/一次重试/关闭终态、持久Message-ID与原地址保护；补附件队列备份。0009独立恢复和161项本机回归通过，详情docs/DELIVERY_REVIEW_VERIFICATION.md。
+
+0.1.8：DOCX正文/表格按顺序提取并保留位置、删除修订排除；损坏请求生成失败结果而不终止worker。合成上传/提取/审核及备份回归通过；无新数据库迁移或依赖，真实源范围不变。API/worker重启后加载新版本，本文不代表本次已重启。见docs/DOCX_BODY_VERIFICATION.md。

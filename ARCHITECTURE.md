@@ -47,3 +47,5 @@ SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliver
 0008 document_reviews为私有附件审核权威，独立worker通过限额文件协议通信、不连接DB/SMTP。结果需哈希/格式/结构校验；PDF/OCR采用独立禁网络容器和资源上限。lease_terms为有依据的只读Decimal算式，不改来源字段，不认为租金序列是实际付款计划。真实文档准确率与容器运行仍待验收。
 
 0009 incident_emails以异常/阶段唯一，独立于挂牌事件/outbox。EmailDelivery和IncidentEmail记录持久Message-ID、发件地址及manual_retry。依据审核与AuditAction同事务，状态CAS防重复审核；closed不自动恢复，人工排队仅再尝试一次。备份复制document_queue，附件worker/API须同时暂停。
+
+0.1.8 DOCX共用有界XML入口；审核提取正文段落和表格的顺序文字，docx_text与旧docx_table同时被结果验证器接纳。字段增强仍只走原精确表格规则，不从审核文字自动改挂牌。文件worker将请求解析错误写成终态失败结果，DB身份校验继续独立执行，坏请求保留不阻塞后续任务。

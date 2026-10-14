@@ -17,7 +17,7 @@ from app.document_worker import process_one
 import sys
 sys.argv=['leaseradar','migrate'];main()
 buffer=io.BytesIO()
-with zipfile.ZipFile(buffer,'w') as z:z.writestr('word/document.xml','<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:tbl><w:tr><w:tc><w:p><w:r><w:t>synthetic evidence</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:document>')
+with zipfile.ZipFile(buffer,'w') as z:z.writestr('word/document.xml','<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>synthetic evidence</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>')
 import base64
 with Session() as db:
  user=User(username='synthetic',password_hash='synthetic',role='admin');db.add(user);db.flush()

@@ -31,12 +31,9 @@ def tool(args,folder,deadline):
 def extract(data,format):
     if len(data)>MAX_BYTES:raise ExtractionError('附件超过5MB限制')
     if format=='docx':
-        from .attachments import docx_tables
-        tables=docx_tables(data)
-        text='\n'.join(f'表{t} 行{r}：'+ ' | '.join(row) for t,table in enumerate(tables,1) for r,row in enumerate(table,1))
-        if not text.strip():raise ExtractionError('DOCX未发现表格；正文提取尚未覆盖')
-        if len(text)>100000:raise ExtractionError('DOCX表格文本超过限制')
-        return [{'page':None,'position':'DOCX表格行','method':'docx_table','text':text}]
+        from .attachments import docx_review_text
+        text,has_body=docx_review_text(data)
+        return [{'page':None,'position':'DOCX正文段与表格行' if has_body else 'DOCX表格行','method':'docx_text' if has_body else 'docx_table','text':text}]
     if format!='pdf' or not data.startswith(b'%PDF-'):raise ExtractionError('只支持PDF或DOCX签名')
     required=('pdfinfo','pdftotext','pdftoppm','tesseract')
     if any(not shutil.which(name) for name in required):raise ExtractionError('PDF/OCR工具未配置，请使用隔离提取容器')
@@ -64,12 +61,15 @@ def process_one(queue):
         if not re.fullmatch(r'\d+\.json',request.name):continue
         target=results/request.name
         if target.exists():continue
-        if request.stat().st_size>1000:continue
-        spec=json.loads(request.read_text());digest=spec.get('sha256','');format=spec.get('format','')
-        if not re.fullmatch(r'[a-f0-9]{64}',digest) or format not in ('pdf','docx'):continue
-        source=queue/'inputs'/f'{digest}.{format}'
-        result={'sha256':digest,'format':format,'pages':[],'state':'failed','error':None}
+        result={'sha256':None,'format':None,'pages':[],'state':'failed','error':None}
         try:
+            if request.is_symlink() or request.stat().st_size>1000:raise ExtractionError('请求文件边界无效')
+            spec=json.loads(request.read_text())
+            if not isinstance(spec,dict):raise ExtractionError('请求结构无效')
+            digest=spec.get('sha256');format=spec.get('format')
+            if not isinstance(digest,str) or not re.fullmatch(r'[a-f0-9]{64}',digest) or format not in ('pdf','docx'):raise ExtractionError('请求身份无效')
+            result.update(sha256=digest,format=format)
+            source=queue/'inputs'/f'{digest}.{format}'
             if source.is_symlink() or source.stat().st_size>MAX_BYTES:raise ExtractionError('附件文件边界无效')
             data=source.read_bytes()
             if hashlib.sha256(data).hexdigest()!=digest:raise ExtractionError('附件哈希不一致')

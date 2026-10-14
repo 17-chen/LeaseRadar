@@ -36,6 +36,6 @@ def reconcile(db):
             payload=json.loads(result.read_text())
             if payload.get('sha256')!=row.sha256 or payload.get('format')!=row.format or payload.get('state') not in ('review','failed'):raise ValueError('结果身份或状态不一致')
             pages=payload.get('pages',[])
-            if not isinstance(pages,list) or len(pages)>20 or any(not isinstance(p,dict) or not isinstance(p.get('text'),str) or len(p['text'])>100000 or p.get('method') not in ('pdf_text','ocr_review','docx_table') for p in pages):raise ValueError('结果页面结构无效')
+            if not isinstance(pages,list) or len(pages)>20 or any(not isinstance(p,dict) or not isinstance(p.get('text'),str) or len(p['text'])>100000 or p.get('method') not in ('pdf_text','ocr_review','docx_table','docx_text') for p in pages):raise ValueError('结果页面结构无效')
             row.pages=pages;row.state=payload['state'];row.error=str(payload.get('error') or '')[:200] or None
         except (ValueError,TypeError):row.state='failed';row.error='提取结果校验失败，需要人工复核'

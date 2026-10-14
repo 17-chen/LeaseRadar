@@ -11,7 +11,7 @@ import httpx
 
 NS = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
 
-def docx_tables(data):
+def docx_root(data):
     if len(data) > 20_000_000 or not data.startswith(b'PK'):
         raise SourceError('DOCX文件格式或大小不合规')
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
@@ -23,12 +23,66 @@ def docx_tables(data):
                 raise SourceError('DOCX压缩结构不合规')
             if 'vbaProject' in entry.filename or '..' in entry.filename.split('/'):
                 raise SourceError('拒绝宏或异常路径')
+        if len([e for e in entries if e.filename == 'word/document.xml']) != 1:
+            raise SourceError('DOCX正文缺失或重复')
         xml = archive.read('word/document.xml')
-        if b'<!DOCTYPE' in xml or b'<!ENTITY' in xml:
+        declarations = xml.replace(b'\x00', b'').upper()
+        if b'<!DOCTYPE' in declarations or b'<!ENTITY' in declarations:
             raise SourceError('拒绝XML外部实体')
         root = ET.fromstring(xml)
+    return root
+
+
+def docx_tables(data):
+    root = docx_root(data)
     return [[[''.join(t.text or '' for t in c.findall('.//w:t', NS)).strip() for c in row.findall('w:tc', NS)]
              for row in table.findall('w:tr', NS)] for table in root.findall('.//w:tbl', NS)]
+
+
+def docx_review_text(data):
+    """Ordered body text with XML positions, never invented Word page numbers."""
+    root = docx_root(data)
+    body = root.find('w:body', NS)
+    if body is None:
+        raise SourceError('DOCX正文缺失')
+    blocks = []; paragraph = 0; table = 0; has_body = False
+    size = 0
+    def text(node):
+        parts = []
+        def visit(element):
+            if element.tag in (tag('del'), tag('moveFrom')): return
+            if element.tag == tag('t'): parts.append(element.text or '')
+            elif element.tag == tag('tab'): parts.append('\t')
+            elif element.tag in (tag('br'), tag('cr')): parts.append('\n')
+            else:
+                for child in element: visit(child)
+        visit(node)
+        return ''.join(parts).strip()
+    def tag(name): return '{'+NS['w']+'}'+name
+    def add(value):
+        nonlocal size
+        size += len(value) + 1
+        if size > 100000: raise SourceError('DOCX正文与表格文本超过限制')
+        blocks.append(value)
+    def walk(node):
+        nonlocal paragraph, table, has_body
+        for child in node:
+            if child.tag == tag('p'):
+                paragraph += 1
+                value = text(child)
+                if value:
+                    has_body = True
+                    add(f'正文段{paragraph}：{value}')
+            elif child.tag == tag('tbl'):
+                table += 1
+                for number, row in enumerate(child.findall('w:tr', NS), 1):
+                    cells = [text(cell) for cell in row.findall('w:tc', NS)]
+                    if any(cells): add(f'表{table} 行{number}：'+' | '.join(cells))
+            elif child.tag not in (tag('del'), tag('moveFrom')):
+                walk(child)
+    walk(body)
+    if not blocks: raise SourceError('DOCX未发现可提取正文或表格文字')
+    return '\n'.join(blocks), has_body
 
 def identity(text):
     return re.sub(r'\s+', '', re.sub(r'^标的\s*\d+\s*[：:]', '', text))
