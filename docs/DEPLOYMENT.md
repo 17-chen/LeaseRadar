@@ -123,3 +123,5 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 先停止API/业务worker/附件worker，backup，migrate至0009，再启动。SQLite备份现在包括document_queue，恢复须与database.db、snapshots一并复制；配置/凭据另行保管。SOURCE_ALERT_EMAIL_ENABLED默认false，启用需EMAIL_ENABLED及明确授权的admin用户/地址/启用时间，环境变量优先于runtime.json。告警/恢复独立SMTP回执，非挂牌通知，不补启用前历史。
 
 来源页和邮件历史提供admin依据审核：失败可重试一次，ambiguous先核验服务商原日志，确认未接受才重试；确认接受须原接受时间，关闭终态保留历史不恢复。次数和Message-ID保留，发件或接收目标改变阻止旧记录重放。真实外部接受/生产仍需验收，详见DELIVERY_REVIEW_VERIFICATION.md。
+
+0.1.9升级：正常停止API/采集/附件worker，备份数据库、snapshots及document_queue；执行migrate到0010，重启各进程。SOURCE_DOCUMENTS_ENABLED默认false；启用须SOURCE_DOCUMENTS_USER_ID有效管理员；不需要SMTP。只处理后续采集/复查所见的已有哈希快照，没有历史全库自动补扫。

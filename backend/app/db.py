@@ -293,9 +293,12 @@ def seed_sources(db):
 
 class DocumentReview(Base):
     __tablename__ = 'document_reviews'
+    __table_args__ = (UniqueConstraint('listing_id','origin_url','sha256',name='uq_document_origin_content'),)
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     listing_id: Mapped[int | None] = mapped_column(ForeignKey('listing_rounds.id'))
+    origin_version_id: Mapped[int | None] = mapped_column(ForeignKey('listing_versions.id'))
+    origin_url: Mapped[str | None] = mapped_column(Text)
     filename: Mapped[str]
     sha256: Mapped[str] = mapped_column(String(64))
     format: Mapped[str]

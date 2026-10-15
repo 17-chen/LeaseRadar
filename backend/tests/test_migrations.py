@@ -31,6 +31,9 @@ with engine.begin() as connection:
 command.upgrade(cfg,'0008')
 with engine.begin() as connection:
     connection.execute(text("INSERT INTO email_deliveries (id,outbox_id,recipient,state,attempts,accepted_at) VALUES (1,1,'synthetic@example.test','accepted',1,'2026-10-10T01:00:00+00:00')"))
+command.upgrade(cfg,'0009')
+with engine.begin() as connection:
+    connection.execute(text("INSERT INTO document_reviews (id,user_id,listing_id,filename,sha256,format,state,pages,created_at) VALUES (1,1,1,'synthetic.docx','synthetic','docx','review','[]','2026-10-10T00:00:00+00:00')"))
 command.upgrade(cfg,'head')
 with Session() as db:
     assert db.execute(text('SELECT snapshot_path FROM raw_documents WHERE id=1')).scalar()=='snapshots/'+'a'*64+'.html'
@@ -41,6 +44,7 @@ with Session() as db:
     assert receipt.state=='accepted' and receipt.attempts==1 and receipt.manual_retry is False
     assert receipt.message_id is None and receipt.sender_address is None
     assert db.get(Source,'nongjy').backfill_page==2 and db.get(Source,'nongjy').detail_checked==0
+    assert db.execute(text('SELECT origin_url,origin_version_id,state FROM document_reviews WHERE id=1')).one()==(None,None,'review')
     assert db.execute(text('PRAGMA integrity_check')).scalar()=='ok'
     assert db.execute(text('PRAGMA foreign_key_check')).all()==[]
 '''

@@ -49,3 +49,5 @@ SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliver
 0009 incident_emails以异常/阶段唯一，独立于挂牌事件/outbox。EmailDelivery和IncidentEmail记录持久Message-ID、发件地址及manual_retry。依据审核与AuditAction同事务，状态CAS防重复审核；closed不自动恢复，人工排队仅再尝试一次。备份复制document_queue，附件worker/API须同时暂停。
 
 0.1.8 DOCX共用有界XML入口；审核提取正文段落和表格的顺序文字，docx_text与旧docx_table同时被结果验证器接纳。字段增强仍只走原精确表格规则，不从审核文字自动改挂牌。文件worker将请求解析错误写成终态失败结果，DB身份校验继续独立执行，坏请求保留不阻塞后续任务。
+
+0010 document_reviews增加origin_version_id/origin_url及挂牌+来源地址+SHA256唯一键，手动上传为NULL保持原行为。source_documents在ingest事务内复用document_jobs，结果请求仍在提交后由reconcile发布。仅读取白名单地址对应的已有hash快照，不发网络请求；指定管理员归属与单次/总待提取上限，默认关闭。

@@ -261,7 +261,7 @@ def document_reviews(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user
     rows=db.scalars(query.order_by(DocumentReview.id.desc()).offset((page-1)*limit).limit(limit))
     return {'total':db.scalar(select(func.count()).select_from(query.subquery())),
         'worker_note':'提取需启动隔离worker；未配置时保留队列，不伪称完成',
-        'items':[{'id':r.id,'filename':r.filename,'listing_id':r.listing_id,'sha256':r.sha256,'state':r.state,'pages':r.pages,'error':r.error} for r in rows]}
+        'items':[{'id':r.id,'filename':r.filename,'listing_id':r.listing_id,'sha256':r.sha256,'state':r.state,'pages':r.pages,'error':r.error,'origin_url':r.origin_url,'origin_version_id':r.origin_version_id} for r in rows]}
 
 class DeliveryReviewInput(BaseModel):
     expected_state:Literal['dead_letter','ambiguous']

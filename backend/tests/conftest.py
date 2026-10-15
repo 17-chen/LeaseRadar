@@ -11,6 +11,7 @@ from argon2 import PasswordHasher
 def clean_db(monkeypatch):
     # Tests never inherit a real recipient or SMTP credential from the host.
     monkeypatch.setenv('EMAIL_ENABLED', 'false')
+    monkeypatch.setenv('SOURCE_DOCUMENTS_ENABLED', 'false')
     monkeypatch.setenv('SMTP_USERNAME', '')
     monkeypatch.setenv('SMTP_PASSWORD', '')
     Base.metadata.drop_all(engine); Base.metadata.create_all(engine)

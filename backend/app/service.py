@@ -58,11 +58,15 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
     if previous and previous.fields.get('human_reviewed'):
         previous = next((v for v in db.scalars(select(Version).where(Version.listing_id == listing.id).order_by(Version.id.desc())) if not v.fields.get('human_reviewed')), None)
     if previous and previous.business_hash == business_hash:
+        from .source_documents import enqueue_cached
+        enqueue_cached(db,previous)
         return listing.id, False
     # A previous state can recur. Versions describe observations rather than globally unique hashes.
     version = Version(listing_id=listing.id, raw_id=raw.id, business_hash=business_hash,
                       fields=fields, first_year_monthly=decimal(fields.get('first_year_monthly')), area_m2=decimal(fields.get('area_m2')))
     db.add(version); db.flush()
+    from .source_documents import enqueue_cached
+    enqueue_cached(db,version)
     listing.current_version_id = version.id
     for field, quote in evidence.items(): db.add(Evidence(version_id=version.id, field=field, quote=quote))
     reprocessing = False
