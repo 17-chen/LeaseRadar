@@ -81,6 +81,24 @@ def test_docx_body_and_tables_keep_order_without_deleted_text():
     assert page['text']=='正文段1：租金\t每年递增\n待核验\n表1 行1：表内依据\n正文段2：免租须确认'
 
 
+def test_docx_price_table_ignores_deleted_and_moved_text():
+    from app.attachments import docx_tables, enrich_tables
+    data=body_docx(
+        '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>标的概况</w:t></w:r></w:p></w:tc>'
+        '<w:tc><w:p><w:r><w:t>首年租金起始价</w:t></w:r></w:p></w:tc></w:tr>'
+        '<w:tr><w:tc><w:p><w:r><w:t>测试路11号商铺</w:t></w:r></w:p></w:tc>'
+        '<w:tc><w:p><w:moveFrom><w:r><w:t>90000元</w:t></w:r></w:moveFrom>'
+        '<w:del><w:r><w:t>100000元</w:t></w:r></w:del>'
+        '<w:ins><w:r><w:t>120000元</w:t></w:r></w:ins></w:p></w:tc></w:tr></w:tbl>'
+    )
+    tables=docx_tables(data)
+    assert tables[0][1][1]=='120000元'
+    fields={'title':'测试路11号商铺','raw_amount':'120000','warnings':[]}
+    evidence={}
+    assert enrich_tables(fields,evidence,tables,'https://www.nongjy.cn/file.docx')
+    assert fields['period_basis']=='first_year'
+
+
 def test_body_only_document_reaches_review_without_business_updates(monkeypatch,tmp_path):
     import app.document_jobs as jobs
     monkeypatch.setattr(jobs,'QUEUE',tmp_path)

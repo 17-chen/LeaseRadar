@@ -35,7 +35,13 @@ def docx_root(data):
 
 def docx_tables(data):
     root = docx_root(data)
-    return [[[''.join(t.text or '' for t in c.findall('.//w:t', NS)).strip() for c in row.findall('w:tc', NS)]
+    def current_text(node):
+        if node.tag in (f"{{{NS['w']}}}del", f"{{{NS['w']}}}moveFrom"):
+            return ''
+        if node.tag == f"{{{NS['w']}}}t":
+            return node.text or ''
+        return ''.join(current_text(child) for child in node)
+    return [[[current_text(c).strip() for c in row.findall('w:tc', NS)]
              for row in table.findall('w:tr', NS)] for table in root.findall('.//w:tbl', NS)]
 
 
