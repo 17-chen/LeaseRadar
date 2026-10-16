@@ -60,11 +60,16 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
     if previous and previous.business_hash == business_hash:
         from .source_documents import enqueue_cached
         enqueue_cached(db,previous)
+        from .document_downloads import enqueue_downloads
+        enqueue_downloads(db,previous)
         return listing.id, False
     # A previous state can recur. Versions describe observations rather than globally unique hashes.
     version = Version(listing_id=listing.id, raw_id=raw.id, business_hash=business_hash,
                       fields=fields, first_year_monthly=decimal(fields.get('first_year_monthly')), area_m2=decimal(fields.get('area_m2')))
     db.add(version); db.flush()
+    from .document_downloads import enqueue_downloads
+    db.flush()  # Publish pending SourceRecord identity inside this transaction.
+    enqueue_downloads(db,version)
     from .source_documents import enqueue_cached
     enqueue_cached(db,version)
     listing.current_version_id = version.id
@@ -321,6 +326,8 @@ def poll_jobs():
                     # Exhausted or invalid sources require explicit admin resumption.
                     db.get(Source, sid).enabled = False
                 job.error = str(exc)[:500]; job.lease_until = None; db.commit()
+    from .document_downloads import process_download
+    process_download()
     from .document_jobs import reconcile
     with Session() as db:
         reconcile(db);db.commit()

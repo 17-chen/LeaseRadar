@@ -263,6 +263,17 @@ def document_reviews(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user
         'worker_note':'提取需启动隔离worker；未配置时保留队列，不伪称完成',
         'items':[{'id':r.id,'filename':r.filename,'listing_id':r.listing_id,'sha256':r.sha256,'state':r.state,'pages':r.pages,'error':r.error,'origin_url':r.origin_url,'origin_version_id':r.origin_version_id} for r in rows]}
 
+@router.get('/document-downloads')
+def document_downloads(page:int=Query(1,ge=1),limit:int=Query(20,ge=1,le=100),user=Depends(admin),db=Depends(database)):
+    from .db import DocumentDownload
+    from .document_downloads import owner
+    try:status='configured' if owner(db) else 'disabled'
+    except ValueError:status='invalid_configuration'
+    query=select(DocumentDownload).where(DocumentDownload.user_id==user.id)
+    rows=db.scalars(query.order_by(DocumentDownload.id.desc()).offset((page-1)*limit).limit(limit))
+    return {'configuration':status,'total':db.scalar(select(func.count()).select_from(query.subquery())),
+        'items':[{'id':r.id,'version_id':r.version_id,'url':r.url,'state':r.state,'attempts':r.attempts,'retry_at':r.retry_at,'error':r.error,'sha256':r.sha256,'review_id':r.review_id} for r in rows]}
+
 class DeliveryReviewInput(BaseModel):
     expected_state:Literal['dead_letter','ambiguous']
     action:Literal['retry','confirm_unsent','confirm_accepted','close']

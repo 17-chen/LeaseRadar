@@ -39,3 +39,5 @@ PYTHONPATH=backend .venv/bin/python -m app.cli readiness-check
 本阶段完成通知节奏、完整历史分页、人工纠正/撤销/源更新冲突、同挂牌出处聚合、重挂关联、覆盖预算/持久告警、核准链接导入、DEMO回放和评测工具。外部配置不会阻塞以上本地功能；其余开发缺口仍在TODO中保留。
 
 已缓存来源附件自动审核（可选）：先迁移0010，设置SOURCE_DOCUMENTS_ENABLED=true及SOURCE_DOCUMENTS_USER_ID为有效管理员，再重启采集进程。默认false，不依赖邮件配置；每次观察最多5份、20份待提取上限，失败样本不自动重试。尚未下载/无哈希的来源附件不会由此开关获取。
+
+可选受控下载：先升级0011，在来源附件审核开关与管理员已配置后，再设SOURCE_DOCUMENT_DOWNLOADS_ENABLED=true并重启。只处理后续观察发现的前20个明确.pdf/.docx链接，任务最多20份待下载；无历史全库补扫。blocked不自动恢复，先人工核查来源/授权；可用既有私有上传继续审核，保留失败记录。

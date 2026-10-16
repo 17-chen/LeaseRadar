@@ -2,7 +2,7 @@
 
 面向门店拓展的招租公告发现、筛选与跟进工作空间。比赛优先，兼顾真实使用；筛选条件由用户选择，未选项不限。
 
-**状态：0.1.9-dev，已缓存来源附件自动审核版本。** 不是完整规格验收或生产上线版本。GitHub仓库目前私有。
+**状态：0.1.10-dev，受控附件下载与私有审核版本。** 不是完整规格验收或生产上线版本。GitHub仓库目前私有。
 
 ## 已实现
 
@@ -52,7 +52,7 @@ Code license: MIT. Public source content and original handoff material are not r
 
 SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本地协议/注入发送测试，真实邮件默认关闭。邮件回执与站内通知分别显示；来源页提供管理员当前异常及恢复历史。启用与状态语义见 [运行与部署](docs/DEPLOYMENT.md)。
 
-最新阶段：0.1.7-dev，161项本机回归、0009恢复及DEMO发送审核验证。见[告警与发送审核验收](docs/DELIVERY_REVIEW_VERIFICATION.md)。升级先备份、migrate至0009，再重启API/worker。外部资料可以最后统一补齐，见[最后配置清单](docs/FINAL_SETUP_CHECKLIST.md)。
+历史阶段：0.1.7-dev，161项本机回归、0009恢复及DEMO发送审核验证。见[告警与发送审核验收](docs/DELIVERY_REVIEW_VERIFICATION.md)。升级先备份、migrate至0009，再重启API/worker。外部资料可以最后统一补齐，见[最后配置清单](docs/FINAL_SETUP_CHECKLIST.md)。
 
 条款与附件：网页支持有依据的租金递增/免租/分段计算；PDF/DOCX上传进入私有审核队列，OCR文字不自动改字段。PDF/OCR需独立隔离提取worker，本机工具缺失/容器未启动仍保持待处理，见本阶段验收。
 
@@ -60,4 +60,6 @@ SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本�
 
 最新附件能力：DOCX正文段落与表格按文档顺序进入私有审核，保留段/表/行依据，删除修订不计入文字；损坏请求保留失败结果，不阻塞后续附件。未自动提取业务条款，未扩大真实来源。见[正文与队列验收](docs/DOCX_BODY_VERIFICATION.md)。
 
-来源附件审核：启用SOURCE_DOCUMENTS_ENABLED并指定SOURCE_DOCUMENTS_USER_ID管理员后，采集/详情复查会将已保存且带SHA256的来源附件复制到私有审核队列；默认关闭。尚未下载或无哈希的附件不会自动抓取。需先备份、迁移0010并重启API/worker；见[来源附件验收](docs/SOURCE_DOCUMENTS_VERIFICATION.md)。
+来源附件审核：启用SOURCE_DOCUMENTS_ENABLED并指定SOURCE_DOCUMENTS_USER_ID管理员后，采集/详情复查会将已保存且带SHA256的来源附件复制到私有审核队列；默认关闭。仅启用此审核开关不会自动下载未缓存附件；受控下载有单独开关。需先备份、迁移0010并重启API/worker；见[来源附件验收](docs/SOURCE_DOCUMENTS_VERIFICATION.md)。
+
+受控下载：SOURCE_DOCUMENT_DOWNLOADS_ENABLED默认false，同时要求来源附件审核开关和有效管理员。支持核准HTTPS地址的.pdf/.docx，5MB、最多3次、Retry-After与共享来源租约；401/403保留blocked，不跳转或绕过。页面显示下载和审核的独立状态。213项回归及一份真实DOCX下载已验证；不是完整第二来源接通或PDF/OCR准确率验收。升级至0011后使用，见[下载验收](docs/DOCUMENT_DOWNLOADS_VERIFICATION.md)。

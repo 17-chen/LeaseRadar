@@ -307,6 +307,25 @@ class DocumentReview(Base):
     error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(default=now)
 
+class DocumentDownload(Base):
+    __tablename__='document_downloads'
+    __table_args__=(UniqueConstraint('version_id','url',name='uq_download_version_url'),)
+    id: Mapped[int]=mapped_column(primary_key=True)
+    version_id: Mapped[int]=mapped_column(ForeignKey('listing_versions.id'))
+    source_id: Mapped[str]=mapped_column(ForeignKey('sources.id'))
+    user_id: Mapped[int]=mapped_column(ForeignKey('users.id'))
+    url: Mapped[str]=mapped_column(Text)
+    format: Mapped[str]
+    state: Mapped[str]=mapped_column(default='queued',index=True)
+    attempts: Mapped[int]=mapped_column(default=0)
+    token: Mapped[str | None]
+    lease_until: Mapped[str | None]
+    retry_at: Mapped[str | None]
+    error: Mapped[str | None]=mapped_column(Text)
+    sha256: Mapped[str | None]
+    review_id: Mapped[int | None]=mapped_column(ForeignKey('document_reviews.id'))
+    created_at: Mapped[str]=mapped_column(default=now)
+
 class IncidentEmail(Base):
     __tablename__='incident_emails'
     __table_args__=(UniqueConstraint('incident_id','phase'),)

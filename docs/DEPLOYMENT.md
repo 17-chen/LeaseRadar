@@ -125,3 +125,5 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 来源页和邮件历史提供admin依据审核：失败可重试一次，ambiguous先核验服务商原日志，确认未接受才重试；确认接受须原接受时间，关闭终态保留历史不恢复。次数和Message-ID保留，发件或接收目标改变阻止旧记录重放。真实外部接受/生产仍需验收，详见DELIVERY_REVIEW_VERIFICATION.md。
 
 0.1.9升级：正常停止API/采集/附件worker，备份数据库、snapshots及document_queue；执行migrate到0010，重启各进程。SOURCE_DOCUMENTS_ENABLED默认false；启用须SOURCE_DOCUMENTS_USER_ID有效管理员；不需要SMTP。只处理后续采集/复查所见的已有哈希快照，没有历史全库自动补扫。
+
+0.1.10升级：停止API/采集/附件worker，备份DB、snapshots和document_queue，migrate至0011后重启。默认SOURCE_DOCUMENT_DOWNLOADS_ENABLED=false；来源附件开关与有效管理员是其前置条件。每轮下载一份，与来源采集共用租约；429/临时故障延迟同源请求，401/403仅保留受阻不绕过。真实部署仍需验证PostgreSQL、多worker容量及PDF隔离容器。
