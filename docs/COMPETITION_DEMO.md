@@ -54,3 +54,5 @@
 已实际生成并启动一次DEMO，private/demo-runs/647be7504b4e，6候选/7版本/5已入站内通知；指南账号文件权限0600。没有操作真实数据库、访问外部源或发送消息。此处是API闭环与服务器启动验证，尚未完成最终录屏彩排/视频导出/介绍PDF，不能写作已提交或已完成材料。
 
 0.1.13：新建DEMO支持页面七步路线，无需手动填写筛选或寻找固定记录；旧演示不覆盖，重新运行脚本创建。237项完整回归、浏览器七步与重演通过，详见DEMO_ROUTE_VERIFICATION.md。
+
+介绍材料进度：6页PDF初稿已生成并逐页渲染QA，见output/pdf/LeaseRadar_Competition_Intro_Draft.pdf及docs/submission/README.md；视频/最终审稿/正式提交尚未完成。
