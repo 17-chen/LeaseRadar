@@ -47,7 +47,7 @@
 
 ## 下一步任务
 
-继续PDF/OCR及完整条款/第二来源适配，生产与真实评测条件最后统一补齐。通知节奏、完整分页、人工纠正/撤销/冲突、人工关联聚合与重挂、预算/告警、导入/回放/评测工具已实现。0007有数据升级与异目录恢复验证；docs/WORKFLOWS_VERIFICATION.md记录范围，docs/FINAL_SETUP_CHECKLIST.md集中外部配置。
+比赛优先：完成录制彩排/实际视频导出、PDF定稿及评审访问核对；第二来源/PDF关键路径按倒排有界推进，生产与真实评测条件集中补齐。通知节奏、完整分页、人工纠正/撤销/冲突、人工关联聚合与重挂、预算/告警、导入/回放/评测工具已实现。0007有数据升级与异目录恢复验证；docs/WORKFLOWS_VERIFICATION.md记录范围，docs/FINAL_SETUP_CHECKLIST.md集中外部配置。
 
 ## 证据来源
 
@@ -72,3 +72,5 @@ backend/app、backend/tests/test_core.py、docs/VERIFICATION.md、docs/SOURCE_AU
 0.1.13：DEMO七步可点击路线、受限场景元数据API、过期/权限/旧marker保护；237项完整本机回归和浏览器7步/重演通过。当前新演示http://127.0.0.1:8002，private/demo-runs/a86d645f1d70/DEMO_GUIDE.md；原库25/41/0 outbox未变，无迁移。下一步介绍PDF与录制材料，26日核心冻结/30日包目标继续。
 
 参赛介绍材料：已生成并逐页验证6页PDF初稿output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，附独立构建脚本/可选锁依赖和合成截图。基于0.1.13/9ce2f3d，真实/合成/未验收边界明确。视频尚未录制导出，PDF待最终审稿/规则核对，未正式发布或提交。下一步优先视频素材与完整彩排。
+
+录制交接：scripts/build_recording_bundle.py显式清单生成可运行ZIP、五分钟逐镜头讲解稿、启动指南和SHA256清单；排除真实/私人运行数据，拒绝链接文件/覆盖，标记未具备提交条件。243项完整本机回归通过，含独立解压后禁外网初始化/登录/静态资源/筛选；没有新增应用依赖、迁移或真实来源。视频仍未导出，真实库与外部开关未操作；见docs/submission/RECORDING_BUNDLE_VERIFICATION.md。
