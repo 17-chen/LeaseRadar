@@ -11,12 +11,12 @@ from pydantic import BaseModel, Field, StrictInt, model_validator
 from sqlalchemy import select, text
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
-from .config import ROOT, MODE, COOKIE_SECURE
+from .config import ROOT, DATA, MODE, COOKIE_SECURE
 from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Version, RawDocument, Subscription, Outbox, Followup, CrawlRun
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.12')
+app = FastAPI(title='LeaseRadar', version='0.1.13')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -77,6 +77,30 @@ def login(data: LoginInput, request: Request, response: Response, db=Depends(dat
 @app.get('/api/v1/auth/me')
 def me(request: Request, user=Depends(current_user)):
     return {'username': user.username, 'role': user.role, 'csrf': request.state.session.csrf, 'mode': MODE}
+
+@app.get('/api/v1/demo/scenario')
+def demo_scenario(user=Depends(current_user),db=Depends(database)):
+    # An ordinary demo database is not proof that these scenario IDs exist.
+    if MODE!='demo':raise HTTPException(404,'真实环境没有演示路线')
+    if user.role!='admin':raise HTTPException(403,'演示路线仅向演示管理员开放')
+    import json
+    marker=DATA/'demo-proof.json'
+    try:
+        if marker.is_symlink() or marker.stat().st_size>4000:raise ValueError()
+        proof=json.loads(marker.read_text())
+        if not isinstance(proof,dict) or proof.get('schema')!=1 or proof.get('mode')!='demo' or proof.get('synthetic') is not True or proof.get('owner_user_id')!=user.id:raise ValueError()
+        ids=proof.get('comparison_ids')
+        if not isinstance(ids,list) or len(ids)!=3 or len(set(ids))!=3 or any(type(x) is not int or x<=0 for x in ids):raise ValueError()
+        if proof.get('detail_id')!=ids[0] or proof.get('unknown_id')!=ids[-1]:raise ValueError()
+        for identity in ids:
+            listing=db.get(Listing,identity);version=db.get(Version,listing.current_version_id) if listing else None
+            if not version or not isinstance(version.fields.get('title'),str) or not version.fields['title'].startswith('合成'):raise ValueError()
+        from .domain import aware_time
+        known=db.get(Version,db.get(Listing,ids[0]).current_version_id)
+        cutoff=aware_time(known.fields.get('registration_deadline'))
+        if cutoff is None or cutoff<=datetime.now(timezone.utc):raise HTTPException(409,'演示日期已过期，请运行scripts/demo.py新建演示')
+        return {'synthetic':True,'comparison_ids':ids,'detail_id':ids[0],'unknown_id':ids[-1]}
+    except (OSError,ValueError,TypeError):raise HTTPException(404,'此数据库未配置演示路线；请用scripts/demo.py新建')
 
 @app.post('/api/v1/auth/logout')
 def logout(request: Request, response: Response, user=Depends(current_user), db=Depends(database)):

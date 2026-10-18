@@ -52,6 +52,7 @@ def prepare():
     with Session() as db:
         summary={'mode':'demo','synthetic':True,'network_requests':0,'listings':db.scalar(select(func.count()).select_from(Listing)),
                  'versions':db.scalar(select(func.count()).select_from(Version)),'inbox':db.scalar(select(func.count()).select_from(Outbox).where(Outbox.state=='accepted'))}
+    summary.update(schema=1,owner_user_id=user.id,comparison_ids=[identities[0],identities[1],identities[-1]],detail_id=identities[0],unknown_id=identities[-1])
     guide=DATA/'DEMO_GUIDE.md'
     guide.write_text(f'''# LeaseRadar 合成演示（非真实试用）
 
@@ -61,6 +62,7 @@ def prepare():
 访问：http://127.0.0.1:{os.getenv('DEMO_PORT','8001')}
 
 1. 确认顶部DEMO标识；默认全部关闭网络采集/邮件/自动下载，不启动后台worker。
+   可使用页面“演示路线”依次打开筛选、比较、依据、提醒、跟进和来源；弹窗关闭后继续下一步。
 2. 候选页有6条合成记录；选择30㎡以上、月租上限12000，含待确认，展示明确匹配/未知/超预算/已截止差别。
 3. 比较“可比年租A/B”与“周期未知”记录，解释周期未知不能按标题五年除60个月。
 4. 查看详情字段依据、租金公式及保存的原文；原公告URL是格式测试地址，不要访问或当真实接通证据。

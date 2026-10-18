@@ -68,3 +68,5 @@ backend/app、backend/tests/test_core.py、docs/VERIFICATION.md、docs/SOURCE_AU
 用户最新优先级（2026-10-18）：10月31日前提交、演示优先；按docs/COMPETITION_DEMO.md倒排，26日核心冻结/30日可提交包。0.1.12新增scripts/demo.py和app.demo，全新隔离目录合成6候选/7版本/5提醒，随机账号指南；拒绝覆盖与继承真实DB，强制关闭外部通道。完整功能估算保留作后续计划，不再作为演示提交前置。
 
 0.1.12本机236项完整回归通过；实际隔离DEMO在127.0.0.1:8001启动，当前指南private/demo-runs/647be7504b4e/DEMO_GUIDE.md。最终录屏/介绍PDF/公开提交尚未执行，后续按倒排优先处理。
+
+0.1.13：DEMO七步可点击路线、受限场景元数据API、过期/权限/旧marker保护；237项完整本机回归和浏览器7步/重演通过。当前新演示http://127.0.0.1:8002，private/demo-runs/a86d645f1d70/DEMO_GUIDE.md；原库25/41/0 outbox未变，无迁移。下一步介绍PDF与录制材料，26日核心冻结/30日包目标继续。

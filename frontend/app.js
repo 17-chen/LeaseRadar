@@ -1,5 +1,6 @@
 const $ = (id) => document.getElementById(id);
 let sessionGeneration=0;
+let demoScenario=null,demoRouteIndex=-1,demoRouteBusy=false;
 let noticePage=1,emailPage=1,digestPage=1,reviewPage=1,incidentPage=1,incidentEmailPage=1;
 let csrf = '', user = null, page = 1, total = 0, activeDetail = null, editingSubscription = null, subscriptionFilters = {};
 const selected = new Set();
@@ -35,6 +36,7 @@ function renderSelection(){
 
 function toast(msg){$('toast').textContent=msg;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4500);}
 function clearWorkspace(){
+ demoScenario=null;demoRouteIndex=-1;demoRouteBusy=false;$('demo-route').hidden=true;
  sessionGeneration++;documentPage=1;noticePage=emailPage=digestPage=reviewPage=incidentPage=incidentEmailPage=1;csrf='';user=null;activeDetail=null;editingSubscription=null;subscriptionFilters={};selected.clear();listingCache.clear();window.currentSubscriptions=[];listingRequest++;
  appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest'};
  for(const id of ['subscriptions','notifications','email-deliveries','detail-body','cards','filter-summary','source-alerts','digests','incidents','review-queue','sources','lease-result','document-reviews','incident-emails'])$(id).innerHTML='';
@@ -57,7 +59,7 @@ function filters(){
  return data;
 }
 async function boot(){
- try{user=await api('/auth/me');csrf=user.csrf;$('login').hidden=true;$('workspace').hidden=false;$('user-label').textContent=user.username;$('review-nav').hidden=$('import-form').hidden=$('document-upload-section').hidden=user.role!=='admin';$('incident-heading').hidden=$('incident-pagination').hidden=$('incident-email-section').hidden=user.role!=='admin';$('mode').textContent=user.mode==='live'?'LIVE':'DEMO';$('demo-banner').hidden=user.mode==='live';renderSelection();await refresh();}
+ try{user=await api('/auth/me');csrf=user.csrf;$('login').hidden=true;$('workspace').hidden=false;$('user-label').textContent=user.username;$('review-nav').hidden=$('import-form').hidden=$('document-upload-section').hidden=user.role!=='admin';$('incident-heading').hidden=$('incident-pagination').hidden=$('incident-email-section').hidden=user.role!=='admin';$('mode').textContent=user.mode==='live'?'LIVE':'DEMO';$('demo-banner').hidden=user.mode==='live';renderSelection();await refresh();await loadDemoRoute();}
  catch(e){if(!user){$('login').hidden=false;$('workspace').hidden=true;}else toast(e.message);}
 }
 async function refresh(){await Promise.all([loadListings(),loadSources(),loadNotices(),loadSubscriptions(),loadPreferences(),...(user.role==='admin'?[loadReview(),loadIncidents(),loadDocuments(),loadIncidentEmails()]:[])]);}
@@ -151,7 +153,7 @@ $('subscription-form').onsubmit=async e=>{
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  try{
- if(b.dataset.view){document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!==b.dataset.view;$('page-title').textContent=b.textContent.trim().slice(1).trim();renderSelection();await refresh();}
+ if(b.dataset.view)await showView(b.dataset.view);
  if(b.dataset.deliveryReview)await openDeliveryReview(b.dataset.deliveryReview,b.dataset.deliveryState,b.dataset.deliveryKind);
  if(b.dataset.coverage)await openCoverage(b.dataset.coverage);
  if(b.dataset.compareBack)$('compare-selected').click();
@@ -178,7 +180,7 @@ document.addEventListener('change', e=>{
 $('clear-selection').onclick=()=>{selected.clear();renderSelection();};
 $('compare-tray-open').onclick=()=>$('compare-selected').click();
 $('compare-selected').onclick=async()=>{
- if(selected.size<2){toast('请勾选2–5条候选');return;}
+ if(selected.size<2){toast('请勾选2–5条候选');return false;}
  try{
   $('detail-context').textContent='候选比较 / COMPARISON';$('detail').setAttribute('aria-label','候选比较');
   const result=await api('/comparisons',{method:'POST',body:JSON.stringify({listing_ids:[...selected]})});
@@ -190,7 +192,8 @@ $('compare-selected').onclick=async()=>{
   const differences=fields.filter(([key])=>new Set(result.items.map(r=>value(r,key))).size>1).length;
   $('detail-body').innerHTML=`<h2>候选比较 · ${result.items.length} 条</h2><p class="muted">${differences} 项不同；差异行已标记。手机可左右滑动表格，字段列固定。</p><p class="warning">价格性质按列分组，只比较已核实的月租基准。保证金另列，税费等未完整核实；经营用途未知需核验。</p><div class="comparison-scroll" tabindex="0" role="region" aria-label="候选比较表"><table class="comparison"><thead><tr><th scope="col">比较字段</th>${result.items.map((r,i)=>`<th scope="col" class="${groupStart(r,i)}"><span class="badge">${esc(kinds[r.price_kind]||'价格性质待确认')}</span><h3 title="${esc(r.title)}">${esc(r.title)}</h3><button class="link" data-detail="${r.id}">查看原文依据</button></th>`).join('')}</tr></thead><tbody>${fields.map(([key,label])=>{const different=new Set(result.items.map(r=>value(r,key))).size>1;return `<tr class="${different?'different':''}"><th scope="row">${esc(label)}${different?'<small>有差异</small>':''}</th>${result.items.map((r,i)=>`<td class="${r[key]==null&&key!=='followup'?'cell-unknown':''}${groupStart(r,i)}">${esc(value(r,key))}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`;
   if(!$('detail').open)$('detail').showModal();
- }catch(e){toast(e.message);}
+  return true;
+ }catch(e){toast(e.message);return false;}
 };
 
 function setPager(prefix,current,count){$(prefix+'-page').textContent=`${current} / ${Math.max(1,Math.ceil(count/20))} · ${count} 条` ;$(prefix+'-prev').disabled=current<=1;$(prefix+'-next').disabled=current*20>=count;}
@@ -249,3 +252,55 @@ async function loadIncidentEmails(){
  $('incident-emails').innerHTML=d.items.length?d.items.map(r=>`<article class="stack-item"><span class="badge">${esc(stateLabels[r.state]||r.state)}</span><h3>异常 #${r.incident_id} · ${r.phase==='open'?'异常开始':'异常结束，现状须核验'}</h3><p>发送记录 #${r.id} · 累计尝试 ${r.attempts} 次</p><p class="muted">Message-ID：${esc(r.message_id||'尚未记录')}</p>${r.error?`<p class="muted">${esc(r.error)}</p>`:''}${['dead_letter','ambiguous'].includes(r.state)?`<button class="secondary" data-delivery-review="${r.id}" data-delivery-state="${r.state}" data-delivery-kind="incident">审核告警发送结果</button>`:''}</article>`).join(''):'<p class="muted">暂无来源告警邮件记录。站内异常与恢复历史仍可查看。</p>';
 }
 $('incident-email-prev').onclick=()=>{incidentEmailPage--;loadIncidentEmails().catch(e=>toast(e.message));};$('incident-email-next').onclick=()=>{incidentEmailPage++;loadIncidentEmails().catch(e=>toast(e.message));};
+
+
+async function showView(view){
+ const b=document.querySelector('nav [data-view="'+view+'"]');
+ if(!b)throw new Error('页面不存在');
+ document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));
+ for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!==view;
+ $('page-title').textContent=b.textContent.trim().slice(1).trim();renderSelection();await refresh();
+}
+const demoSteps=[
+ ['自由筛选','应用面积≥30㎡、月租≤12000、仅可报名并包含待确认；显示明确匹配与未知的差别。'],
+ ['比较三条候选','比较年租A/B与周期未知记录；价格性质分别分组，未知周期不换算。关闭弹窗后继续。'],
+ ['查看金额依据','打开A的字段依据与月租公式；经营许可和完整成本仍待核验。关闭弹窗后继续。'],
+ ['查看周期未知','标题含五年不代表金额为五年总租金；不能直接除以60。关闭弹窗后继续。'],
+ ['提醒收件箱','查看合成96000→90000的同口径变化及待确认提醒；站内入箱不等于外部投递。'],
+ ['跟进与笔记','打开合成跟进记录，可自行演示编辑；本路线不会自动保存或伪造真实联系。关闭弹窗后继续。'],
+ ['来源与受阻','查看合成访问受阻与覆盖边界；历史数据保留，没有绕过访问控制。']
+];
+async function loadDemoRoute(){
+ $('demo-route').hidden=true;demoScenario=null;
+ if(user?.mode!=='demo'||user.role!=='admin')return;
+ try{demoScenario=await api('/demo/scenario');$('demo-route').hidden=false;renderDemoRoute();}
+ catch(e){if(user&&e.message.includes('过期'))toast(e.message);}
+}
+function renderDemoRoute(){
+ const done=demoRouteIndex>=demoSteps.length-1;
+ $('demo-route-title').textContent=demoRouteIndex<0?'7步走完整个流程':demoSteps[demoRouteIndex][0];
+ $('demo-route-note').textContent=demoRouteIndex<0?'合成场景：按钮只切换查询与视图，不会重置数据库或发送外部消息。':demoSteps[demoRouteIndex][1];
+ $('demo-route-progress').textContent=demoRouteIndex<0?'尚未开始':`第 ${demoRouteIndex+1} / ${demoSteps.length} 步${done?' · 路线已走完，仍是合成演示':''}`;
+ $('demo-route-next').disabled=demoRouteBusy||done;
+ $('demo-route-reset').disabled=demoRouteBusy;
+ $('demo-route-next').textContent=demoRouteIndex<0?'开始演示':done?'路线已走完':'下一步：'+demoSteps[demoRouteIndex+1][0];
+}
+async function runDemoStep(index){
+ if(!demoScenario||demoRouteBusy||index<0||index>=demoSteps.length)return;
+ const generation=sessionGeneration;demoRouteBusy=true;renderDemoRoute();
+ try{
+  if($('detail').open)$('detail').close();
+  if(index===0){
+   const form=$('filter-form');form.reset();form.elements.area_m2_min.value='30';form.elements.first_year_monthly_max.value='12000';form.elements.registration_open.checked=true;
+   $('include-unknown').checked=true;$('sort').value='newest';selected.clear();page=1;appliedQuery=draftQuery();await showView('listings');
+  }else if(index===1){
+   await showView('listings');selected.clear();demoScenario.comparison_ids.forEach(id=>selected.add(id));renderSelection();if(!await $('compare-selected').onclick())throw new Error('比较尚未打开，请重试当前步骤');
+  }else if(index===2||index===5){await showView('listings');await showDetail(demoScenario.detail_id);if(index===5)$('followup-form').scrollIntoView({block:'center'});}
+  else if(index===3){await showView('listings');await showDetail(demoScenario.unknown_id);}
+  else if(index===4){noticePage=1;await showView('notifications');}
+  else if(index===6){await showView('sources');}
+  if(generation===sessionGeneration)demoRouteIndex=index;
+ }catch(e){toast(e.message);}finally{if(generation===sessionGeneration){demoRouteBusy=false;renderDemoRoute();}}
+}
+$('demo-route-next').onclick=()=>runDemoStep(demoRouteIndex+1);
+$('demo-route-reset').onclick=()=>runDemoStep(0);
