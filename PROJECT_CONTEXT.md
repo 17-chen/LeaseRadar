@@ -64,3 +64,7 @@ backend/app、backend/tests/test_core.py、docs/VERIFICATION.md、docs/SOURCE_AU
 0.1.10：未缓存PDF/DOCX下载独立持久队列、token/来源租约、有限重试/blocked、原始版本与管理员归属、状态分页。213项完整本机回归、一份公开DOCX真实GET（1,461,321字节）与隔离DEMO页面通过。真实库先备份再0009→0011，25挂牌/41版本/0下载/0审核，API0.1.10和本地worker已启动；来源/自动下载/邮件均关闭。真实PDF/OCR、生产与第二来源完整字段仍未验收。详情docs/DOCUMENT_DOWNLOADS_VERIFICATION.md。
 
 0.1.11：高校独立适配器、合成fixture及18项测试，冲突unknown/明确日期时区/用途条款原文/正文附件安全元数据；真实历史全文1条核对，原库未导入历史样本。无新依赖/迁移。剩余比赛核心5–8、完整当前可独立开发范围15–25有效开发日（估算，见docs/DELIVERY_PLAN.md），用户配置与观察等待单列。
+
+用户最新优先级（2026-10-18）：10月31日前提交、演示优先；按docs/COMPETITION_DEMO.md倒排，26日核心冻结/30日可提交包。0.1.12新增scripts/demo.py和app.demo，全新隔离目录合成6候选/7版本/5提醒，随机账号指南；拒绝覆盖与继承真实DB，强制关闭外部通道。完整功能估算保留作后续计划，不再作为演示提交前置。
+
+0.1.12本机236项完整回归通过；实际隔离DEMO在127.0.0.1:8001启动，当前指南private/demo-runs/647be7504b4e/DEMO_GUIDE.md。最终录屏/介绍PDF/公开提交尚未执行，后续按倒排优先处理。
