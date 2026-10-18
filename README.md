@@ -2,7 +2,7 @@
 
 面向门店拓展的招租公告发现、筛选与跟进工作空间。比赛优先，兼顾真实使用；筛选条件由用户选择，未选项不限。
 
-**状态：0.1.10-dev，受控附件下载与私有审核版本。** 不是完整规格验收或生产上线版本。GitHub仓库目前私有。
+**状态：0.1.11-dev，高校公告字段可靠性版本。** 不是完整规格验收或生产上线版本。GitHub仓库目前私有。
 
 ## 已实现
 
@@ -63,3 +63,5 @@ SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本�
 来源附件审核：启用SOURCE_DOCUMENTS_ENABLED并指定SOURCE_DOCUMENTS_USER_ID管理员后，采集/详情复查会将已保存且带SHA256的来源附件复制到私有审核队列；默认关闭。仅启用此审核开关不会自动下载未缓存附件；受控下载有单独开关。需先备份、迁移0010并重启API/worker；见[来源附件验收](docs/SOURCE_DOCUMENTS_VERIFICATION.md)。
 
 受控下载：SOURCE_DOCUMENT_DOWNLOADS_ENABLED默认false，同时要求来源附件审核开关和有效管理员。支持核准HTTPS地址的.pdf/.docx，5MB、最多3次、Retry-After与共享来源租约；401/403保留blocked，不跳转或绕过。页面显示下载和审核的独立状态。213项回归及一份真实DOCX下载已验证；不是完整第二来源接通或PDF/OCR准确率验收。升级至0011后使用，见[下载验收](docs/DOCUMENT_DOWNLOADS_VERIFICATION.md)。
+
+0.1.11：高校独立适配器增强价格/面积冲突、日期语义与原文条款依据；已核对1条历史全文，不等于当前第二来源完整接通。见[验收记录](docs/WZPT_ADAPTER_VERIFICATION.md)。剩余范围与估算见[交付计划](docs/DELIVERY_PLAN.md)：比赛核心5–8个、完整可独立开发范围15–25个有效开发日，外部配置等待另计。

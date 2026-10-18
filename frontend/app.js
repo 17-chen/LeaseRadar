@@ -5,7 +5,7 @@ let csrf = '', user = null, page = 1, total = 0, activeDetail = null, editingSub
 const selected = new Set();
 const listingCache = new Map();
 let appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest'}, listingRequest=0;
-const labels = {title:'标题',address:'地址',area_m2:'面积',raw_amount:'原价',period_basis:'价格周期',registration_deadline:'报名截止',auction_deadline:'竞价截止',status:'状态',deposit:'保证金',project_code:'项目编号',environment:'所在环境',property_type:'物业类型',disclosure_deadline:'信息披露截止',operation:'经营用途',price_kind:'价格性质',city:'城市',district:'区县',keyword:'关键词',registration_open:'报名状态',area_m2_min:'面积下限',area_m2_max:'面积上限',first_year_monthly_min:'月租下限',first_year_monthly_max:'月租上限'};
+const labels = {disclosed_use:'公告用途原文（许可待核验）',lease_term_text:'租期原文',free_rent_text:'免租期原文',rent_notes:'租金备注原文',title:'标题',address:'地址',area_m2:'面积',raw_amount:'原价',period_basis:'价格周期',registration_deadline:'报名截止',auction_deadline:'竞价截止',status:'状态',deposit:'保证金',project_code:'项目编号',environment:'所在环境',property_type:'物业类型',disclosure_deadline:'信息披露截止',operation:'经营用途',price_kind:'价格性质',city:'城市',district:'区县',keyword:'关键词',registration_open:'报名状态',area_m2_min:'面积下限',area_m2_max:'面积上限',first_year_monthly_min:'月租下限',first_year_monthly_max:'月租上限'};
 const states = {open:'报名入口开放',closed:'已截止',failed:'流标',sold:'已成交',withdrawn:'撤回',unknown:'待核实'};
 const sourceStates = {healthy:'本轮扫描完成',partial:'有限覆盖',blocked:'访问受阻',degraded:'采集异常',pending_validation:'待核验'};
 const jobStates = {queued:'待执行',running:'执行中',retry_wait:'等待重试',complete:'完成',failed:'失败'};

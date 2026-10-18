@@ -53,3 +53,5 @@ SMTP邮件回执独立引用站内outbox，一条outbox最多一条email_deliver
 0010 document_reviews增加origin_version_id/origin_url及挂牌+来源地址+SHA256唯一键，手动上传为NULL保持原行为。source_documents在ingest事务内复用document_jobs，结果请求仍在提交后由reconcile发布。仅读取白名单地址对应的已有hash快照，不发网络请求；指定管理员归属与单次/总待提取上限，默认关闭。
 
 0011 document_downloads以版本+URL唯一，记录原管理员/来源、尝试、token租约、退避及审核引用；入队与ingest同事务。下载worker每poll最多一份，使用已核准IP连接、原Host/SNI、禁止重定向，和HTML采集共用Source租约。领取后不持DB事务做GET，结束时同时验证任务和来源token再发布审核。内容写入哈希命名的document_queue/inputs并随现有备份保留；不修改原公告字段或创建商业事件。
+
+0.1.11高校解析拆到adapters/wzpt.py，collectors保留入口兼容。字段收集后统一冲突核验，金额与周期共同保留/撤回；原文条款独立于operation许可判断。日期标签决定语义，不从披露日期推报名时间。

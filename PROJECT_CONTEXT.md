@@ -1,6 +1,6 @@
 # 项目上下文
 
-> 最后更新：2026-10-16（Asia/Shanghai）
+> 最后更新：2026-10-18（Asia/Shanghai）
 
 ## 项目基本信息
 
@@ -62,3 +62,5 @@ backend/app、backend/tests/test_core.py、docs/VERIFICATION.md、docs/SOURCE_AU
 0.1.9：采集/详情复查可将已缓存带哈希的来源附件自动送指定管理员私有审核，默认关闭；来源版本/URL与内容唯一身份、每观察5份及待处理20份限制、失败留存。0010副本升级/完整性及旧附件记录迁移通过，真实原库仍0009，常驻进程未重启。未下载附件的获取、完整第二来源和真实PDF/OCR评测未实现；见docs/SOURCE_DOCUMENTS_VERIFICATION.md。
 
 0.1.10：未缓存PDF/DOCX下载独立持久队列、token/来源租约、有限重试/blocked、原始版本与管理员归属、状态分页。213项完整本机回归、一份公开DOCX真实GET（1,461,321字节）与隔离DEMO页面通过。真实库先备份再0009→0011，25挂牌/41版本/0下载/0审核，API0.1.10和本地worker已启动；来源/自动下载/邮件均关闭。真实PDF/OCR、生产与第二来源完整字段仍未验收。详情docs/DOCUMENT_DOWNLOADS_VERIFICATION.md。
+
+0.1.11：高校独立适配器、合成fixture及18项测试，冲突unknown/明确日期时区/用途条款原文/正文附件安全元数据；真实历史全文1条核对，原库未导入历史样本。无新依赖/迁移。剩余比赛核心5–8、完整当前可独立开发范围15–25有效开发日（估算，见docs/DELIVERY_PLAN.md），用户配置与观察等待单列。

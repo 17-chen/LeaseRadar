@@ -184,44 +184,8 @@ def wzpt_discover(html, page=1):
     return list(dict.fromkeys(refs)), int(total.group(1))
 
 def wzpt_parse(html, url):
-    soup, text = soup_text(html)
-    article = soup.select_one('.wp_articlecontent')
-    if not article:
-        raise SourceError('高校公告正文选择器失效')
-    title = soup.title.get_text(strip=True)
-    fields = {'title': title, 'source_url': url, 'status': 'unknown', 'price_kind': None,
-              'period_basis': None, 'property_type': None, 'environment': None, 'operation': None,
-              'parser_version': 'wzpt-html-v3', 'warnings': ['经营许可与披露截止是否为报名截止待核对', '发布单位不代表标的位于校园，所在环境待核实']}
-    evidence = {'title': title}
-    if not article.select('tr'):
-        fields['warnings'].append('链接型公告：正文未提供结构化字段，需核验所链接交易平台')
-    # Restrict extraction to known labeled table rows.
-    for row in article.select('tr'):
-        cells = [c.get_text(' ', strip=True) for c in row.find_all(['td', 'th'], recursive=False)]
-        for i, label in enumerate(cells[:-1]):
-            value = cells[i+1]
-            if label == '挂牌价格':
-                m = re.search(r'([\d.]+)\s*(万元|元)\s*/\s*(年|月)', value)
-                if m:
-                    from decimal import Decimal
-                    fields['raw_amount'] = str(Decimal(m.group(1)) * (10000 if m.group(2) == '万元' else 1))
-                    fields['price_kind'] = 'asking'
-                    # 年租金可以作一年口径，仅作为当前公布年租基准。
-                    fields['period_basis'] = 'first_year' if m.group(3) == '年' else 'monthly'
-                    evidence['raw_amount'] = evidence['period_basis'] = label + ' ' + value
-            elif label == '出租面积':
-                m = re.search(r'([\d.]+)\s*平方米', value)
-                if m: fields['area_m2'] = m.group(1); evidence['area_m2'] = value
-            elif label == '出租标的地址':
-                fields['address'] = value; evidence['address'] = value
-            elif label == '所在地区':
-                fields['city'], fields['district'] = location_parts(value)
-                for key in ('city', 'district'):
-                    if fields[key]: evidence[key] = label + ' ' + value
-            elif label == '信息披露截止日期':
-                fields['disclosure_deadline'] = value
-                evidence['disclosure_deadline'] = value
-    return fields, evidence, article.get_text(' ', strip=True)
+    from .adapters.wzpt import parse
+    return parse(html, url)
 
 PARSERS = {'nongjy': nongjy_parse, 'wzpt': wzpt_parse}
 DISCOVERERS = {'nongjy': nongjy_discover, 'wzpt': wzpt_discover}
