@@ -25,7 +25,10 @@ function registrationText(r){
 function filterText(f){return Object.entries(f).filter(([k,v])=>v!==false&&v!==null&&v!=='').map(([k,v])=>`${labels[k]||k}：${changeValue(k,v)}`).join(' · ')||'所有条件不限';}
 function draftQuery(){return {filters:filters(),include_unknown:$('include-unknown').checked,sort:$('sort').value,view:appliedQuery.view||'all'};}
 function pendingFilters(){$('filter-pending').hidden=JSON.stringify(draftQuery())===JSON.stringify(appliedQuery);}
-function renderQuickViews(){document.querySelectorAll('[data-quick-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.quickView===(appliedQuery.view||'all'))));}
+function renderQuickViews(){
+ document.querySelectorAll('[data-quick-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.quickView===(appliedQuery.view||'all'))));
+ $('quick-view-note').textContent=['favorites','following'].includes(appliedQuery.view)?'仅显示当前账号的收藏或待联系、已联系、预约看铺记录；保留已截止项方便收尾。仍与已应用筛选取交集，保存订阅不包含此视图。':'快捷视图只改变当前浏览范围；保存订阅时仅使用下方筛选条件。';
+}
 function renderSelection(){
  const visible=selected.size>0&&!$('view-listings').hidden;
  $('compare-tray').hidden=!visible;document.body.classList.toggle('has-selection',visible);
@@ -70,7 +73,7 @@ function renderListingRow(r){
  const uncertain=!['报名期限已过','已截止','流标','已成交','撤回'].includes(status)&&(r.match?.verdict==='unknown'||r.source_conflicts?.length>0||r.review_conflicts?.length>0||r.status==null||r.status==='unknown'||r.area_m2==null||r.raw_amount==null||r.registration_deadline==null||!['first_year','monthly'].includes(r.period_basis));
  const priceBasis=r.period_basis==='first_year'?'首年租金':r.period_basis==='monthly'?'月租':'周期待确认';
  const monthly=r.first_year_monthly!=null?`首年月租基准 ${money(r.first_year_monthly)} 元；税费等未完整核实`:'月租不可比：价格周期尚未核实';
- return `<article class="listing-row"><div class="listing-row-main"><div class="listing-row-kicker"><span>${esc(source)}</span><span class="listing-status ${status==='报名期限内'?'':'is-uncertain'}">${esc(status)}</span>${uncertain?'<span class="listing-status is-uncertain">条件待核实</span>':''}</div><h3><button type="button" class="listing-title" data-detail="${r.id}">${esc(r.title)}</button></h3><p class="listing-address">${esc(r.address||'地址待核实')}</p>${r.source_count>1?`<p class="listing-source-note">${r.source_count} 个已人工关联的出处${r.source_conflicts?.length?' · 来源字段冲突待核验':''}</p>`:''}</div><dl class="listing-row-facts"><div><dt>面积</dt><dd>${money(r.area_m2)} <small>㎡</small></dd></div><div><dt>${esc(kinds[r.price_kind]||'原价')} · ${priceBasis}</dt><dd>${money(r.raw_amount)} <small>元</small></dd></div><div><dt>报名截止</dt><dd class="deadline-value">${esc(date(r.registration_deadline))}</dd></div></dl><div class="listing-row-footer"><span>${monthly}</span><span>最近核验 ${esc(date(r.last_checked_at))}</span><label class="listing-select"><input type="checkbox" data-select="${r.id}" ${selected.has(r.id)?'checked':''}>加入比较</label><button class="link" type="button" data-detail="${r.id}">查看依据 →</button></div></article>`;
+ return `<article class="listing-row"><div class="listing-row-main"><div class="listing-row-kicker"><span>${esc(source)}</span><span class="listing-status ${status==='报名期限内'?'':'is-uncertain'}">${esc(status)}</span>${uncertain?'<span class="listing-status is-uncertain">条件待核实</span>':''}</div><h3><button type="button" class="listing-title" data-detail="${r.id}">${esc(r.title)}</button></h3><p class="listing-address">${esc(r.address||'地址待核实')}</p>${r.source_count>1?`<p class="listing-source-note">${r.source_count} 个已人工关联的出处${r.source_conflicts?.length?' · 来源字段冲突待核验':''}</p>`:''}</div><dl class="listing-row-facts"><div><dt>面积</dt><dd>${money(r.area_m2)} <small>㎡</small></dd></div><div><dt>${esc(kinds[r.price_kind]||'原价')} · ${priceBasis}</dt><dd>${money(r.raw_amount)} <small>元</small></dd></div><div><dt>报名截止</dt><dd class="deadline-value">${esc(date(r.registration_deadline))}</dd></div></dl><div class="listing-row-footer">${personalActions(r)}<span>${monthly}</span><span>最近核验 ${esc(date(r.last_checked_at))}</span><label class="listing-select"><input type="checkbox" data-select="${r.id}" ${selected.has(r.id)?'checked':''}>加入比较</label><button class="link" type="button" data-detail="${r.id}">查看依据 →</button></div></article>`;
 }
 async function loadListings(query=appliedQuery){
  const request=++listingRequest;
@@ -82,6 +85,9 @@ async function loadListings(query=appliedQuery){
  total=data.total;if(page>Math.max(1,Math.ceil(total/24))){page=1;return loadListings(query);}$('stat-count').textContent=total;$('results-label').textContent=`找到 ${total} 条候选`;$('page-number').textContent=`${page} / ${Math.max(1,Math.ceil(total/24))}`;$('prev').disabled=page===1;$('next').disabled=page*24>=total;
  $('cards').innerHTML=data.items.length?data.items.map(renderListingRow).join(''):`<div class="empty"><h3>${query.view==='all'?'当前没有候选':'这个快捷视图暂无候选'}</h3><p>${query.view==='all'?'可调整筛选条件，或在来源健康页检查采集覆盖。尚未同步时不代表没有新房源。':'可查看全部候选，或调整筛选条件。来源尚未同步完成时，结果不代表全站没有机会。'}</p>${query.view==='all'?'':'<button type="button" class="secondary" data-quick-view="all">查看全部候选</button>'}</div>`;
  renderSelection();
+}
+function personalActions(r){
+ return (r.personal_followups||[]).filter(f=>f.favorite||['待联系','已联系','预约看铺'].includes(f.status)).map(f=>`<button type="button" class="link" data-detail="${Number(f.listing_id)}">${f.favorite?'已收藏 · ':''}${esc(f.status)}${f.listing_id!==r.id?' · 出处 #'+Number(f.listing_id):''}</button>`).join('');
 }
 $('export-listings').onclick=async()=>{
  const generation=sessionGeneration,button=$('export-listings');button.disabled=true;

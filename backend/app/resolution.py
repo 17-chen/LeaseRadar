@@ -44,6 +44,10 @@ def grouped_rows(db, user_id=None):
         merged['review_conflicts']=list(set(conflicts+sum((v.get('review_conflicts',[]) for v in variants),[])))
         merged['source_count']=len(variants)
         merged['related_listing_ids']=[v['id'] for v in variants]
+        # Preserve personal actions on non-canonical sources without merging notes.
+        merged['personal_followups']=[{'listing_id':v['id'], 'status':v['followup']['status'],
+                                      'favorite':v['followup']['favorite']}
+                                     for v in variants if v.get('followup')]
         merged['source_variants']=[{k:v.get(k) for k in ('id','version_id','title','source_url','source_id',*KEYS)} for v in variants]
         result.append(merged)
     return sorted(result,key=lambda r:r['id'],reverse=True)

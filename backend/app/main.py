@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.14')
+app = FastAPI(title='LeaseRadar', version='0.1.15')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -134,7 +134,7 @@ class SearchInput(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=24, ge=1, le=100)
     sort: Literal['newest', 'monthly'] = 'newest'
-    view: Literal['all', 'recent', 'deadline', 'review'] = 'all'
+    view: Literal['all', 'recent', 'deadline', 'review', 'favorites', 'following'] = 'all'
 
 def searched_rows(data: SearchInput, user, db):
     rows = []

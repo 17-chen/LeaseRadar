@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from .domain import aware_time
 
 TERMINAL_STATES = {'closed', 'failed', 'sold', 'withdrawn'}
+ACTIVE_FOLLOWUP_STATES = {'待联系', '已联系', '预约看铺'}
 
 
 def in_quick_view(row: dict, view: str, at: datetime | None = None) -> bool:
@@ -11,6 +12,12 @@ def in_quick_view(row: dict, view: str, at: datetime | None = None) -> bool:
     at = at or datetime.now(timezone.utc)
     if view == 'all':
         return True
+    if view in ('favorites', 'following'):
+        # Personal flags are already scoped to the current user by grouped_rows.
+        followups = row.get('personal_followups', [])
+        if view == 'favorites':
+            return any(item.get('favorite') is True for item in followups)
+        return any(item.get('status') in ACTIVE_FOLLOWUP_STATES for item in followups)
     if view == 'recent':
         created = aware_time(row.get('created_at'))
         return created is not None and at - timedelta(days=7) <= created <= at
