@@ -5,7 +5,7 @@ let noticePage=1,emailPage=1,digestPage=1,reviewPage=1,incidentPage=1,incidentEm
 let csrf = '', user = null, page = 1, total = 0, activeDetail = null, editingSubscription = null, subscriptionFilters = {};
 const selected = new Set();
 const listingCache = new Map();
-let appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest'}, listingRequest=0;
+let appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest',view:'all'}, listingRequest=0;
 const labels = {disclosed_use:'公告用途原文（许可待核验）',lease_term_text:'租期原文',free_rent_text:'免租期原文',rent_notes:'租金备注原文',title:'标题',address:'地址',area_m2:'面积',raw_amount:'原价',period_basis:'价格周期',registration_deadline:'报名截止',auction_deadline:'竞价截止',status:'状态',deposit:'保证金',project_code:'项目编号',environment:'所在环境',property_type:'物业类型',disclosure_deadline:'信息披露截止',operation:'经营用途',price_kind:'价格性质',city:'城市',district:'区县',keyword:'关键词',registration_open:'报名状态',area_m2_min:'面积下限',area_m2_max:'面积上限',first_year_monthly_min:'月租下限',first_year_monthly_max:'月租上限'};
 const states = {open:'报名入口开放',closed:'已截止',failed:'流标',sold:'已成交',withdrawn:'撤回',unknown:'待核实'};
 const sourceStates = {healthy:'本轮扫描完成',partial:'有限覆盖',blocked:'访问受阻',degraded:'采集异常',pending_validation:'待核验'};
@@ -23,8 +23,9 @@ function registrationText(r){
  return r.status==='open'&&Number.isFinite(cutoff)?'报名期限内':'报名状态待核实';
 }
 function filterText(f){return Object.entries(f).filter(([k,v])=>v!==false&&v!==null&&v!=='').map(([k,v])=>`${labels[k]||k}：${changeValue(k,v)}`).join(' · ')||'所有条件不限';}
-function draftQuery(){return {filters:filters(),include_unknown:$('include-unknown').checked,sort:$('sort').value};}
+function draftQuery(){return {filters:filters(),include_unknown:$('include-unknown').checked,sort:$('sort').value,view:appliedQuery.view||'all'};}
 function pendingFilters(){$('filter-pending').hidden=JSON.stringify(draftQuery())===JSON.stringify(appliedQuery);}
+function renderQuickViews(){document.querySelectorAll('[data-quick-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.quickView===(appliedQuery.view||'all'))));}
 function renderSelection(){
  const visible=selected.size>0&&!$('view-listings').hidden;
  $('compare-tray').hidden=!visible;document.body.classList.toggle('has-selection',visible);
@@ -38,7 +39,7 @@ function toast(msg){$('toast').textContent=msg;$('toast').hidden=false;setTimeou
 function clearWorkspace(){
  demoScenario=null;demoRouteIndex=-1;demoRouteBusy=false;$('demo-route').hidden=true;
  sessionGeneration++;documentPage=1;noticePage=emailPage=digestPage=reviewPage=incidentPage=incidentEmailPage=1;csrf='';user=null;activeDetail=null;editingSubscription=null;subscriptionFilters={};selected.clear();listingCache.clear();window.currentSubscriptions=[];listingRequest++;
- appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest'};
+ appliedQuery={filters:{registration_open:false},include_unknown:true,sort:'newest',view:'all'};renderQuickViews();
  for(const id of ['subscriptions','notifications','email-deliveries','detail-body','cards','filter-summary','source-alerts','digests','incidents','review-queue','sources','lease-result','document-reviews','incident-emails'])$(id).innerHTML='';
  for(const dialog of document.querySelectorAll('dialog'))if(dialog.open)dialog.close();
  for(const el of $('filter-form').elements){if(el.name){if(el.type==='checkbox')el.checked=false;else el.value='';}}
@@ -63,17 +64,36 @@ async function boot(){
  catch(e){if(!user){$('login').hidden=false;$('workspace').hidden=true;}else toast(e.message);}
 }
 async function refresh(){await Promise.all([loadListings(),loadSources(),loadNotices(),loadSubscriptions(),loadPreferences(),...(user.role==='admin'?[loadReview(),loadIncidents(),loadDocuments(),loadIncidentEmails()]:[])]);}
+function renderListingRow(r){
+ const source={nongjy:'农交云',wzpt:'温州职业技术学院',wzcqpt:'温州联合产权交易中心'}[r.source_id]||r.source_id;
+ const status=registrationText(r);
+ const uncertain=!['报名期限已过','已截止','流标','已成交','撤回'].includes(status)&&(r.match?.verdict==='unknown'||r.source_conflicts?.length>0||r.review_conflicts?.length>0||r.status==null||r.status==='unknown'||r.area_m2==null||r.raw_amount==null||r.registration_deadline==null||!['first_year','monthly'].includes(r.period_basis));
+ const priceBasis=r.period_basis==='first_year'?'首年租金':r.period_basis==='monthly'?'月租':'周期待确认';
+ const monthly=r.first_year_monthly!=null?`首年月租基准 ${money(r.first_year_monthly)} 元；税费等未完整核实`:'月租不可比：价格周期尚未核实';
+ return `<article class="listing-row"><div class="listing-row-main"><div class="listing-row-kicker"><span>${esc(source)}</span><span class="listing-status ${status==='报名期限内'?'':'is-uncertain'}">${esc(status)}</span>${uncertain?'<span class="listing-status is-uncertain">条件待核实</span>':''}</div><h3><button type="button" class="listing-title" data-detail="${r.id}">${esc(r.title)}</button></h3><p class="listing-address">${esc(r.address||'地址待核实')}</p>${r.source_count>1?`<p class="listing-source-note">${r.source_count} 个已人工关联的出处${r.source_conflicts?.length?' · 来源字段冲突待核验':''}</p>`:''}</div><dl class="listing-row-facts"><div><dt>面积</dt><dd>${money(r.area_m2)} <small>㎡</small></dd></div><div><dt>${esc(kinds[r.price_kind]||'原价')} · ${priceBasis}</dt><dd>${money(r.raw_amount)} <small>元</small></dd></div><div><dt>报名截止</dt><dd class="deadline-value">${esc(date(r.registration_deadline))}</dd></div></dl><div class="listing-row-footer"><span>${monthly}</span><span>最近核验 ${esc(date(r.last_checked_at))}</span><label class="listing-select"><input type="checkbox" data-select="${r.id}" ${selected.has(r.id)?'checked':''}>加入比较</label><button class="link" type="button" data-detail="${r.id}">查看依据 →</button></div></article>`;
+}
 async function loadListings(query=appliedQuery){
  const request=++listingRequest;
  const data=await api('/listings/search',{method:'POST',body:JSON.stringify({...query,page,limit:24})});
  if(request!==listingRequest)return;
- appliedQuery=query;data.items.forEach(r=>listingCache.set(r.id,r));
+ appliedQuery=query;renderQuickViews();data.items.forEach(r=>listingCache.set(r.id,r));
  for(const field of ['city','district'])$('options-'+field).innerHTML=[...new Set([...listingCache.values()].map(r=>r[field]).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}"></option>`).join('');
  $('filter-summary').textContent='已应用：'+filterText(query.filters)+(query.include_unknown?' · 包含待确认':' · 排除待确认');pendingFilters();
  total=data.total;if(page>Math.max(1,Math.ceil(total/24))){page=1;return loadListings(query);}$('stat-count').textContent=total;$('results-label').textContent=`找到 ${total} 条候选`;$('page-number').textContent=`${page} / ${Math.max(1,Math.ceil(total/24))}`;$('prev').disabled=page===1;$('next').disabled=page*24>=total;
- $('cards').innerHTML=data.items.length?data.items.map(r=>`<article class="card"><div class="card-header"><label class="check"><input type="checkbox" data-select="${r.id}" ${selected.has(r.id)?'checked':''}>比较</label><span>${esc(r.source_id==='nongjy'?'农交云':'温州职业技术学院')}</span><span class="badge ${r.match?.verdict!=='pass'?'warn':''}">${r.match?.verdict!=='pass'?'条件待确认':esc(registrationText(r))}</span></div><h3>${esc(r.title)}</h3>${r.source_count>1?`<p class="muted">${r.source_count} 个已人工关联的出处${r.source_conflicts.length?' · 来源字段冲突待核验':''}</p>`:''}<p class="card-address">${esc(r.address||'地址待核实')}</p><div class="card-metrics"><div class="metric"><small>面积</small><strong>${money(r.area_m2)}</strong><span> ㎡</span></div><div class="metric"><small>${esc(kinds[r.price_kind]||'原价')} · ${r.period_basis==='first_year'?'首年租':r.period_basis==='monthly'?'月租':'周期待确认'}</small><strong>${money(r.raw_amount)}</strong><span> 元</span></div></div><p class="card-price-note">${r.first_year_monthly!=null?`月租基准 ${money(r.first_year_monthly)} 元 · 税费等未完整核实`:'月租不可比：价格周期尚未核实'}</p><div class="card-footer"><span>报名截止 ${esc(date(r.registration_deadline))}</span><button class="link" data-detail="${r.id}">查看依据 ↗</button></div></article>`).join(''):'<div class="empty"><h3>当前没有候选</h3><p>可调整筛选条件，或在来源健康页检查采集覆盖。尚未同步时不代表没有新房源。</p></div>';
+ $('cards').innerHTML=data.items.length?data.items.map(renderListingRow).join(''):`<div class="empty"><h3>${query.view==='all'?'当前没有候选':'这个快捷视图暂无候选'}</h3><p>${query.view==='all'?'可调整筛选条件，或在来源健康页检查采集覆盖。尚未同步时不代表没有新房源。':'可查看全部候选，或调整筛选条件。来源尚未同步完成时，结果不代表全站没有机会。'}</p>${query.view==='all'?'':'<button type="button" class="secondary" data-quick-view="all">查看全部候选</button>'}</div>`;
  renderSelection();
 }
+$('export-listings').onclick=async()=>{
+ const generation=sessionGeneration,button=$('export-listings');button.disabled=true;
+ try{
+  const response=await fetch('/api/v1/exports/listings.csv',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(appliedQuery)});
+  if(generation!==sessionGeneration)return;
+  if(!response.ok){if(response.status===401){clearWorkspace();$('workspace').hidden=true;$('login').hidden=false;}throw new Error('导出失败，请确认登录状态和筛选条件');}
+  const blob=await response.blob();if(generation!==sessionGeneration)return;
+  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='leaseradar-filtered.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('已导出当前已应用条件的全部结果，包含跨页候选');
+ }catch(e){if(generation===sessionGeneration)toast(e.message);}finally{button.disabled=false;}
+};
 async function loadSources(){
  if(user.role==='admin'){const alerts=await api('/source-alerts');$('source-alerts').innerHTML=alerts.length?`<article class="stack-item"><span class="badge warn">${alerts.length} 个来源异常</span><p>异常来源需核验；受阻或重试耗尽的任务可能已暂停。</p>${alerts.map(a=>`<p class="error">${esc(a.source_id)}：${esc(a.error)}</p>`).join('')}</article>`:'';}else{$('source-alerts').innerHTML='';}
 
@@ -107,11 +127,16 @@ async function loadNotices(){
  $('notifications').innerHTML=rows.length?rows.map(r=>`<article class="stack-item"><span class="badge ${r.state==='cancelled'||r.match?.verdict!=='pass'?'warn':''}">${r.state==='cancelled'?'提醒已作废':r.notice_class==='status_update'?'原候选变化':r.match?.verdict!=='pass'?'条件待确认':r.notice_class==='deadline_reminder'?'报名提醒':'明确匹配'} · ${r.read?'已读':'未读'}</span><h3>${esc(r.title||'历史通知：详情待补齐')}</h3><p class="muted">${esc(date(r.created_at))} · ${esc(noticeKinds[r.kind]||r.kind)} · ${esc({queued:'等待处理',accepted:'已入站内收件箱',cancelled:'已作废'}[r.state]||r.state)}</p>${r.kind==='registration_reminder'?`<p>已进入提前 ${esc(r.lead_hours)} 小时提醒窗口。报名截止：${esc(date(r.registration_deadline))}</p><p class="muted">最近核验：${esc(date(r.last_checked_at))}</p>`:''}${(r.changes||[]).length?`<p class="muted">${r.changes.map(c=>`${esc(labels[c.field]||c.field)}：${esc(changeValue(c.field,c.before))} → ${esc(changeValue(c.field,c.after))}`).join('<br>')}</p>`:''}<div class="actions"><button class="secondary" data-detail="${r.listing_id}">查看详情</button><button class="link" data-read="${r.id}">标记已读</button></div></article>`).join(''):'<div class="empty">暂无提醒。保存订阅后，后续采集变化和报名截止提醒会出现在这里。</div>';
 }
 
+function showWorkspaceDialog(drawer=false){
+ const dialog=$('detail');dialog.classList.toggle('detail-drawer',drawer);
+ if(!dialog.open)dialog.showModal();
+ dialog.scrollTop=0;
+}
 async function showDetail(id){
- const r=await api('/listings/'+id);activeDetail=r;$('detail-context').textContent='公告依据 / DETAIL';$('detail').setAttribute('aria-label','公告详情');
- const pairs=[['地址',r.address||'待核实'],['面积',`${money(r.area_m2)} ㎡`],['原始价格',`${money(r.raw_amount)} 元 · ${kinds[r.price_kind]||'价格性质待确认'}`],['月租基准',`${money(r.first_year_monthly)}${r.first_year_monthly?' 元/月':''}`],['单位面积月租',`${money(r.unit_monthly)}${r.unit_monthly?' 元/㎡/月':''}`],['报名截止',date(r.registration_deadline)],['竞价截止',date(r.auction_deadline)],['保证金',`${money(r.deposit)} 元`],['最后核验',date(r.last_checked_at)]];
- $('detail-body').innerHTML=`${selected.size>=2?'<button class="secondary" data-compare-back="true">返回已选比较</button>':''}<span class="badge">${esc(registrationText(r))}</span><h2>${esc(r.title)}</h2><p class="muted">来源记录 #${r.id} · <a href="${esc(r.source_url)}" target="_blank" rel="noopener noreferrer">打开原始公告 ↗</a></p><div class="detail-grid">${pairs.map(([k,v])=>`<div><small>${esc(k)}</small>${esc(v)}</div>`).join('')}</div>${r.formula?`<p class="muted">换算：${esc(r.formula)}；税费等成本未完整核实。</p>`:''}<div class="warning">${(r.warnings||[]).map(esc).join('<br>')}</div>${r.source_variants?.length>1?`<h3>多来源原始观察</h3><p class="warning">字段冲突：${r.source_conflicts.map(k=>esc(labels[k]||k)).join(' / ')||'没有已知值冲突'}；各来源字段并列保留，检索时冲突按待确认处理。</p>${r.source_variants.map(v=>`<details><summary>挂牌 #${v.id} · ${esc(v.source_id)}</summary><p>${esc(v.title)}</p><p>${Object.entries(v).filter(([k])=>labels[k]&&k!=='title').map(([k,value])=>`${esc(labels[k])}：${esc(changeValue(k,value))}`).join('<br>')}</p><button class="link" data-detail="${v.id}">查看此来源依据</button></details>`).join('')}`:''}<h3>关键字段依据</h3>${r.evidence.map(e=>`<div class="evidence"><strong>${esc(labels[e.field]||e.field)}</strong>${esc(e.quote)}</div>`).join('')}${user.role==='admin'?reviewForms(r):''}<div id="listing-relations"></div><h3>跟进记录</h3><form id="followup-form" class="followup-form"><select name="status">${['未查看','已查看','待联系','已联系','预约看铺','放弃','已成交'].map(s=>`<option ${r.followup?.status===s?'selected':''}>${s}</option>`).join('')}</select><label class="check"><input name="favorite" type="checkbox" ${r.followup?.favorite?'checked':''}>收藏该铺位</label><textarea name="note" rows="3" maxlength="3000" placeholder="联系情况、看铺记录或放弃原因">${esc(r.followup?.note||'')}</textarea><button class="primary">保存跟进</button></form><h3>版本历史 · ${r.versions.length}</h3><p class="muted">${r.versions.map(v=>esc(date(v.created_at))).join(' / ')}</p><details><summary>查看保存的原文文本</summary><p class="source-text">${esc(r.source_text)}</p></details>`;
- if(!$('detail').open)$('detail').showModal();
+ const r=await api('/listings/'+id);activeDetail=r;$('detail-context').textContent='铺位资料与字段依据';$('detail').setAttribute('aria-label','铺位资料与字段依据');
+ const pairs=[['地址',r.address||'待核实'],['面积',`${money(r.area_m2)} ㎡`],['原始价格',`${money(r.raw_amount)} 元 · ${kinds[r.price_kind]||'价格性质待确认'}`],['月租基准',r.first_year_monthly==null?'待确认':`${money(r.first_year_monthly)} 元/月`],['单位面积月租',r.unit_monthly==null?'待确认':`${money(r.unit_monthly)} 元/㎡/月`],['报名截止',date(r.registration_deadline)],['竞价截止',date(r.auction_deadline)],['保证金',r.deposit==null?'待确认':`${money(r.deposit)} 元`],['最后核验',date(r.last_checked_at)]];
+ $('detail-body').innerHTML=`${selected.size>=2?'<button class="secondary" data-compare-back="true">返回已选比较</button>':''}<span class="badge">${esc(registrationText(r))}</span><h2>${esc(r.title)}</h2><p class="muted">来源记录 #${r.id} · <a href="${esc(r.source_url)}" target="_blank" rel="noopener noreferrer">打开原始公告 ↗</a></p><button type="button" class="detail-jump" data-evidence-jump="true">跳到关键字段依据 ↓</button><div class="detail-grid">${pairs.map(([k,v])=>`<div><small>${esc(k)}</small>${esc(v)}</div>`).join('')}</div>${r.formula?`<p class="muted">换算：${esc(r.formula)}；税费等成本未完整核实。</p>`:''}<div class="warning">${(r.warnings||[]).map(esc).join('<br>')}</div>${r.source_variants?.length>1?`<h3>多来源原始观察</h3><p class="warning">字段冲突：${r.source_conflicts.map(k=>esc(labels[k]||k)).join(' / ')||'没有已知值冲突'}；各来源字段并列保留，检索时冲突按待确认处理。</p>${r.source_variants.map(v=>`<details><summary>挂牌 #${v.id} · ${esc(v.source_id)}</summary><p>${esc(v.title)}</p><p>${Object.entries(v).filter(([k])=>labels[k]&&k!=='title').map(([k,value])=>`${esc(labels[k])}：${esc(changeValue(k,value))}`).join('<br>')}</p><button class="link" data-detail="${v.id}">查看此来源依据</button></details>`).join('')}`:''}<h3 id="detail-evidence">关键字段依据</h3>${r.evidence.map(e=>`<div class="evidence"><strong>${esc(labels[e.field]||e.field)}</strong>${esc(e.quote)}</div>`).join('')}${user.role==='admin'?reviewForms(r):''}<div id="listing-relations"></div><h3>跟进记录</h3><form id="followup-form" class="followup-form"><select name="status">${['未查看','已查看','待联系','已联系','预约看铺','放弃','已成交'].map(s=>`<option ${r.followup?.status===s?'selected':''}>${s}</option>`).join('')}</select><label class="check"><input name="favorite" type="checkbox" ${r.followup?.favorite?'checked':''}>收藏该铺位</label><textarea name="note" rows="3" maxlength="3000" placeholder="联系情况、看铺记录或放弃原因">${esc(r.followup?.note||'')}</textarea><button class="primary">保存跟进</button></form><h3>版本历史 · ${r.versions.length}</h3><p class="muted">${r.versions.map(v=>esc(date(v.created_at))).join(' / ')}</p><details><summary>查看保存的原文文本</summary><p class="source-text">${esc(r.source_text)}</p></details>`;
+ showWorkspaceDialog(true);
  await loadRelations(r.id);bindReviewForms(r);
  $('followup-form').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await api(`/listings/${r.id}/followup`,{method:'PATCH',body:JSON.stringify({status:f.elements.status.value,note:f.elements.note.value,favorite:f.elements.favorite.checked})});toast('跟进记录已保存');await loadListings();await loadNotices();}catch(e){toast(e.message);}};
 }
@@ -154,6 +179,8 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  try{
  if(b.dataset.view)await showView(b.dataset.view);
+ if(b.dataset.quickView){page=1;await loadListings({...appliedQuery,view:b.dataset.quickView});}
+ if(b.dataset.evidenceJump)$('detail-evidence')?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  if(b.dataset.deliveryReview)await openDeliveryReview(b.dataset.deliveryReview,b.dataset.deliveryState,b.dataset.deliveryKind);
  if(b.dataset.coverage)await openCoverage(b.dataset.coverage);
  if(b.dataset.compareBack)$('compare-selected').click();
@@ -164,7 +191,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.sourceBackfill){await api('/sources/'+b.dataset.sourceBackfill+'/runs?kind=backfill',{method:'POST'});toast('续扫任务已入队');await loadSources();}
  if(b.dataset.sourceDetails){await api('/sources/'+b.dataset.sourceDetails+'/runs?kind=details',{method:'POST'});toast('活跃详情复查已入队');await loadSources();}
  if(b.dataset.sourceToggle){await api('/sources/'+b.dataset.sourceToggle,{method:'PATCH',body:JSON.stringify({enabled:b.dataset.enabled!=='true'})});await loadSources();}
- if(b.dataset.subSearch){const s=window.currentSubscriptions.find(s=>String(s.id)===b.dataset.subSearch);for(const el of $('filter-form').elements){if(!el.name)continue;if(el.type==='checkbox')el.checked=Boolean(s.filters[el.name]);else el.value=s.filters[el.name]??'';}$('include-unknown').checked=s.unknown_policy!=='exclude';$('sort').value='newest';page=1;document.querySelector('nav [data-view="listings"]').click();await loadListings(draftQuery());}
+ if(b.dataset.subSearch){const s=window.currentSubscriptions.find(s=>String(s.id)===b.dataset.subSearch);for(const el of $('filter-form').elements){if(!el.name)continue;if(el.type==='checkbox')el.checked=Boolean(s.filters[el.name]);else el.value=s.filters[el.name]??'';}$('include-unknown').checked=s.unknown_policy!=='exclude';$('sort').value='newest';page=1;document.querySelector('nav [data-view="listings"]').click();await loadListings({...draftQuery(),view:'all'});}
  if(b.dataset.subEdit)openSubscription(window.currentSubscriptions.find(s=>String(s.id)===b.dataset.subEdit));
  if(b.dataset.subToggle){const s=window.currentSubscriptions.find(s=>String(s.id)===b.dataset.subToggle);await api('/subscriptions/'+s.id,{method:'PATCH',body:JSON.stringify({...s,enabled:!s.enabled})});await loadSubscriptions();await loadNotices();}
  }catch(e){b.disabled=false;toast(e.message);}
@@ -191,7 +218,7 @@ $('compare-selected').onclick=async()=>{
   const groupStart=(r,i)=>i>0&&r.price_kind!==result.items[i-1].price_kind?' group-start':'';
   const differences=fields.filter(([key])=>new Set(result.items.map(r=>value(r,key))).size>1).length;
   $('detail-body').innerHTML=`<h2>候选比较 · ${result.items.length} 条</h2><p class="muted">${differences} 项不同；差异行已标记。手机可左右滑动表格，字段列固定。</p><p class="warning">价格性质按列分组，只比较已核实的月租基准。保证金另列，税费等未完整核实；经营用途未知需核验。</p><div class="comparison-scroll" tabindex="0" role="region" aria-label="候选比较表"><table class="comparison"><thead><tr><th scope="col">比较字段</th>${result.items.map((r,i)=>`<th scope="col" class="${groupStart(r,i)}"><span class="badge">${esc(kinds[r.price_kind]||'价格性质待确认')}</span><h3 title="${esc(r.title)}">${esc(r.title)}</h3><button class="link" data-detail="${r.id}">查看原文依据</button></th>`).join('')}</tr></thead><tbody>${fields.map(([key,label])=>{const different=new Set(result.items.map(r=>value(r,key))).size>1;return `<tr class="${different?'different':''}"><th scope="row">${esc(label)}${different?'<small>有差异</small>':''}</th>${result.items.map((r,i)=>`<td class="${r[key]==null&&key!=='followup'?'cell-unknown':''}${groupStart(r,i)}">${esc(value(r,key))}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`;
-  if(!$('detail').open)$('detail').showModal();
+  showWorkspaceDialog();
   return true;
  }catch(e){toast(e.message);return false;}
 };
@@ -207,7 +234,7 @@ function bindReviewForms(r){if(user.role!=='admin')return;$('correction-form').e
 const relationKinds={same_round:'同一挂牌不同出处',relisting:'重新挂牌',same_asset:'同一资产',bundle_member:'整体与成员'};
 async function loadRelations(id){const rows=await api('/listing-relations/'+id);$('listing-relations').innerHTML='<h3>关联与重新挂牌时间线</h3>'+ (rows.length?rows.map(r=>`<article class="evidence"><strong>${esc(relationKinds[r.kind])} · ${r.state==='active'?'有效':'已撤销'}</strong><p>挂牌 #${r.left_id} ↔ #${r.right_id} · ${esc(date(r.created_at))}</p><p>${esc(r.reason)}</p><button class="link" data-detail="${r.left_id===Number(id)?r.right_id:r.left_id}">查看另一挂牌依据</button>${user.role==='admin'&&r.state==='active'?`<form data-revert-relation="${r.id}"><label>撤销原因<input name="reason" minlength="5" maxlength="1000" required></label><button class="secondary">撤销关联</button></form>`:''}</article>`).join(''):'<p class="muted">尚无人工确认关联；系统不会仅按相似地址自动合并。</p>');document.querySelectorAll('[data-revert-relation]').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('/listing-relations/'+f.dataset.revertRelation+'/revert',{method:'POST',body:JSON.stringify({reason:f.elements.reason.value})});await loadRelations(id);toast('关联已撤销，历史保留');}catch(e){toast(e.message);}});}
 async function loadReview(){const d=await api('/review-queue?page='+reviewPage);setPager('review',reviewPage,Math.max(d.total,d.source_conflict_total));$('review-page').textContent=`第 ${reviewPage} 页 · 纠正 ${d.total} 条 / 来源冲突 ${d.source_conflict_total} 组`;const conflictHtml=d.source_conflicts.map(r=>`<article class="stack-item"><span class="badge warn">多来源冲突待核验</span><h3>${esc(r.title)}</h3><p>${r.source_conflicts.map(k=>esc(labels[k]||k)).join(' / ')}</p>${r.source_variants.map(v=>`<p>挂牌 #${v.id}：${r.source_conflicts.map(k=>`${esc(labels[k]||k)} ${esc(changeValue(k,v[k]))}`).join(' · ')} <button class="link" data-detail="${v.id}">核验该出处</button></p>`).join('')}</article>`).join('');$('review-queue').innerHTML=d.items.length?d.items.map(r=>`<article class="stack-item"><span class="badge ${r.state==='conflict'?'warn':''}">${{active:'纠正有效',conflict:'来源冲突待审',reverted:'已撤销'}[r.state]}</span><h3>挂牌 #${r.listing_id} · ${esc(labels[r.field]||r.field)}</h3><p>原值 ${esc(changeValue(r.field,r.original))} → 人工值 ${esc(changeValue(r.field,r.value))}<br>最新源观测 ${esc(changeValue(r.field,r.source_value))}</p><p class="muted">${esc(r.quote)}；${esc(r.reason)}</p><button class="link" data-detail="${r.listing_id}">查看公告依据</button>${r.state!=='reverted'?`<form data-resolve-correction="${r.id}" data-version="${r.expected_version_id}"><label>处理依据<input name="reason" minlength="5" maxlength="1000" required></label><select name="action"><option value="revert">撤销并恢复最新源值</option><option value="keep">核验后继续保留人工值</option></select><button class="secondary">保存审核结果</button></form>`:''}</article>`).join(''):'<div class="empty">暂无人工纠正。可从公告详情创建有依据的纠正。</div>';$('review-queue').insertAdjacentHTML('afterbegin',conflictHtml);document.querySelectorAll('[data-resolve-correction]').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('/corrections/'+f.dataset.resolveCorrection+'/resolve',{method:'POST',body:JSON.stringify({action:f.elements.action.value,reason:f.elements.reason.value,expected_version_id:Number(f.dataset.version)})});await loadReview();await loadListings();toast('审核已保存');}catch(e){toast(e.message);}});}
-async function openCoverage(id){const rows=await api('/sources');const s=rows.find(r=>r.id===id);$('detail-context').textContent='来源回扫设置';$('detail-body').innerHTML=`<h2>${esc(s.name)} · 回扫预算</h2><p class="muted">只修改预算，不会自动启用来源。每日预算按上海日历计算，前台首页与详情复查优先；动态页码不构成全量一致快照。</p><form id="coverage-form"><label>每日回扫页数上限<input name="daily_page_budget" type="number" min="1" max="240" value="${s.metrics.daily_page_budget}" required></label><label>每批页数<input name="backfill_batch_pages" type="number" min="1" max="10" value="${s.metrics.backfill_batch_pages}" required></label><button class="primary">保存回扫预算</button></form>`;if(!$('detail').open)$('detail').showModal();$('coverage-form').onsubmit=async e=>{e.preventDefault();try{const f=e.target;await api('/sources/'+id+'/coverage-policy',{method:'PUT',body:JSON.stringify({daily_page_budget:Number(f.elements.daily_page_budget.value),backfill_batch_pages:Number(f.elements.backfill_batch_pages.value)})});$('detail').close();await loadSources();toast('预算已保存，持续监测状态未改变');}catch(e){toast(e.message);}};}
+async function openCoverage(id){const rows=await api('/sources');const s=rows.find(r=>r.id===id);$('detail-context').textContent='来源回扫设置';$('detail-body').innerHTML=`<h2>${esc(s.name)} · 回扫预算</h2><p class="muted">只修改预算，不会自动启用来源。每日预算按上海日历计算，前台首页与详情复查优先；动态页码不构成全量一致快照。</p><form id="coverage-form"><label>每日回扫页数上限<input name="daily_page_budget" type="number" min="1" max="240" value="${s.metrics.daily_page_budget}" required></label><label>每批页数<input name="backfill_batch_pages" type="number" min="1" max="10" value="${s.metrics.backfill_batch_pages}" required></label><button class="primary">保存回扫预算</button></form>`;showWorkspaceDialog();$('coverage-form').onsubmit=async e=>{e.preventDefault();try{const f=e.target;await api('/sources/'+id+'/coverage-policy',{method:'PUT',body:JSON.stringify({daily_page_budget:Number(f.elements.daily_page_budget.value),backfill_batch_pages:Number(f.elements.backfill_batch_pages.value)})});$('detail').close();await loadSources();toast('预算已保存，持续监测状态未改变');}catch(e){toast(e.message);}};}
 
 $('import-form').onsubmit=async e=>{e.preventDefault();try{const r=await api('/imports',{method:'POST',body:JSON.stringify({url:e.target.elements.url.value})});toast(`任务 #${r.job_id}：${r.message}`);await loadSources();}catch(e){toast(e.message);}};
 
@@ -241,7 +268,7 @@ async function openDeliveryReview(id,state,kind){
  $('detail-context').textContent='发送结果审核';$('detail').setAttribute('aria-label','发送结果审核');
  const choices=state==='ambiguous'?[['confirm_accepted','回执确认服务商已接受'],['confirm_unsent','回执确认未接受，重试一次'],['close','关闭，不再发送']]:[['retry','修复后重试一次'],['close','关闭，不再发送']];
  $('detail-body').innerHTML=`<h2>发送记录 #${esc(id)} · ${state==='ambiguous'?'结果不明':'发送失败'}</h2><p class="warning">结果不明须核验原Message-ID和服务商日志。没有回执依据不能重发；已接受不代表最终邮箱投递。重试保留原接收目标与累计次数，最多再尝试一次。</p><form id="delivery-review-form"><label>处理方式<select name="action">${choices.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select></label><label>审核原因<textarea name="reason" required minlength="5" maxlength="1000"></textarea></label><label>服务商回执 / 日志核验依据<textarea name="receipt" maxlength="2000" placeholder="确认结果不明时必填；请保留服务商记录号及核验结论"></textarea></label><label>服务商接受时间 · 北京时间<input name="accepted_at" type="datetime-local"></label><button class="primary">保存审核结果</button></form>`;
- if(!$('detail').open)$('detail').showModal();
+ showWorkspaceDialog();
  $('delivery-review-form').onsubmit=async e=>{e.preventDefault();const f=e.target;try{const body=Object.fromEntries(new FormData(f));body.expected_state=state;body.accepted_at=body.accepted_at?body.accepted_at+':00+08:00':null;const r=await api((kind==='incident'?'/incident-emails/':'/email-deliveries/')+id+'/review',{method:'POST',body:JSON.stringify(body)});$('detail').close();toast(r.message);await loadNotices();await loadIncidentEmails();}catch(e){toast(e.message);}};
 }
 async function loadIncidentEmails(){
@@ -259,7 +286,7 @@ async function showView(view){
  if(!b)throw new Error('页面不存在');
  document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));
  for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!==view;
- $('page-title').textContent=b.textContent.trim().slice(1).trim();renderSelection();await refresh();
+ $('page-title').textContent=b.textContent.trim();renderSelection();await refresh();
 }
 const demoSteps=[
  ['自由筛选','应用面积≥30㎡、月租≤12000、仅可报名并包含待确认；显示明确匹配与未知的差别。'],
@@ -292,7 +319,7 @@ async function runDemoStep(index){
   if($('detail').open)$('detail').close();
   if(index===0){
    const form=$('filter-form');form.reset();form.elements.area_m2_min.value='30';form.elements.first_year_monthly_max.value='12000';form.elements.registration_open.checked=true;
-   $('include-unknown').checked=true;$('sort').value='newest';selected.clear();page=1;appliedQuery=draftQuery();await showView('listings');
+   $('include-unknown').checked=true;$('sort').value='newest';$('filter-panel').open=true;selected.clear();page=1;appliedQuery={...draftQuery(),view:'all'};await showView('listings');
   }else if(index===1){
    await showView('listings');selected.clear();demoScenario.comparison_ids.forEach(id=>selected.add(id));renderSelection();if(!await $('compare-selected').onclick())throw new Error('比较尚未打开，请重试当前步骤');
   }else if(index===2||index===5){await showView('listings');await showDetail(demoScenario.detail_id);if(index===5)$('followup-form').scrollIntoView({block:'center'});}

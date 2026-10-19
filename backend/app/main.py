@@ -16,7 +16,7 @@ from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Ver
 from .service import listing_data
 from .domain import match
 
-app = FastAPI(title='LeaseRadar', version='0.1.13')
+app = FastAPI(title='LeaseRadar', version='0.1.14')
 hasher = PasswordHasher()
 login_attempts = {}
 
@@ -134,19 +134,28 @@ class SearchInput(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=24, ge=1, le=100)
     sort: Literal['newest', 'monthly'] = 'newest'
+    view: Literal['all', 'recent', 'deadline', 'review'] = 'all'
 
-@app.post('/api/v1/listings/search')
-def search(data: SearchInput, user=Depends(current_user), db=Depends(database)):
+def searched_rows(data: SearchInput, user, db):
     rows = []
     from .resolution import grouped_rows
+    from .listing_views import in_quick_view
+    from datetime import datetime, timezone
+    at = datetime.now(timezone.utc)
     for row in grouped_rows(db, user.id):
         result = match(row, data.filters.model_dump(exclude_none=True))
         if result['verdict'] == 'fail' or (not data.include_unknown and result['verdict'] == 'unknown'): continue
-        rows.append({**row, 'match': result})
+        candidate = {**row, 'match': result}
+        if in_quick_view(candidate, data.view, at): rows.append(candidate)
     if data.sort == 'monthly':
         # Group price kind; unknown values sort last, never as zero.
         from decimal import Decimal
         rows.sort(key=lambda r: (r.get('price_kind') or 'unknown', r.get('first_year_monthly') is None, Decimal(r['first_year_monthly']) if r.get('first_year_monthly') else Decimal('Infinity')))
+    return rows
+
+@app.post('/api/v1/listings/search')
+def search(data: SearchInput, user=Depends(current_user), db=Depends(database)):
+    rows = searched_rows(data, user, db)
     total = len(rows); offset = (data.page - 1) * data.limit
     return {'items': rows[offset:offset+data.limit], 'total': total, 'page': data.page, 'mode': MODE}
 
@@ -183,13 +192,21 @@ def compare(data: CompareInput, user=Depends(current_user), db=Depends(database)
 
 @app.get('/api/v1/exports/listings.csv')
 def export(user=Depends(current_user), db=Depends(database)):
+    from .resolution import grouped_rows
+    return csv_response(grouped_rows(db, user.id))
+
+@app.post('/api/v1/exports/listings.csv')
+def export_filtered(data: SearchInput, user=Depends(current_user), db=Depends(database)):
+    # Full applied result set, not just the current page; same semantics as search.
+    return csv_response(searched_rows(data, user, db))
+
+def csv_response(rows):
     import csv, io
     buf = io.StringIO(); buf.write('\ufeff')
     writer = csv.writer(buf)
     keys = ['id', 'title', 'address', 'area_m2', 'raw_amount', 'price_kind', 'period_basis', 'first_year_monthly', 'registration_deadline', 'source_url']
     writer.writerow(keys)
-    from .resolution import grouped_rows
-    for fields in grouped_rows(db, user.id):
+    for fields in rows:
         values = []
         for key in keys:
             value = '' if fields.get(key) is None else str(fields[key])
