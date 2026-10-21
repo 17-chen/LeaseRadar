@@ -36,6 +36,62 @@ def test_pdf_page_limits_and_ocr_are_explicit(monkeypatch):
     with pytest.raises(ExtractionError):extract(b'%PDF-synthetic','pdf')
 
 
+def test_text_pdf_does_not_require_ocr_tools(monkeypatch):
+    import app.document_worker as worker
+    monkeypatch.setattr(worker.shutil,'which',lambda name:'/synthetic/'+name if name in ('pdfinfo','pdftotext') else None)
+    calls=[]
+    def fake(args,*unused):
+        calls.append(args[0])
+        return 'Pages: 1\nEncrypted: no' if args[0]=='pdfinfo' else '合成文字层'
+    monkeypatch.setattr(worker,'tool',fake)
+    assert extract(b'%PDF-synthetic','pdf')[0]['method']=='pdf_text'
+    assert calls==['pdfinfo','pdftotext']
+    monkeypatch.setattr(worker,'tool',lambda args,*unused:'Pages: 1\nEncrypted: no' if args[0]=='pdfinfo' else '')
+    with pytest.raises(ExtractionError,match='第1页.*OCR工具未配置'):extract(b'%PDF-synthetic','pdf')
+
+
+def test_blank_ocr_cannot_be_reported_as_review(monkeypatch):
+    import app.document_worker as worker
+    monkeypatch.setattr(worker.shutil,'which',lambda name:'/synthetic/'+name)
+    monkeypatch.setattr(worker,'tool',lambda args,*unused:'Pages: 1\nEncrypted: no' if args[0]=='pdfinfo' else '  ')
+    with pytest.raises(ExtractionError,match='OCR未识别到文字'):extract(b'%PDF-synthetic','pdf')
+
+
+@pytest.mark.parametrize('bad_pages', [[], [{'text':' ', 'method':'docx_text', 'page':None}],
+    [{'text':'synthetic', 'method':'pdf_text', 'page':1}]])
+def test_empty_or_cross_format_review_results_fail_without_versions(monkeypatch,tmp_path,bad_pages):
+    import app.document_jobs as jobs
+    monkeypatch.setattr(jobs,'QUEUE',tmp_path)
+    admin=client_for('admin')
+    response=admin.post('/api/v1/document-reviews',json={'filename':'synthetic.docx','content_base64':base64.b64encode(docx()).decode()})
+    with Session() as db:row=db.get(DocumentReview,response.json()['id']);digest=row.sha256
+    path=tmp_path/'results'/f'{response.json()["id"]}.json'
+    payload={'sha256':digest,'format':'docx','state':'review','pages':bad_pages}
+    path.write_text(json.dumps(payload))
+    result=admin.get('/api/v1/document-reviews').json()['items'][0]
+    assert result['state']=='failed' and result['pages']==[]
+    assert json.loads(path.read_text())==payload
+    with Session() as db:assert db.scalar(select(func.count()).select_from(Version))==0
+
+
+def test_non_object_worker_result_does_not_break_review_api(monkeypatch,tmp_path):
+    import app.document_jobs as jobs
+    monkeypatch.setattr(jobs,'QUEUE',tmp_path)
+    admin=client_for('admin')
+    response=admin.post('/api/v1/document-reviews',json={'filename':'synthetic.docx','content_base64':base64.b64encode(docx()).decode()})
+    path=tmp_path/'results'/f'{response.json()["id"]}.json'
+    path.write_text('[]')
+    result=admin.get('/api/v1/document-reviews')
+    assert result.status_code==200 and result.json()['items'][0]['state']=='failed'
+    assert path.read_text()=='[]'
+
+
+@pytest.mark.parametrize('page',[0,2,True,None])
+def test_pdf_review_page_numbers_cannot_be_forged(page):
+    from app.document_jobs import validate_pages
+    with pytest.raises(ValueError):validate_pages([{'text':'synthetic','page':page,'method':'pdf_text'}],'pdf')
+
+
 def test_file_worker_hash_identity_and_repeat(tmp_path):
     for name in ['requests','inputs','results']:(tmp_path/name).mkdir()
     data=docx();digest=hashlib.sha256(data).hexdigest()

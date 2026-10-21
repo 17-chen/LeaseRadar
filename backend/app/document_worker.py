@@ -35,8 +35,8 @@ def extract(data,format):
         text,has_body=docx_review_text(data)
         return [{'page':None,'position':'DOCX正文段与表格行' if has_body else 'DOCX表格行','method':'docx_text' if has_body else 'docx_table','text':text}]
     if format!='pdf' or not data.startswith(b'%PDF-'):raise ExtractionError('只支持PDF或DOCX签名')
-    required=('pdfinfo','pdftotext','pdftoppm','tesseract')
-    if any(not shutil.which(name) for name in required):raise ExtractionError('PDF/OCR工具未配置，请使用隔离提取容器')
+    required=('pdfinfo','pdftotext')
+    if any(not shutil.which(name) for name in required):raise ExtractionError('PDF文字提取工具未配置，请使用隔离提取容器')
     with tempfile.TemporaryDirectory(prefix='leaseradar-extract-') as folder:
         root=Path(folder);(root/'input.pdf').write_bytes(data);deadline=time.monotonic()+120
         info=tool(['pdfinfo','input.pdf'],folder,deadline)
@@ -48,8 +48,11 @@ def extract(data,format):
             text=tool(['pdftotext','-f',str(page),'-l',str(page),'-layout','input.pdf','-'],folder,deadline).strip()
             method='pdf_text'
             if not text:
+                if any(not shutil.which(name) for name in ('pdftoppm','tesseract')):
+                    raise ExtractionError(f'PDF第{page}页无文字层且OCR工具未配置；请使用隔离提取容器')
                 tool(['pdftoppm','-f',str(page),'-l',str(page),'-singlefile','-scale-to','1600','-png','input.pdf','page'],folder,deadline)
                 text=tool(['tesseract','page.png','stdout','-l','chi_sim+eng','--psm','6'],folder,deadline).strip();method='ocr_review'
+                if not text:raise ExtractionError(f'PDF第{page}页OCR未识别到文字；不能作为已提取结果')
             if len(text)>20000:raise ExtractionError('单页文本超过限制')
             pages.append({'page':page,'position':f'PDF第{page}页','method':method,'text':text})
         return pages
