@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import subprocess
 import zipfile
@@ -17,11 +18,12 @@ FILES = (
     'docs/COMPETITION_DEMO.md', 'docs/submission/RECORDING_SCRIPT.md',
     'output/pdf/LeaseRadar_Competition_Intro_Draft.pdf',
     'docs/submission/assets/synthetic-comparison.png',
+    'docs/submission/RELEASE_EVIDENCE.json',
 )
 TREES = ('backend/app', 'backend/migrations')
 GUIDE = '''# LeaseRadar 本地录制包
 
-这是合成演示录制素材，不是已提交作品或生产部署。介绍PDF为初稿，视频尚未录制导出。
+这是合成演示录制素材，不是已提交作品或生产部署。介绍PDF为0.1.16审阅稿，视频尚未录制导出。
 使用 Python 3.12/3.13。在解压后的本目录执行：
 
 ```sh
@@ -67,6 +69,10 @@ def build(root, destination):
             if path.is_file() and path.suffix == '.py':
                 selected.add(path.relative_to(root).as_posix())
     payload = {name: read_safe(root, name) for name in sorted(selected)}
+    evidence=json.loads(payload['docs/submission/RELEASE_EVIDENCE.json'])
+    match=re.search(r"FastAPI\([^\n]+version=['\"]([^'\"]+)['\"]", payload['backend/app/main.py'].decode())
+    if not isinstance(evidence,dict) or not match or evidence.get('app_version')!=match.group(1):
+        raise ValueError('材料版本与应用版本不一致；请刷新并审查PDF和口播')
     if not payload['output/pdf/LeaseRadar_Competition_Intro_Draft.pdf'].startswith(b'%PDF-'):
         raise ValueError('介绍PDF签名无效；请先重建材料')
     payload['START_HERE.md'] = GUIDE.encode()
@@ -77,6 +83,8 @@ def build(root, destination):
         'source_commit': revision.stdout.strip() if revision.returncode == 0 else None,
         'working_tree_dirty': bool(dirty.stdout.strip()) if dirty.returncode == 0 else None,
         'mode': 'synthetic_demo', 'ready_to_submit': False,
+        'app_version': evidence['app_version'],
+        'evidence_commit': evidence.get('implementation_commit'),
         'remaining': ['video_export', 'pdf_final_review', 'contest_rules_and_repository_access', 'authorized_submission'],
         'files': {name: {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()} for name, data in payload.items()},
     }

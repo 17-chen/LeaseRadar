@@ -76,6 +76,6 @@ SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本�
 
 新建合成DEMO后可点击页面“开始演示”，七步打开筛选、比较、金额/周期依据、提醒、跟进和受阻；真实环境没有该入口。旧演示数据不重置，重新创建即可获得路线。见[路线验收](docs/DEMO_ROUTE_VERIFICATION.md)。
 
-提交材料：[介绍PDF初稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)（6页）与[重建/QA说明](docs/submission/README.md)。已核查版面和数据边界，仍待最终审稿、视频录制与提交授权。
+提交材料：[介绍PDF审阅稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)（6页，0.1.16）与[重建/QA说明](docs/submission/README.md)。当前界面、录制口播和证据版本已统一；仍待正式要求核对、视频录制与提交授权。
 
 录制交接：运行 `.venv/bin/python scripts/build_recording_bundle.py --output private/recording-new.zip` 生成带运行代码、合成素材、[讲解稿](docs/submission/RECORDING_SCRIPT.md)和SHA256清单的本地ZIP；拒绝覆盖，不含真实数据库或账号。视频尚未导出，清单明确尚不可提交，详见[录制包说明](docs/submission/README.md)。

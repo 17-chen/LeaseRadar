@@ -26,6 +26,8 @@ def sample_root(tmp_path):
         path = root/tree/'module.py'
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('# synthetic')
+    (root/'backend/app/main.py').write_text("app = FastAPI(title='Synthetic', version='0.0.1')")
+    (root/'docs/submission/RELEASE_EVIDENCE.json').write_text(json.dumps({'app_version':'0.0.1','implementation_commit':'synthetic'}))
     for name in ('private/demo.db', '.env', 'private/DEMO_GUIDE.md', 'backend/app/__pycache__/x.pyc'):
         path = root/name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -57,6 +59,14 @@ def test_existing_archive_is_preserved(tmp_path):
     with pytest.raises(FileExistsError):
         bundle.build(root, archive)
     assert archive.read_bytes() == b'previous evidence'
+
+
+def test_stale_material_version_cannot_be_packaged(tmp_path):
+    root = sample_root(tmp_path)
+    (root/'docs/submission/RELEASE_EVIDENCE.json').write_text(json.dumps({'app_version':'old'}))
+    with pytest.raises(ValueError, match='版本不一致'):
+        bundle.build(root, tmp_path/'stale.zip')
+    assert not (tmp_path/'stale.zip').exists()
 
 
 @pytest.mark.parametrize('parent_link', [False, True])

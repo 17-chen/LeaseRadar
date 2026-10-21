@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "app_version": "0.1.16",
+  "evidence_date": "2026-10-21",
+  "implementation_commit": "ccd5a1c",
+  "local_tests_passed": 262,
+  "poppler_integration_passed": 1,
+  "real_listings_last_verified": 25,
+  "real_versions_last_verified": 41,
+  "synthetic_listings": 6,
+  "synthetic_versions": 7,
+  "synthetic_notices": 5,
+  "video_exported": false,
+  "production_accepted": false,
+  "source_reports": [
+    "docs/EXTRACTION_VALIDATION_VERIFICATION.md",
+    "docs/PERSONAL_VIEWS_VERIFICATION.md",
+    "docs/WORKBENCH_VERIFICATION.md",
+    "docs/SOURCE_AUDIT.md"
+  ]
+}
