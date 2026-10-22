@@ -22,6 +22,8 @@
 
 安装下述依赖后执行 `.venv/bin/python scripts/demo.py`，浏览器打开终端给出的本地地址，账号和步骤见新生成的私有DEMO_GUIDE.md。每次创建独立数据，外部采集/邮件/下载关闭，不覆盖真实库。详见[演示方案与10月31日倒排](docs/COMPETITION_DEMO.md)。
 
+新启动的DEMO按数据库隔离登录Cookie，同一浏览器可同时打开真实环境和多个演示端口。已有真实登录兼容；旧DEMO升级重启后需重新登录，详见[会话隔离验收](docs/SESSION_ISOLATION_VERIFICATION.md)。
+
 ## 运行
 
 ```sh

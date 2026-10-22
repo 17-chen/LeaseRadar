@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, StrictInt, model_validator
 from sqlalchemy import select, text
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
-from .config import ROOT, DATA, MODE, COOKIE_SECURE
+from .config import ROOT, DATA, MODE, COOKIE_SECURE, SESSION_COOKIE_NAME
 from .db import Session, User, LoginSession, Source, Job, Listing, Evidence, Version, RawDocument, Subscription, Outbox, Followup, CrawlRun
 from .service import listing_data
 from .domain import match
@@ -31,7 +31,7 @@ def database():
         yield db
 
 def current_user(request: Request, db=Depends(database)):
-    token = request.cookies.get('lease_session', '')
+    token = request.cookies.get(SESSION_COOKIE_NAME, '')
     session = db.get(LoginSession, hashlib.sha256(token.encode()).hexdigest())
     if not session or datetime.fromisoformat(session.expires_at) < datetime.now(timezone.utc):
         raise HTTPException(401, '请登录')
@@ -71,7 +71,7 @@ def login(data: LoginInput, request: Request, response: Response, db=Depends(dat
     db.add(LoginSession(token=hashlib.sha256(token.encode()).hexdigest(), user_id=user.id, csrf=csrf,
                         expires_at=(datetime.now(timezone.utc) + timedelta(hours=12)).isoformat()))
     db.commit(); login_attempts.pop(key, None)
-    response.set_cookie('lease_session', token, httponly=True, secure=COOKIE_SECURE, samesite='lax', max_age=43200)
+    response.set_cookie(SESSION_COOKIE_NAME, token, httponly=True, secure=COOKIE_SECURE, samesite='lax', max_age=43200)
     return {'username': user.username, 'role': user.role, 'csrf': csrf}
 
 @app.get('/api/v1/auth/me')
@@ -105,7 +105,8 @@ def demo_scenario(user=Depends(current_user),db=Depends(database)):
 @app.post('/api/v1/auth/logout')
 def logout(request: Request, response: Response, user=Depends(current_user), db=Depends(database)):
     db.delete(db.get(LoginSession, request.state.session.token)); db.commit()
-    response.delete_cookie('lease_session'); return {'ok': True}
+    response.delete_cookie(SESSION_COOKIE_NAME, httponly=True, secure=COOKIE_SECURE, samesite='lax')
+    return {'ok': True}
 
 class Filters(BaseModel):
     keyword: str | None = Field(default=None, max_length=100)
