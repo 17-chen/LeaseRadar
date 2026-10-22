@@ -1,0 +1,71 @@
+{
+  "capture_kind" : "static_ui_storyboard",
+  "duration" : 206.90000000000001,
+  "fps" : 10,
+  "height" : 1080,
+  "timeline" : [
+    {
+      "duration" : 19.699999999999999,
+      "scene" : 1,
+      "start" : 0,
+      "title" : "铺讯：从公告到跟进"
+    },
+    {
+      "duration" : 21.5,
+      "scene" : 2,
+      "start" : 19.699999999999999,
+      "title" : "自由筛选，保留未知"
+    },
+    {
+      "duration" : 21.5,
+      "scene" : 3,
+      "start" : 41.200000000000003,
+      "title" : "同口径比较，差异可见"
+    },
+    {
+      "duration" : 20,
+      "scene" : 4,
+      "start" : 62.700000000000003,
+      "title" : "查回字段依据"
+    },
+    {
+      "duration" : 18.100000000000001,
+      "scene" : 5,
+      "start" : 82.700000000000003,
+      "title" : "未知周期不制造精确答案"
+    },
+    {
+      "duration" : 19.800000000000001,
+      "scene" : 6,
+      "start" : 100.8,
+      "title" : "变化进入站内收件箱"
+    },
+    {
+      "duration" : 18.800000000000001,
+      "scene" : 7,
+      "start" : 120.59999999999999,
+      "title" : "收藏与私人跟进"
+    },
+    {
+      "duration" : 20.399999999999999,
+      "scene" : 8,
+      "start" : 139.40000000000001,
+      "title" : "受阻不是没有新房源"
+    },
+    {
+      "duration" : 20.699999999999999,
+      "scene" : 9,
+      "start" : 159.80000000000001,
+      "title" : "回到个人工作队列"
+    },
+    {
+      "duration" : 26.399999999999999,
+      "scene" : 10,
+      "start" : 180.5,
+      "title" : "验证范围与下一步"
+    }
+  ],
+  "video_codec" : "H264",
+  "voice" : "macOS Tingting",
+  "width" : 1920
+}

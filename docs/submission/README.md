@@ -1,5 +1,7 @@
 # 参赛介绍材料审阅稿
 
+2026-10-22新增[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)，详见[视频构建与验收](VIDEO_DRAFT.md)；非连续录屏或最终提交版。下述PDF仍为10月21日审阅快照，其“视频未导出”指当时状态，不代表后续草稿进度。
+
 2026-10-21更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；内容基于0.1.16/ccd5a1c，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
 ## 内容与数据边界

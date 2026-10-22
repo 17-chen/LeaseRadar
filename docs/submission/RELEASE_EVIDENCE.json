@@ -10,7 +10,10 @@
   "synthetic_listings": 6,
   "synthetic_versions": 7,
   "synthetic_notices": 5,
-  "video_exported": false,
+  "final_video_exported": false,
+  "storyboard_draft_exported": true,
+  "continuous_recording": false,
+  "video_draft": "output/video/LeaseRadar_Storyboard_Review.mp4",
   "production_accepted": false,
   "source_reports": [
     "docs/EXTRACTION_VALIDATION_VERIFICATION.md",
