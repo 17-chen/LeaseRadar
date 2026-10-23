@@ -2,6 +2,7 @@
   "schema": 1,
   "app_version": "0.1.16",
   "evidence_date": "2026-10-21",
+  "material_date": "2026-10-23",
   "implementation_commit": "ccd5a1c",
   "local_tests_passed": 262,
   "poppler_integration_passed": 1,
