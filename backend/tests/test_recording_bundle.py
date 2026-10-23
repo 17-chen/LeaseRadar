@@ -35,6 +35,25 @@ def sample_root(tmp_path):
     return root
 
 
+def add_sample_video(root):
+    for name in bundle.FULL_FILES:
+        path = root/name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_bytes(b'synthetic file')
+    video = b'\x00\x00\x00\x18ftypisomsynthetic'
+    (root/bundle.VIDEO).write_bytes(video)
+    (root/bundle.VIDEO_PROOF).write_text(json.dumps({
+        'app_version': '0.0.1', 'capture_kind': 'static_ui_storyboard',
+        'synthetic': True, 'continuous_recording': False,
+        'bytes': len(video), 'sha256': hashlib.sha256(video).hexdigest(),
+        'decode_check': {'full_decode': 'passed', 'duration': 10.0},
+    }))
+    (root/'output/video/LeaseRadar_Storyboard_Review.media.json').write_text(json.dumps({
+        'capture_kind': 'static_ui_storyboard', 'duration': 10.0,
+    }))
+
+
 def test_allowlist_and_hashes_exclude_private_state(tmp_path):
     root = sample_root(tmp_path)
     archive = tmp_path/'recording.zip'
@@ -93,9 +112,49 @@ def test_missing_material_fails_without_partial_archive(tmp_path):
     assert not (tmp_path/'missing.zip').exists()
 
 
-def test_actual_archive_initializes_and_serves_without_original_repository(tmp_path):
+def test_full_review_bundle_contains_verified_video_and_excludes_private(tmp_path):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    archive = tmp_path/'full.zip'
+    bundle.build(root, archive, include_video=True)
+    with zipfile.ZipFile(archive) as z:
+        manifest = json.loads(z.read('MANIFEST.json'))
+        assert z.testzip() is None
+        assert manifest['mode'] == 'synthetic_demo_review_bundle'
+        assert manifest['video_capture_kind'] == 'static_ui_storyboard'
+        assert not manifest['ready_to_submit']
+        assert 'video_listening_and_final_form' in manifest['remaining']
+        assert 'video_export' not in manifest['remaining']
+        assert set(z.namelist()) == set(manifest['files']) | {'MANIFEST.json'}
+        assert set(bundle.FULL_FILES).issubset(z.namelist())
+        assert b'SECRET_SENTINEL' not in b''.join(z.read(name) for name in z.namelist())
+        for name, entry in manifest['files'].items():
+            data = z.read(name)
+            assert entry == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+
+
+@pytest.mark.parametrize('damage', ['video', 'proof', 'missing'])
+def test_full_bundle_rejects_missing_or_unverified_video(tmp_path, damage):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    if damage == 'video':
+        (root/bundle.VIDEO).write_bytes(b'not an mp4')
+    elif damage == 'proof':
+        proof = json.loads((root/bundle.VIDEO_PROOF).read_text())
+        proof['sha256'] = '0' * 64
+        (root/bundle.VIDEO_PROOF).write_text(json.dumps(proof))
+    else:
+        (root/bundle.VIDEO).unlink()
+    archive = tmp_path/'rejected.zip'
+    with pytest.raises(ValueError, match='视频|必需文件'):
+        bundle.build(root, archive, include_video=True)
+    assert not archive.exists()
+
+
+@pytest.mark.parametrize('include_video', [False, True])
+def test_actual_archive_initializes_and_serves_without_original_repository(tmp_path, include_video):
     archive = tmp_path/'actual.zip'
-    bundle.build(ROOT, archive)
+    bundle.build(ROOT, archive, include_video=include_video)
     unpacked = tmp_path/'unpacked'
     with zipfile.ZipFile(archive) as z:
         z.extractall(unpacked)
