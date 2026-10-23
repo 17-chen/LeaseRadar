@@ -52,6 +52,8 @@ PYTHONPATH=backend .venv/bin/python -m app.local_worker
 
 ## 项目资料
 
+新聊天接续开发先读[详细交接](PROJECT_HANDOFF.md)与[剩余工作/提交门槛](docs/REMAINING_WORK.md)，再核查Git与运行环境；不要假定新聊天继承旧对话或旧服务已更新。
+
 [项目上下文](PROJECT_CONTEXT.md) · [任务清单](TODO.md) · [架构](ARCHITECTURE.md) · [技术决策](docs/DECISION_LOG.md) · [原始交接](docs/handoff/README_FIRST.md) · [比赛要求](docs/COMPETITION_REQUIREMENTS.md)
 
 ## English

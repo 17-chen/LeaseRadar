@@ -1,3 +1,7 @@
+## 新聊天交接 · 2026-10-23
+
+新增PROJECT_HANDOFF.md和docs/REMAINING_WORK.md，汇总用户决策/授权、当前代码和证据版本、模块/材料位置、恢复检查、比赛优先级、独立开发与用户/环境依赖、最终提交门槛。AGENTS与顶层文档加入接手入口，纠正历史进程表述，确认92ba1a3远端CI成功。本轮仅文档核查，无应用代码、版本、依赖、数据库或运行进程变动。
+
 ## 演示会话隔离 · 2026-10-22
 
 修复同主机不同端口LIVE/DEMO登录Cookie互相覆盖的问题。DEMO按数据库URL摘要命名，读取/设置/退出统一；LIVE/replay保持原名，DEMO不回退旧名。保持HttpOnly、SameSite、Secure、CSRF及服务端会话撤销。新增6项测试，含3个独立数据库共用Cookie jar的同时登录、单独退出与旧token重放拒绝；275项完整回归及1项Poppler集成通过。无依赖、迁移或API版本变更；未重启真实服务。既有PDF/视频保留各自历史快照，详见docs/SESSION_ISOLATION_VERIFICATION.md。

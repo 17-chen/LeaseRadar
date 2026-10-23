@@ -1,5 +1,9 @@
 # LeaseRadar开发规则
 
+## 新聊天接手
+
+先读根目录PROJECT_HANDOFF.md和docs/REMAINING_WORK.md，再核查PROJECT_CONTEXT.md、TODO.md及Git现状。它们保存跨聊天项目记忆；历史版本、进程与验收记录不能直接视为当前运行状态。后续阶段完成后更新相关交接事实与剩余清单，不写入凭据或私人数据。
+
 ## 产品与范围
 
 优先完成更早发现、可靠筛选和及时提醒；阅读01_TECHNICAL_REPORT.md和02_IMPLEMENTATION_PLAN.md。规格是待实现要求，禁止伪称已经运行。新项目独立目录，不覆盖AgentTwin或其他工程。
