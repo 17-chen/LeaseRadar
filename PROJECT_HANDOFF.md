@@ -1,6 +1,8 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-23，Asia/Shanghai。应用代码基线：92ba1a3；最新已核对交接提交863d24d。本轮材料与演示复核见docs/submission/DEMO_MATERIALS_20261023.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-23，Asia/Shanghai。应用运行代码基线92ba1a3；演示/PDF复核提交62e05c5，完整包构建提交d306277。本轮证据见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+
+2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
 
 ## 1. 新聊天先读什么
 

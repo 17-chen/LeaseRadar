@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [ ] 本地含视频80文件审阅包已生成、哈希/Git逐项比对及独立DEMO恢复通过（2026-10-23）；继续最终视频听审/形式、PDF终审、390px与访问/提交门槛。证据见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。
+
 - [ ] 2026-10-23最新DEMO七步/收藏/跟进/筛选CSV及双端口隔离已复核，介绍PDF审阅稿已修正视频状态；继续补390px、自然过期提示、最终视频听审与全包恢复。证据见docs/submission/DEMO_MATERIALS_20261023.md。
 
 - [ ] 10月31日比赛提交优先：26日核心演示冻结、30日提交包；见docs/COMPETITION_DEMO.md。优先主链路/可重复回放/介绍与视频，后置账号自助、地图和大规模扩展。
