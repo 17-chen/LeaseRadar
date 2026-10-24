@@ -32,7 +32,9 @@ def main():
     parser.add_argument('--module-cache',type=Path,default=ROOT/'private/storyboard-module-cache',help='本地Swift模块缓存，不入Git')
     args=parser.parse_args()
     if args.output.exists():parser.error('拒绝覆盖已有视频，请使用新路径')
-    story=json.loads((ROOT/'docs/submission/VIDEO_STORYBOARD.json').read_text())
+    storyboard_path=ROOT/'docs/submission/VIDEO_STORYBOARD.json'
+    storyboard_bytes=storyboard_path.read_bytes()
+    story=json.loads(storyboard_bytes)
     assets=ROOT/'docs/submission/video-assets';scenes=validate(story,assets)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     work=Path(tempfile.mkdtemp(prefix='storyboard-',dir=ROOT/'private'))
@@ -62,6 +64,7 @@ def main():
     subprocess.run([str(verify),str(args.output.resolve()),str(qa)],check=True,timeout=180)
     proof={'app_version':story['app_version'],'source_commit':story['source_commit'],'capture_kind':story['capture_kind'],
            'synthetic':True,'tts_voice':'macOS Tingting','continuous_recording':False,'ready_to_submit':False,
+           'storyboard_sha256':hashlib.sha256(storyboard_bytes).hexdigest(),
            'scene_images':{s['image']:hashlib.sha256((assets/s['image']).read_bytes()).hexdigest() for s in scenes},
            'decode_check':json.loads((qa/'decode-proof.json').read_text()),'mux_recovery_used':recovered,
            'sha256':hashlib.sha256(args.output.read_bytes()).hexdigest(),'bytes':args.output.stat().st_size}

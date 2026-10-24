@@ -1,0 +1,36 @@
+{
+  "app_version": "0.1.16",
+  "source_commit": "f50223e",
+  "capture_kind": "static_ui_storyboard",
+  "synthetic": true,
+  "tts_voice": "macOS Tingting",
+  "continuous_recording": false,
+  "ready_to_submit": false,
+  "storyboard_sha256": "36f07429778afc1d1a36cdaf39582bd46bcddcce1950843c590dceaff2b89ce1",
+  "scene_images": {
+    "00-intro.jpg": "4658badf9d7c84d9c752ecff840b477a9bf0eba983573e741ede6ab963d1f515",
+    "01-filter.jpg": "884dc90fcfccb6228b41fd40a64a124917a7510eb194b4708f01ebacfcd151f2",
+    "02-compare.jpg": "ec8c38f1c35789c578c3b1af5f99e0db8f9388d9e1c7667e31b30d8a10b144d4",
+    "03-evidence.jpg": "65c97ed1f5b1d2bf439827ac47c180126c5d3aca01790d4150debe8bfdf5910a",
+    "04-unknown.jpg": "f6554bf4e41e7e3e80ba64b832d6c218ffff66739feaee90ba09636efe85e805",
+    "05-inbox.jpg": "254935c47149952b57de9f97e5d1ccda82d25bebe9ff0fb519af720a8df8fe9d",
+    "06-followup.jpg": "4965d45dd857b404b304886d4bc89622139f9df510cd61d950d0ad76986f0680",
+    "07-blocked.jpg": "2283c6e915266fb3dceada7e3845f18e34d918da51641bac111ead93770192d0",
+    "08-favorites.jpg": "894858898ac74af385d93f4f206a3c4a7526e5720edbe8d0d8550f76c0addbc6"
+  },
+  "decode_check": {
+    "audio_peak": 0.7761484384536743,
+    "decoded_audio_buffers": 574,
+    "decoded_video_frames": 2075,
+    "duration": 207.5,
+    "full_decode": "passed",
+    "height": 1080,
+    "human_listening_review": false,
+    "nominal_fps": 10,
+    "scene_previews": 10,
+    "width": 1920
+  },
+  "mux_recovery_used": false,
+  "sha256": "01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54",
+  "bytes": 16211580
+}

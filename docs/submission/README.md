@@ -1,6 +1,6 @@
 # 参赛介绍材料审阅稿
 
-2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；窄屏/会话提示复核后又同步第5页实际范围，并形成[当前含视频审阅包](VERIFIED_REVIEW_BUNDLE_20261024.md)。10月23日曾修正视频状态并完成[合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
+2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；窄屏/会话提示复核后又同步第5页实际范围，并形成[此前含旧版视频的审阅包](VERIFIED_REVIEW_BUNDLE_20261024.md)。10月23日曾修正视频状态并完成[合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[修订口播的静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review_20261024.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
 
 2026-10-24材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
@@ -23,10 +23,10 @@ python scripts/build_competition_intro.py --font /可嵌入且支持中文的Tru
 
 ## 已执行检查
 
-- PDFInfo：6页A4，无表单、无JavaScript、无加密；278474字节。
-- 全部6页以110 DPI渲染PNG并逐页目视检查；新增创新/依赖文字没有裁切、重叠或缺字。390px浏览器复核后第5页范围措辞更新，其他5页渲染与前版逐字节一致；第5页重新目视核对。
+- PDFInfo：6页A4，无表单、无JavaScript、无加密；278477字节。
+- 全部6页以110 DPI渲染PNG并逐页目视检查；新增创新/依赖文字没有裁切、重叠或缺字。390px浏览器复核后第5页范围措辞更新；新版视频时长同步后第6页更新并目视核对，其他5页渲染与上一版逐字节一致。
 - pypdf提取文本：6页，方案创新点、开源依赖与治理、262/0.1.16/ccd5a1c/合成/未知/未完成及静态分镜等关键边界存在；未发现本机绝对路径或SMTP密码字段。
-- QA图片保存在private/pdf-qa-20261024-mobile，旧版在private/pdf-qa-20261024，均不入Git；最终PDF、构建脚本和合成截图保留。
+- QA图片保存在private/pdf-qa-20261024-video，旧版在private/pdf-qa-20261024-mobile及private/pdf-qa-20261024，均不入Git；最终PDF、构建脚本和合成截图保留。
 
 ## 定稿前剩余
 

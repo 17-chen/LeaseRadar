@@ -50,10 +50,11 @@ def add_sample_video(root):
     (root/bundle.VIDEO_PROOF).write_text(json.dumps({
         'app_version': '0.0.1', 'capture_kind': 'static_ui_storyboard',
         'synthetic': True, 'continuous_recording': False,
+        'storyboard_sha256': hashlib.sha256((root/'docs/submission/VIDEO_STORYBOARD.json').read_bytes()).hexdigest(),
         'bytes': len(video), 'sha256': hashlib.sha256(video).hexdigest(),
         'decode_check': {'full_decode': 'passed', 'duration': 10.0},
     }))
-    (root/'output/video/LeaseRadar_Storyboard_Review.media.json').write_text(json.dumps({
+    (root/'output/video/LeaseRadar_Storyboard_Review_20261024.media.json').write_text(json.dumps({
         'capture_kind': 'static_ui_storyboard', 'duration': 10.0,
     }))
 
@@ -167,7 +168,7 @@ def test_full_review_bundle_contains_verified_video_and_excludes_private(tmp_pat
             assert entry == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
 
 
-@pytest.mark.parametrize('damage', ['video', 'proof', 'missing'])
+@pytest.mark.parametrize('damage', ['video', 'proof', 'storyboard', 'missing'])
 def test_full_bundle_rejects_missing_or_unverified_video(tmp_path, damage):
     root = sample_root(tmp_path)
     add_sample_video(root)
@@ -177,6 +178,8 @@ def test_full_bundle_rejects_missing_or_unverified_video(tmp_path, damage):
         proof = json.loads((root/bundle.VIDEO_PROOF).read_text())
         proof['sha256'] = '0' * 64
         (root/bundle.VIDEO_PROOF).write_text(json.dumps(proof))
+    elif damage == 'storyboard':
+        (root/'docs/submission/VIDEO_STORYBOARD.json').write_text('changed after export')
     else:
         (root/bundle.VIDEO).unlink()
     archive = tmp_path/'rejected.zip'

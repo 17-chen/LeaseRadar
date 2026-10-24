@@ -22,8 +22,8 @@ FILES = (
     'docs/submission/RELEASE_EVIDENCE.json',
 )
 TREES = ('backend/app', 'backend/migrations')
-VIDEO = 'output/video/LeaseRadar_Storyboard_Review.mp4'
-VIDEO_PROOF = 'output/video/LeaseRadar_Storyboard_Review.proof.json'
+VIDEO = 'output/video/LeaseRadar_Storyboard_Review_20261024.mp4'
+VIDEO_PROOF = 'output/video/LeaseRadar_Storyboard_Review_20261024.proof.json'
 FULL_FILES = (
     'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md',
     'docs/submission/README.md', 'docs/submission/VIDEO_DRAFT.md',
@@ -31,7 +31,7 @@ FULL_FILES = (
     'docs/submission/VIDEO_STORYBOARD.json',
     'scripts/build_storyboard_video.py', 'scripts/render_storyboard_video.swift',
     'scripts/verify_storyboard_video.swift',
-    VIDEO, VIDEO_PROOF, 'output/video/LeaseRadar_Storyboard_Review.media.json',
+    VIDEO, VIDEO_PROOF, 'output/video/LeaseRadar_Storyboard_Review_20261024.media.json',
     *(f'docs/submission/video-assets/{name}' for name in (
         '00-intro.jpg', '01-filter.jpg', '02-compare.jpg', '03-evidence.jpg',
         '04-unknown.jpg', '05-inbox.jpg', '06-followup.jpg',
@@ -122,7 +122,7 @@ def build(root, destination, include_video=False):
         if len(video) < 12 or video[4:8] != b'ftyp':
             raise ValueError('视频MP4签名无效；请先核对媒体文件')
         proof = json.loads(payload[VIDEO_PROOF])
-        media = json.loads(payload['output/video/LeaseRadar_Storyboard_Review.media.json'])
+        media = json.loads(payload['output/video/LeaseRadar_Storyboard_Review_20261024.media.json'])
         decode = proof.get('decode_check') if isinstance(proof, dict) else None
         if (not isinstance(proof, dict) or not isinstance(decode, dict)
                 or not isinstance(media, dict)
@@ -131,6 +131,7 @@ def build(root, destination, include_video=False):
                 or proof.get('synthetic') is not True or proof.get('continuous_recording') is not False
                 or proof.get('bytes') != len(video)
                 or proof.get('sha256') != hashlib.sha256(video).hexdigest()
+                or proof.get('storyboard_sha256') != hashlib.sha256(payload['docs/submission/VIDEO_STORYBOARD.json']).hexdigest()
                 or decode.get('full_decode') != 'passed'
                 or media.get('capture_kind') != 'static_ui_storyboard'
                 or not isinstance(media.get('duration'), (float, int))
