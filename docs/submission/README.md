@@ -1,8 +1,8 @@
 # 参赛介绍材料审阅稿
 
-2026-10-23已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，修正视频状态并加入[最新合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把本轮彩排混入历史测试数。[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
+2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；10月23日曾修正视频状态并完成[合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
 
-2026-10-23材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，本轮演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
+2026-10-24材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
 ## 内容与数据边界
 
@@ -23,10 +23,10 @@ python scripts/build_competition_intro.py --font /可嵌入且支持中文的Tru
 
 ## 已执行检查
 
-- PDFInfo：6页A4，无表单、无JavaScript、无加密；约268KB。
-- 全部页面渲染PNG逐页查看；本次更新截图，修正表格行首孤立标点及代码/英文附近换行；不拉伸截图。最终不变页面以PNG哈希对照已审查版本，变化页重新查看；页码/标题/表格/截图无重叠或缺字。
-- pypdf提取文本：6页，262/0.1.16/ccd5a1c/合成/未知/未完成等关键边界存在；无本机绝对路径、密码或SMTP配置值。
-- QA图片和中间版本在private/pdf-qa-20261021，不入Git；最终PDF、构建脚本和合成截图保留。
+- PDFInfo：6页A4，无表单、无JavaScript、无加密；278458字节。
+- 全部6页以110 DPI渲染PNG并逐页目视检查；新增创新/依赖文字没有裁切、重叠或缺字。
+- pypdf提取文本：6页，方案创新点、开源依赖与治理、262/0.1.16/ccd5a1c/合成/未知/未完成及静态分镜等关键边界存在；未发现本机绝对路径或SMTP密码字段。
+- QA图片保存在private/pdf-qa-20261024，不入Git；最终PDF、构建脚本和合成截图保留。
 
 ## 定稿前剩余
 
@@ -50,4 +50,4 @@ python scripts/build_competition_intro.py --font /可嵌入且支持中文的Tru
 .venv/bin/python scripts/build_recording_bundle.py --include-video --output private/LeaseRadar_Review_20261023.zip
 ```
 
-该选项在原显式许可清单上加入已提交的静态分镜MP4、解码证明、媒体时间线、场景素材及重建源码、最新演示证据与阅读说明。打包前核对MP4签名、视频SHA256/字节数、应用版本、合成/非连续录屏标记、完整解码与时间线时长；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。实际独立恢复与包哈希见[完整包验收](FULL_REVIEW_BUNDLE_VERIFICATION.md)。
+该选项在原显式许可清单上加入已提交的静态分镜MP4、解码证明、媒体时间线、场景素材及重建源码、最新演示证据与阅读说明。打包前核对MP4签名、视频SHA256/字节数、应用版本、合成/非连续录屏标记、完整解码与时间线时长；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。10月23日包与哈希见[历史完整包验收](FULL_REVIEW_BUNDLE_VERIFICATION.md)；PDF更新后须重新生成包，不能将旧ZIP称为当前PDF版本。

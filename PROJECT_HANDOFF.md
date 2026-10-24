@@ -1,8 +1,8 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-23，Asia/Shanghai。应用运行代码基线92ba1a3；演示/PDF复核提交62e05c5，完整包构建提交d306277。本轮证据见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-24，Asia/Shanghai。应用运行代码基线92ba1a3；演示复核提交62e05c5，完整包构建提交d306277。10月24日PDF补明创新点和开源依赖，工程证据仍据ccd5a1c。演示与历史完整包证据分别见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
-2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
+2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。这是历史包，不能代表10月24日PDF字节。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
 
 ## 1. 新聊天先读什么
 
@@ -105,7 +105,7 @@ git log -5 --oneline
 
 | 材料 | 位置与实际状态 |
 | --- | --- |
-| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月21日审阅快照；依据ccd5a1c/262测试，非终稿 |
+| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月24日审阅稿；工程依据仍为10月21日ccd5a1c/262测试，非终稿 |
 | PDF构建 | scripts/build_competition_intro.py；独立可选文档依赖，修改须按PDF技能渲染全部页面审阅 |
 | 集中材料证据 | docs/submission/RELEASE_EVIDENCE.json；保留旧实现证据，不机械改测试数字 |
 | 分镜视频 | output/video/LeaseRadar_Storyboard_Review.mp4；206.9秒，1920×1080，10fps，H.264/AAC |
@@ -150,4 +150,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：新建最新DEMO→完整七步与多端口浏览器彩排→提交材料内容/口播终审与PDF更新→最终视频/源码/文档包一致性与失败恢复检查。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：复核390px与自然过期提示→视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。七步与多端口浏览器彩排已有10月23日记录，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
