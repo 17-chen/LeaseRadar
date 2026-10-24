@@ -1,6 +1,6 @@
 # 参赛介绍材料审阅稿
 
-2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖，并形成[新版含视频审阅包](FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md)；10月23日曾修正视频状态并完成[合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
+2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；窄屏/会话提示复核后又同步第5页实际范围，并形成[当前含视频审阅包](FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md)。10月23日曾修正视频状态并完成[合成演示与材料复核](DEMO_MATERIALS_20261023.md)。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
 
 2026-10-24材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
@@ -50,4 +50,4 @@ python scripts/build_competition_intro.py --font /可嵌入且支持中文的Tru
 .venv/bin/python scripts/build_recording_bundle.py --include-video --output private/新的完整审阅包.zip
 ```
 
-该选项在原显式许可清单上加入已提交的静态分镜MP4、解码证明、媒体时间线、场景素材及重建源码、最新演示证据与阅读说明。打包前核对MP4签名、视频SHA256/字节数、应用版本、合成/非连续录屏标记、完整解码与时间线时长；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。10月24日包与哈希见[新版完整包复核](FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md)；[10月23日旧包](FULL_REVIEW_BUNDLE_VERIFICATION.md)不含新版PDF，继续保留历史证据。
+该选项在原显式许可清单上加入已提交的静态分镜MP4、解码证明、媒体时间线、场景素材及重建源码、最新演示证据与阅读说明。打包前核对MP4签名、视频SHA256/字节数、应用版本、合成/非连续录屏标记、完整解码与时间线时长；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。当前包与哈希见[含移动端修复包复核](FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md)；[10月24日早先包](FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md)及[10月23日旧包](FULL_REVIEW_BUNDLE_VERIFICATION.md)继续保留历史证据。

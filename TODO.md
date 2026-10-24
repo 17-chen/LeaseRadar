@@ -4,11 +4,11 @@
 
 ## 进行中
 
-- [ ] 2026-10-24介绍PDF补明创新点/开源依赖，连续录制稿修正静态分镜与含视频包状态；新版80文件审阅包已重建/核对/独立初始化，仍需最终视频听审/形式与材料终审。见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md。
+- [ ] 2026-10-24最新前端会话过期提示已修复并做窄屏浏览器复核，PDF同步范围；`234918c`对应80文件包已重建/核对/独立初始化，仍需最终视频听审/形式与材料终审。见docs/submission/MOBILE_SESSION_VERIFICATION_20261024.md和FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md。
 
-- [ ] 本地含视频80文件审阅包已生成、哈希/Git逐项比对及独立DEMO恢复通过（2026-10-23）；继续最终视频听审/形式、PDF终审、390px与访问/提交门槛。证据见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。
+- [ ] 本地含视频80文件审阅包已生成、哈希/Git逐项比对及独立DEMO恢复通过（2026-10-23）；这是历史包，继续最终视频听审/形式、PDF终审与访问/提交门槛。证据见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。
 
-- [ ] 2026-10-23最新DEMO七步/收藏/跟进/筛选CSV及双端口隔离已复核，介绍PDF审阅稿已修正视频状态；继续补390px、自然过期提示、最终视频听审与全包恢复。证据见docs/submission/DEMO_MATERIALS_20261023.md。
+- [ ] 2026-10-23最新DEMO七步/收藏/跟进/筛选CSV及双端口隔离已复核，介绍PDF审阅稿已修正视频状态；10月24日另完成窄屏/模拟服务端到期提示，继续最终视频听审与全包终审。证据见docs/submission/DEMO_MATERIALS_20261023.md和MOBILE_SESSION_VERIFICATION_20261024.md。
 
 - [ ] 10月31日比赛提交优先：26日核心演示冻结、30日提交包；见docs/COMPETITION_DEMO.md。优先主链路/可重复回放/介绍与视频，后置账号自助、地图和大规模扩展。
 

@@ -49,7 +49,9 @@
 
 ## 下一步任务
 
-2026-10-24材料与审阅包复核：六页PDF补明创新点和开源依赖治理，材料日期改为10月24日，工程依据仍是10月21日ccd5a1c/262项；逐页渲染目视及文字层核对通过。连续操作录制稿澄清静态分镜与`--include-video`能力。基于e369687重新生成80文件包，79个仓库文件逐字节匹配、ZIP校验和独立合成DEMO初始化通过；280项本机回归、1项Poppler集成通过。旧包不含新版PDF，两个包均非最终提交。见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md。
+2026-10-24窄屏/会话提示与当前包：新建8011隔离合成DEMO，390px详情和三项比较可读/横向滚动；模拟服务端会话到期后修复登录页持续提示。前端/PDF提交234918c，六页PDF第5页已同步实际验证边界。基于该提交重建80文件含视频审阅包，79项Git字节匹配、ZIP校验和独立无外网DEMO初始化通过；280项本机回归、1项Poppler集成通过。视频听审/最终形式和正式提交未完成。见docs/submission/MOBILE_SESSION_VERIFICATION_20261024.md和FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md。
+
+2026-10-24早先材料与包复核：六页PDF补明创新点和开源依赖治理，材料日期改为10月24日，工程依据仍是10月21日ccd5a1c/262项；逐页渲染目视及文字层核对通过。连续操作录制稿澄清静态分镜与`--include-video`能力。基于e369687生成80文件历史包，79项Git字节匹配、ZIP校验和独立合成DEMO初始化通过；280项本机回归、1项Poppler集成通过。此包不含后续前端/第5页更新，非最终提交。见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md。
 
 2026-10-23完整审阅包：基于d306277将源码/锁依赖/PDF/静态分镜视频和元数据打入本地80文件ZIP，哈希与Git逐文件匹配、独立目录无外网恢复通过。完整280项本机回归、1项Poppler集成通过；`ready_to_submit=false`，仍缺最终视频听审/形式、PDF终审、访问与正式提交。详见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。
 

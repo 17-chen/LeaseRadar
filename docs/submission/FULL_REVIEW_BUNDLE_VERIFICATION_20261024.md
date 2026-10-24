@@ -1,5 +1,7 @@
 # 本地完整审阅包复核 · 2026-10-24
 
+> 此为`e369687`的历史包记录。当天后续前端会话提示和PDF第5页更新后，当前包另见[FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md](FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md)。保留原哈希与失败记录，不将两个包混为同一版本。
+
 ## 本轮交付物
 
 - 本机文件：`private/LeaseRadar_Review_20261024.zip`，16,897,396字节；SHA256 `ec71c3290ebbe5f29541c101fd5cc1ceac041336052dc896b4ba70ff5f52be39`。仅留在private，不推送GitHub。
