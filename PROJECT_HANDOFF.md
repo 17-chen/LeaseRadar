@@ -1,8 +1,10 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-24，Asia/Shanghai。应用运行代码基线92ba1a3；演示复核提交62e05c5，完整包构建提交d306277。10月24日PDF补明创新点和开源依赖，工程证据仍据ccd5a1c。演示与历史完整包证据分别见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-24，Asia/Shanghai。应用运行代码基线92ba1a3；演示复核提交62e05c5，10月24日PDF/新审阅包源码提交e369687。工程证据仍据ccd5a1c。最新审阅包见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md；历史证据见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
 2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。这是历史包，不能代表10月24日PDF字节。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
+
+2026-10-24续作：从`e369687`生成新版80文件含视频审阅包，79个仓库文件与提交逐字节匹配，ZIP哈希/CRC和无外网独立DEMO初始化通过；PDF为10月24日材料，视频仍是原静态分镜草稿，`ready_to_submit=false`。完整280项本机回归、1项Poppler集成及材料逐页QA通过。范围与哈希见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md；新包仅在private。
 
 ## 1. 新聊天先读什么
 
@@ -115,6 +117,7 @@ git log -5 --oneline
 | 视频源素材 | docs/submission/VIDEO_STORYBOARD.json、video-assets；边界与失败路径见VIDEO_DRAFT.md |
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有3分27秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261024.zip；80个payload文件，含10月24日PDF与原静态分镜视频；非最终提交包，详见10月24日验收记录 |
 
 视频SHA256：833ffa946aaa5c7b75fffbcfbf62dce25bb0f54fc7de6148ab8c15d36b9c5806。
 最新运行包SHA256：13ab7863a15be7d59cde7c6c369dd793a3dd1ba0fe80a85ad2a682eaed48717e。proof在同名.proof.json；manifest的working_tree_dirty=true来自既有未跟踪文件，不等于包内源码有未提交修改，已有逐文件匹配证明。
