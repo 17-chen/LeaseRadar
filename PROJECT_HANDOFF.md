@@ -1,12 +1,14 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-24，Asia/Shanghai。最新前端与PDF源码提交234918c；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。当前含视频审阅包见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md；演示与历史包证据另见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-24，Asia/Shanghai。最新打包源码提交b5132b9；前端与PDF源码仍为234918c，API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。当前含视频审阅包见docs/submission/VERIFIED_REVIEW_BUNDLE_20261024.md；演示与历史包证据另见docs/submission/DEMO_MATERIALS_20261023.md和docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
 2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。这是历史包，不能代表10月24日PDF字节。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
 
 2026-10-24续作：从`e369687`生成新版80文件含视频审阅包，79个仓库文件与提交逐字节匹配，ZIP哈希/CRC和无外网独立DEMO初始化通过；PDF为10月24日材料，视频仍是原静态分镜草稿，`ready_to_submit=false`。完整280项本机回归、1项Poppler集成及材料逐页QA通过。范围与哈希见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md；新包仅在private。
 
 2026-10-24后续：新建8011隔离合成DEMO，在窄屏复核详情与三项比较；模拟服务端会话到期触发401后，修复登录页持续提示。基于`234918c`重新生成80文件包，79项Git字节匹配、哈希/CRC及独立无外网DEMO初始化通过；完整280项回归和1项Poppler集成通过。见docs/submission/MOBILE_SESSION_VERIFICATION_20261024.md及FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md。视频/正式提交仍未完成。
+
+2026-10-24本轮：新增标准库ZIP预解压校验器及损坏/恶意条目专项测试，从`b5132b9`生成81文件新审阅包；80项Git字节匹配、逐项哈希/CRC通过。独立解压后在禁外网条件下完成DEMO初始化、登录、筛选4条、比较、CSV和静态资源HTTP链路。完整281项回归、1项Poppler集成通过；首轮本地SMTP因沙箱端口绑定受阻，获准本机监听后重跑通过。视频10场景时间线/图片哈希一致，但未人工逐字听审；PDF与视频内容未改。见docs/submission/VERIFIED_REVIEW_BUNDLE_20261024.md。
 
 ## 1. 新聊天先读什么
 
@@ -30,7 +32,7 @@
 | 本机目录 | /Users/chenxin/Documents/瑞幸咖啡 网页检索 |
 | GitHub | https://github.com/17-chen/LeaseRadar，私有 |
 | 分支 | main；新建开发分支默认codex/前缀 |
-| 最新前端与PDF源码提交 | 234918cb5c4c4e0acdd4279c35c5363291d73818；API/数据库业务代码基线仍为92ba1a3 |
+| 最新打包源码提交 | b5132b9c9391f40701bb4f031f79fae4dcfe5f8e；前端与PDF源码为234918c，API/数据库业务代码基线仍为92ba1a3 |
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
@@ -88,6 +90,8 @@ DEMO按数据库URL摘要命名Cookie，LIVE/replay保留lease_session；旧DEMO
 
 进程仅有历史线索，非当前保证：真实API曾在8000（旧版本），多个DEMO曾占8001–8006；最新截图DEMO目录private/demo-runs/366c911e47bd曾在8006，8010曾仅提供output/video预览。接手先检查占用，别把端口猜成最新进程或批量kill。上一轮修复未重启真实/既有演示进程；新聊天宜选择空闲端口新建DEMO。
 
+2026-10-24本轮`lsof`复核8000–8019监听：仅SSH进程75651监听8001，没有识别到LeaseRadar API/DEMO进程；未触碰该SSH进程。`docker info`仍因daemon socket不可用失败，未做容器验收。之后的运行状态需重新核查。
+
 Docker CLI存在，10月21日docker info曾因无daemon失败；本次未复查。不能把配置文件存在或Poppler宿主集成成功写成Docker隔离worker验收。
 
 ## 8. 演示重建与验收路线
@@ -119,7 +123,7 @@ git log -5 --oneline
 | 视频源素材 | docs/submission/VIDEO_STORYBOARD.json、video-assets；边界与失败路径见VIDEO_DRAFT.md |
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有3分27秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
-| 最新本地完整审阅包 | private/LeaseRadar_Review_20261024_Mobile.zip；80个payload文件，含最新前端/10月24日PDF与原静态分镜视频；非最终提交包，详见10月24日移动端包验收 |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261024_Verified.zip；81个payload文件，含预解压校验器/最新前端/10月24日PDF与原静态分镜视频；非最终提交包，详见预解压校验与独立恢复记录 |
 
 视频SHA256：833ffa946aaa5c7b75fffbcfbf62dce25bb0f54fc7de6148ab8c15d36b9c5806。
 最新运行包SHA256：13ab7863a15be7d59cde7c6c369dd793a3dd1ba0fe80a85ad2a682eaed48717e。proof在同名.proof.json；manifest的working_tree_dirty=true来自既有未跟踪文件，不等于包内源码有未提交修改，已有逐文件匹配证明。
@@ -155,4 +159,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。七步与多端口浏览器彩排已有10月23日记录，窄屏与服务端会话到期提示已有10月24日记录；未等待12小时自然过期，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前81文件包已独立HTTP恢复；七步与多端口浏览器彩排已有10月23日记录，窄屏与服务端会话到期提示已有10月24日记录；未等待12小时自然过期，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。

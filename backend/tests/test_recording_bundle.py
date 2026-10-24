@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import warnings
 import zipfile
 
 import pytest
@@ -83,21 +84,23 @@ def test_verifier_rejects_unsafe_or_modified_archive(tmp_path):
         payload = {name: source.read(name) for name in source.namelist()}
     for case in ('modified', 'traversal', 'duplicate', 'symlink'):
         unsafe = tmp_path/f'{case}.zip'
-        with zipfile.ZipFile(unsafe, 'w') as destination:
-            for name, data in payload.items():
-                if case == 'modified' and name == 'frontend/app.js':
-                    data = b'changed'
-                destination.writestr(name, data)
-            if case == 'traversal':
-                destination.writestr('../outside', b'bad')
-            elif case == 'duplicate':
-                destination.writestr('frontend/app.js', b'bad')
-            elif case == 'symlink':
-                import stat
-                link = zipfile.ZipInfo('link')
-                link.create_system = 3
-                link.external_attr = (stat.S_IFLNK | 0o777) << 16
-                destination.writestr(link, 'target')
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message="Duplicate name: 'frontend/app.js'", category=UserWarning)
+            with zipfile.ZipFile(unsafe, 'w') as destination:
+                for name, data in payload.items():
+                    if case == 'modified' and name == 'frontend/app.js':
+                        data = b'changed'
+                    destination.writestr(name, data)
+                if case == 'traversal':
+                    destination.writestr('../outside', b'bad')
+                elif case == 'duplicate':
+                    destination.writestr('frontend/app.js', b'bad')
+                elif case == 'symlink':
+                    import stat
+                    link = zipfile.ZipInfo('link')
+                    link.create_system = 3
+                    link.external_attr = (stat.S_IFLNK | 0o777) << 16
+                    destination.writestr(link, 'target')
         with pytest.raises(ValueError, match='哈希|大小|路径|条目'):
             verifier.verify(unsafe)
 
