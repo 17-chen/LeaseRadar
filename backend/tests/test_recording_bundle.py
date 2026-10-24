@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('recording_bundle', ROOT/'scripts/build_recording_bundle.py')
 bundle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bundle)
+verifier_spec = importlib.util.spec_from_file_location('recording_verifier', ROOT/'scripts/verify_recording_bundle.py')
+verifier = importlib.util.module_from_spec(verifier_spec)
+verifier_spec.loader.exec_module(verifier)
 
 
 def sample_root(tmp_path):
@@ -69,6 +72,34 @@ def test_allowlist_and_hashes_exclude_private_state(tmp_path):
             assert b'SECRET_SENTINEL' not in data
             assert entry == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
         assert 'backend/app/module.py' in z.namelist()
+    assert verifier.verify(archive) == manifest
+
+
+def test_verifier_rejects_unsafe_or_modified_archive(tmp_path):
+    root = sample_root(tmp_path)
+    archive = tmp_path/'recording.zip'
+    bundle.build(root, archive)
+    with zipfile.ZipFile(archive) as source:
+        payload = {name: source.read(name) for name in source.namelist()}
+    for case in ('modified', 'traversal', 'duplicate', 'symlink'):
+        unsafe = tmp_path/f'{case}.zip'
+        with zipfile.ZipFile(unsafe, 'w') as destination:
+            for name, data in payload.items():
+                if case == 'modified' and name == 'frontend/app.js':
+                    data = b'changed'
+                destination.writestr(name, data)
+            if case == 'traversal':
+                destination.writestr('../outside', b'bad')
+            elif case == 'duplicate':
+                destination.writestr('frontend/app.js', b'bad')
+            elif case == 'symlink':
+                import stat
+                link = zipfile.ZipInfo('link')
+                link.create_system = 3
+                link.external_attr = (stat.S_IFLNK | 0o777) << 16
+                destination.writestr(link, 'target')
+        with pytest.raises(ValueError, match='哈希|大小|路径|条目'):
+            verifier.verify(unsafe)
 
 
 def test_existing_archive_is_preserved(tmp_path):

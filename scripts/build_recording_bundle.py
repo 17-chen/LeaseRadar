@@ -13,6 +13,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     'backend/alembic.ini', 'backend/requirements.lock', 'scripts/demo.py',
+    'scripts/verify_recording_bundle.py',
     'fixtures/replay/nongjy.html', 'frontend/index.html', 'frontend/app.js',
     'frontend/style.css', 'LICENSE',
     'docs/COMPETITION_DEMO.md', 'docs/submission/RECORDING_SCRIPT.md',
@@ -56,6 +57,7 @@ macOS/Linux命令如上；Windows使用 .venv\\Scripts\\python 替代 .venv/bin/
 若端口占用用 --port 8003。若七步路线提示过期，创建新的DEMO，不修改系统时间。
 
 运行前可核对MANIFEST.json中的SHA256；它是完整性记录，不是数字签名或可信发布证明。
+解压前可运行`python3 scripts/verify_recording_bundle.py 压缩包路径`核对清单、CRC和安全路径。
 包中没有真实数据库、账号、真实原始公告或私人笔记。素材仅合成，不能宣称真实接通、业绩或邮件投递。
 正式提交仍需视频导出、PDF终审、比赛要求/评审访问方式与发布授权核对。
 '''
@@ -78,6 +80,7 @@ python3 -m venv .venv
 端口占用可换其他空闲端口；过期路线需创建新DEMO，不修改系统时间或旧数据。
 PDF在output/pdf，视频及原有校验元数据在output/video，边界见docs/submission/README.md。
 MANIFEST.json列出每项字节数和SHA256，只是完整性清单，不是可信签名。
+解压前可用`python3 scripts/verify_recording_bundle.py 压缩包路径`检查清单、CRC和安全路径；也可用仓库中同名脚本。
 视频已导出但尚未逐字听审；正式比赛指引、评审访问、视频托管和提交均待确认。
 '''
 
