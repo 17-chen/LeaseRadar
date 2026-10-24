@@ -48,12 +48,17 @@ function clearWorkspace(){
  for(const el of $('filter-form').elements){if(el.name){if(el.type==='checkbox')el.checked=false;else el.value='';}}
  $('include-unknown').checked=true;$('sort').value='newest';$('subscription-form').reset();$('preference-form').reset();$('lease-form').reset();$('document-form').reset();$('import-form').reset();for(const id of ['stat-count','stat-notices','stat-sources'])$(id).textContent='—';for(const v of ['listings','subscriptions','notifications','sources','review','tools'])$('view-'+v).hidden=v!=='listings';document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n.dataset.view==='listings'));$('page-title').textContent='候选铺位';renderSelection();
 }
+function requireLogin(){
+ const wasSignedIn=Boolean(user);
+ clearWorkspace();$('workspace').hidden=true;$('login').hidden=false;
+ if(wasSignedIn)$('login-error').textContent='登录已过期，请重新登录';
+}
 async function api(path, options={}){
  const generation=sessionGeneration;
  const r=await fetch('/api/v1'+path,{...options,headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,...options.headers}});
  let data=await r.json();
  if(generation!==sessionGeneration)throw new Error('会话已变更，请重新登录');
- if(!r.ok){if(r.status===401){clearWorkspace();$('workspace').hidden=true;$('login').hidden=false;}throw new Error(typeof data.detail==='string'?data.detail:'请求未通过校验，请检查输入');}
+ if(!r.ok){if(r.status===401)requireLogin();throw new Error(typeof data.detail==='string'?data.detail:'请求未通过校验，请检查输入');}
  return data;
 }
 function filters(){
@@ -94,7 +99,7 @@ $('export-listings').onclick=async()=>{
  try{
   const response=await fetch('/api/v1/exports/listings.csv',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(appliedQuery)});
   if(generation!==sessionGeneration)return;
-  if(!response.ok){if(response.status===401){clearWorkspace();$('workspace').hidden=true;$('login').hidden=false;}throw new Error('导出失败，请确认登录状态和筛选条件');}
+  if(!response.ok){if(response.status===401)requireLogin();throw new Error('导出失败，请确认登录状态和筛选条件');}
   const blob=await response.blob();if(generation!==sessionGeneration)return;
   const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='leaseradar-filtered.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   toast('已导出当前已应用条件的全部结果，包含跨页候选');
@@ -146,8 +151,8 @@ async function showDetail(id){
  await loadRelations(r.id);bindReviewForms(r);
  $('followup-form').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await api(`/listings/${r.id}/followup`,{method:'PATCH',body:JSON.stringify({status:f.elements.status.value,note:f.elements.note.value,favorite:f.elements.favorite.checked})});toast('跟进记录已保存');await loadListings();await loadNotices();}catch(e){toast(e.message);}};
 }
-$('login-form').onsubmit=async e=>{e.preventDefault();try{const data=Object.fromEntries(new FormData(e.target));await api('/auth/login',{method:'POST',body:JSON.stringify(data)});e.target.reset();await boot();}catch(e){$('login-error').textContent=e.message;}};
-$('logout').onclick=async()=>{await api('/auth/logout',{method:'POST'});clearWorkspace();await boot();};
+$('login-form').onsubmit=async e=>{e.preventDefault();$('login-error').textContent='';try{const data=Object.fromEntries(new FormData(e.target));await api('/auth/login',{method:'POST',body:JSON.stringify(data)});e.target.reset();await boot();}catch(e){$('login-error').textContent=e.message;}};
+$('logout').onclick=async()=>{await api('/auth/logout',{method:'POST'});clearWorkspace();$('login-error').textContent='';await boot();};
 $('filter-form').onsubmit=e=>{e.preventDefault();page=1;loadListings(draftQuery()).catch(e=>toast(e.message));};
 $('filter-form').oninput=pendingFilters;
 $('filter-form').onchange=pendingFilters;
