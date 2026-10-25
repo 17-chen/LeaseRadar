@@ -27,6 +27,7 @@ VIDEO_PROOF = 'output/video/LeaseRadar_Storyboard_Review_20261024.proof.json'
 FULL_FILES = (
     'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md',
     'docs/submission/README.md', 'docs/submission/VIDEO_DRAFT.md',
+    'docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md',
     'docs/submission/DEMO_MATERIALS_20261023.md',
     'docs/submission/VIDEO_STORYBOARD.json',
     'scripts/build_storyboard_video.py', 'scripts/render_storyboard_video.swift',

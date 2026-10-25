@@ -1,6 +1,6 @@
 # 参赛介绍材料审阅稿
 
-2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；窄屏/会话提示复核后同步第5页实际范围，新视频时长同步到第6页。[当前含修订视频的审阅包](VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md)已独立恢复；此前[旧版视频包](VERIFIED_REVIEW_BUNDLE_20261024.md)保留。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[修订口播的静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review_20261024.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
+2026-10-24已重新生成[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，补明创新点和开源依赖；窄屏/会话提示复核后同步第5页实际范围，新视频时长同步到第6页。10月25日[新建DEMO彩排](DEMO_FREEZE_REHEARSAL_20261025.md)复核七步和390px比较；[上一版含修订视频的审阅包](VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md)已独立恢复。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。[修订口播的静态分镜视频草稿](../../output/video/LeaseRadar_Storyboard_Review_20261024.mp4)非连续录屏或最终提交版，构建与边界见[视频验收](VIDEO_DRAFT.md)。
 
 2026-10-24材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
