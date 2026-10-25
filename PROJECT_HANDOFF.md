@@ -1,6 +1,6 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-24，Asia/Shanghai。最新视频/PDF/打包源码提交0b1d266；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。当前含视频审阅包见docs/submission/VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md；旧包见docs/submission/VERIFIED_REVIEW_BUNDLE_20261024.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-25，Asia/Shanghai。当前GitHub主线已到e67da58，最新视频/PDF/打包源码为0b1d266；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。当前含视频审阅包见docs/submission/VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md；10月25日最新浏览器彩排见docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
 2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。这是历史包，不能代表10月24日PDF字节。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
 
@@ -11,6 +11,8 @@
 2026-10-24本轮：新增标准库ZIP预解压校验器及损坏/恶意条目专项测试，从`b5132b9`生成81文件新审阅包；80项Git字节匹配、逐项哈希/CRC通过。独立解压后在禁外网条件下完成DEMO初始化、登录、筛选4条、比较、CSV和静态资源HTTP链路。完整281项回归、1项Poppler集成通过；首轮本地SMTP因沙箱端口绑定受阻，获准本机监听后重跑通过。视频10场景时间线/图片哈希一致，但未人工逐字听审；PDF与视频内容未改。见docs/submission/VERIFIED_REVIEW_BUNDLE_20261024.md。
 
 2026-10-24续作：旧视频末镜头“当前263项”会被误解为现时状态，改为指向截图对应源码阶段并重建207.5秒静态分镜；视频proof增加分镜稿哈希，打包器拒绝口播稿与视频证据不一致。PDF第6页同步约3分28秒并渲染检查。从`0b1d266`生成81文件包，80项Git字节匹配、独立禁外网HTTP恢复通过；完整282项回归、1项Poppler集成通过。旧视频/包及首次沙箱AAC失败保留。没有人工逐字听审或正式提交。见docs/submission/VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md。
+
+2026-10-25续作：从最新e67da58新建隔离合成DEMO，原生浏览器重新走完七步；390px来源页及三候选比较可读，页面无整体横向溢出，截图与受限沙箱失败现场留在private。录制建议稿纠正历史测试数/真实样本“当前”的歧义。尚未逐字听审视频或签收演示冻结；完整记录见docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。本轮最终测试、审阅包和GitHub状态以随后记录为准。
 
 ## 1. 新聊天先读什么
 
@@ -38,7 +40,7 @@
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40077000009，2026-10-24 completed/success，head=a0d315d；0b1d266及本轮文档提交后的CI须另核 |
+| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40078438837，2026-10-24 completed/success，head=e67da58；本轮新提交后的CI须另核 |
 
 交接编写前工作树无已跟踪修改，仅有用户既有未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg；不要删除、改写或随手git add全部。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 
@@ -162,4 +164,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前81文件包已独立HTTP恢复；七步与多端口浏览器彩排已有10月23日记录，窄屏与服务端会话到期提示已有10月24日记录；未等待12小时自然过期，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前81文件包已独立HTTP恢复；七步和390px已在10月25日新建DEMO复核，多端口隔离、模拟会话到期分别有10月23/24日记录；未等待12小时自然过期，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。

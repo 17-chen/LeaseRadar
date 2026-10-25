@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [ ] 2026-10-25最新主线新建DEMO七步与390px比较彩排完成并留私有截图；录制稿历史证据措辞已修。视频逐字听审、PDF/规则终审和访问/正式提交仍待完成；见docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。
+
 - [ ] 修订口播视频、同步PDF及新版81文件包已重建/独立恢复；仍需人工逐字听审、最终形式与PDF终审、评审访问及正式提交。见docs/submission/VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md。
 
 - [ ] 2026-10-24当前81文件审阅包已补预解压校验、逐项Git匹配和独立无外网HTTP恢复；视频听审/最终形式、PDF终审、访问与正式提交仍待完成。见docs/submission/VERIFIED_REVIEW_BUNDLE_20261024.md。
