@@ -51,6 +51,8 @@
 
 2026-10-25材料续作：介绍PDF六页同步最新七步/390px合成DEMO证据并逐页渲染检查；十段静态分镜旁白文本与音频时长自动核对，人工听审清单仍全待完成。完整282项本机回归与1项Poppler集成通过；首次沙箱本地SMTP绑定失败，允许本机回环监听后通过。新版包/CI以本轮后续记录为准。见docs/submission/PDF_REVIEW_20261025.md与VIDEO_LISTENING_CHECKLIST_20261025.md。
 
+2026-10-25新包：从f7f1fc7生成85文件本地PDF更新版审阅包，84项Git字节匹配、预解压校验及独立禁外网合成登录/筛选4条/比较/CSV四行恢复通过。`ready_to_submit=false`，具体哈希及范围见docs/submission/PDF_REVIEW_BUNDLE_VERIFICATION_20261025.md。
+
 2026-10-25演示冻结前复核：以`e67da58`新建8013/8014隔离合成DEMO，原生浏览器完成七步、390px来源与三候选比较，保存私有截图；无新的演示阻断。录制建议稿纠正把ccd5a1c阶段262项回归和25条历史真实记录称为“当前”的歧义。首次受限沙箱8012绑定失败现场保留。视频人工逐字听审、PDF与规则终审、评审访问/正式提交仍未完成；见docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。
 
 2026-10-25审阅包续作：基于`1fbeef2`加入最新彩排记录、修订录制稿并生成82文件本地包，81项仓库字节匹配；预解压校验及确切ZIP独立禁外网合成恢复通过。完整282项、Poppler集成1项、包专项14项通过；包仍不可正式提交，详情见docs/submission/REHEARSAL_BUNDLE_VERIFICATION_20261025.md。
