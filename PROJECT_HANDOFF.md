@@ -2,6 +2,8 @@
 
 > 更新：2026-10-25，Asia/Shanghai。最新82文件本地审阅包源码为1fbeef2；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。包与浏览器彩排见docs/submission/REHEARSAL_BUNDLE_VERIFICATION_20261025.md、docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
+2026-10-25材料续作：六页PDF已按新DEMO七步/390px彩排重建并逐页渲染目视，材料日期更新；完整PDF QA见docs/submission/PDF_REVIEW_20261025.md。为现有207.5秒静态分镜新增逐段人工听审清单，十段文字/音频文件与时长自动核对通过，但**没有完成真人逐字听审**；见docs/submission/VIDEO_LISTENING_CHECKLIST_20261025.md。旧82文件包不含新版PDF。完整回归首次因沙箱禁止本机SMTP监听为281过/1失败，允许回环监听后282项全过；Poppler集成、JS语法、依赖一致性和差异检查通过。新包与GitHub状态以本轮后续记录为准。
+
 2026-10-23续作：含视频的80文件本地完整审阅包已基于`d306277`生成，独立解压/逐文件Git匹配/无外网DEMO恢复通过；SHA256和边界见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md。这是历史包，不能代表10月24日PDF字节。此包仍非最终参赛提交包，视频为静态分镜草稿、PDF为审阅稿。新增包专项测试后完整280项回归通过；真实来源和外部通道未操作。GitHub同步与CI以最新提交状态为准。
 
 2026-10-24续作：从`e369687`生成新版80文件含视频审阅包，79个仓库文件与提交逐字节匹配，ZIP哈希/CRC和无外网独立DEMO初始化通过；PDF为10月24日材料，视频仍是原静态分镜草稿，`ready_to_submit=false`。完整280项本机回归、1项Poppler集成及材料逐页QA通过。范围与哈希见docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION_20261024.md；新包仅在private。
@@ -119,12 +121,12 @@ git log -5 --oneline
 
 | 材料 | 位置与实际状态 |
 | --- | --- |
-| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月24日审阅稿；工程依据仍为10月21日ccd5a1c/262测试，非终稿 |
+| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月25日审阅稿；工程依据仍为10月21日ccd5a1c/262测试，非终稿；见PDF_REVIEW_20261025.md |
 | PDF构建 | scripts/build_competition_intro.py；独立可选文档依赖，修改须按PDF技能渲染全部页面审阅 |
 | 集中材料证据 | docs/submission/RELEASE_EVIDENCE.json；保留旧实现证据，不机械改测试数字 |
 | 分镜视频 | output/video/LeaseRadar_Storyboard_Review_20261024.mp4；207.5秒，1920×1080，10fps，H.264/AAC |
 | 视频性质 | 实际合成UI截图＋本机Tingting合成旁白；持续标识静态分镜/非连续录屏；不是用户声音或真实试用 |
-| 视频证据 | 截图依据f50223e；修订口播不再称263项为当前，分镜哈希绑定；全片2075帧/574音频缓冲解码、10场景预览（与旧版相同）；未逐字人工听审 |
+| 视频证据 | 截图依据f50223e；修订口播不再称263项为当前，分镜哈希绑定；全片2075帧/574音频缓冲解码、10场景预览（与旧版相同）；十段自动核对及听审清单已备，未逐字人工听审 |
 | 视频重建 | scripts/build_storyboard_video.py、render_storyboard_video.swift、verify_storyboard_video.swift；macOS原生工具已验证，Linux CI仅验证输入规则 |
 | 视频源素材 | docs/submission/VIDEO_STORYBOARD.json、video-assets；边界与失败路径见VIDEO_DRAFT.md |
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
