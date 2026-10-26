@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "app_version": "0.1.16",
+  "source_commit": "a9e6981122a796e5c6957c3fe79a838fd2b25faa",
+  "capture_kind": "automated_continuous_browser_session",
+  "synthetic": true,
+  "continuous_recording": true,
+  "audio": false,
+  "credential_entry_recorded": false,
+  "external_requests_blocked": true,
+  "browser": "Google Chrome via Playwright-core 1.62.1",
+  "viewport": "1280x800",
+  "format": "WebM / VP8",
+  "duration_seconds": 55.68,
+  "fps": 25,
+  "bytes": 5587001,
+  "sha256": "4ac6ae3eeb088456cee084185d93cf35e88e7b6cf8be2121e4fd3c240d277fdd",
+  "raw_capture_sha256": "8f10c7dedc8f260c76faa2f6854b16d00af0d61d81fe52be21791680a16d15b8",
+  "trimmed_intro_seconds": 0.8,
+  "steps": [
+    "自由筛选",
+    "比较三条候选",
+    "查看金额依据",
+    "查看周期未知",
+    "提醒收件箱",
+    "跟进与笔记",
+    "来源与受阻"
+  ],
+  "verification": {
+    "full_decode": "passed",
+    "key_frame_visual_review": "passed",
+    "audio_track": "none",
+    "manual_audio_review": "not_applicable"
+  },
+  "submission_status": "supplemental_review_only"
+}

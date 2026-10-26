@@ -2,6 +2,8 @@
 
 2026-10-25已重建[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，同步最新七步与390px彩排事实；六页检查见[PDF审阅](PDF_REVIEW_20261025.md)。视频仍是[修订口播的静态分镜草稿](../../output/video/LeaseRadar_Storyboard_Review_20261024.mp4)，逐段核对入口见[听审清单](VIDEO_LISTENING_CHECKLIST_20261025.md)，不是连续录屏或最终提交版。早先[82文件审阅包](REHEARSAL_BUNDLE_VERIFICATION_20261025.md)保留历史记录，**不含这次PDF更新**；当前重建包另见本目录最新验证记录。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。
 
+2026-10-26另录[55.68秒连续浏览器操作片段](../../output/video/LeaseRadar_Browser_Walkthrough_20261026.webm)，自动点击新建合成DEMO七步、无音轨，核验见[录制审阅](BROWSER_WALKTHROUGH_20261026.md)。它只补充实际页面流程画面，带旁白静态分镜仍待人工逐字听审；两者均非最终提交视频。
+
 2026-10-25材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
 ## 内容与数据边界
@@ -50,4 +52,4 @@ python scripts/build_competition_intro.py --font /可嵌入且支持中文的Tru
 .venv/bin/python scripts/build_recording_bundle.py --include-video --output private/新的完整审阅包.zip
 ```
 
-该选项在原显式许可清单上加入已提交的静态分镜MP4、解码证明、媒体时间线、场景素材及重建源码、最新演示证据、PDF审阅/视频听审清单与阅读说明。打包前核对MP4签名、视频SHA256/字节数、应用版本、合成/非连续录屏标记、完整解码与时间线时长；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。早先包与哈希见[10月25日彩排版完整包](REHEARSAL_BUNDLE_VERIFICATION_20261025.md)；[此前口播修订包](VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md)、[预解压校验包](VERIFIED_REVIEW_BUNDLE_20261024.md)、[移动端修复包](FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md)及更早包继续保留历史证据。
+该选项在原显式许可清单上加入已提交的静态分镜MP4、约56秒无音轨连续浏览器WebM、两份媒体证明、场景素材及重建源码、最新演示证据、PDF审阅/视频听审清单与阅读说明。打包前核对两份媒体签名、SHA256/字节数、应用版本和合成/录制方式标记；任一项不符或缺失则拒绝产生包。压缩包仍标`ready_to_submit=false`，因为视频听审/最终形式、PDF终审、规则与访问、正式提交均未完成。早先包与哈希见[10月25日彩排版完整包](REHEARSAL_BUNDLE_VERIFICATION_20261025.md)；[此前口播修订包](VIDEO_REFRESH_BUNDLE_VERIFICATION_20261024.md)、[预解压校验包](VERIFIED_REVIEW_BUNDLE_20261024.md)、[移动端修复包](FULL_REVIEW_BUNDLE_VERIFICATION_20261024_MOBILE.md)及更早包继续保留历史证据。

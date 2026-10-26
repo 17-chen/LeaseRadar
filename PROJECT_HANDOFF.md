@@ -1,6 +1,8 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-25，Asia/Shanghai。最新85文件本地审阅包源码为f7f1fc7；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。包与浏览器彩排见docs/submission/PDF_REVIEW_BUNDLE_VERIFICATION_20261025.md、docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-26，Asia/Shanghai。10月25日最新已验证本地包为85文件、源码f7f1fc7；10月26日新增连续浏览器七步补充片段，待重新打包。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+
+2026-10-26演示续作：从当前a9e6981代码新建8015隔离合成DEMO，Chrome/Playwright连续走完七步，录成55.68秒无音轨WebM，剔除原始捕获首0.8秒空白登录表单；最终首帧为合成候选页。浏览器脚本已通用化并复跑七步，输出SHA和录制方式证明；关键镜头抽帧目视、成品完整解码通过。它是自动化连续浏览器操作，**不是带讲解的最终投稿视频**，原静态分镜逐字听审仍待完成。17项包专项、285项完整回归及1项Poppler集成通过。见docs/submission/BROWSER_WALKTHROUGH_20261026.md。真实来源/邮件未启用，8015已停止，原8001 SSH未触碰。本轮新包与GitHub状态以随后记录为准。
 
 2026-10-25材料续作：六页PDF已按新DEMO七步/390px彩排重建并逐页渲染目视，材料日期更新；完整PDF QA见docs/submission/PDF_REVIEW_20261025.md。为现有207.5秒静态分镜新增逐段人工听审清单，十段文字/音频文件与时长自动核对通过，但**没有完成真人逐字听审**；见docs/submission/VIDEO_LISTENING_CHECKLIST_20261025.md。旧82文件包不含新版PDF。完整回归首次因沙箱禁止本机SMTP监听为281过/1失败，允许回环监听后282项全过；Poppler集成、JS语法、依赖一致性和差异检查通过。新包与GitHub状态以本轮后续记录为准。
 
@@ -46,7 +48,7 @@
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40152105180，2026-10-25 completed/success，head=b3a715c；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
+| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40164454438，2026-10-25 completed/success，head=a9e6981；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
 
 交接编写前工作树无已跟踪修改，仅有用户既有未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg；不要删除、改写或随手git add全部。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 
@@ -127,6 +129,7 @@ git log -5 --oneline
 | PDF构建 | scripts/build_competition_intro.py；独立可选文档依赖，修改须按PDF技能渲染全部页面审阅 |
 | 集中材料证据 | docs/submission/RELEASE_EVIDENCE.json；保留旧实现证据，不机械改测试数字 |
 | 分镜视频 | output/video/LeaseRadar_Storyboard_Review_20261024.mp4；207.5秒，1920×1080，10fps，H.264/AAC |
+| 浏览器操作补充片段 | output/video/LeaseRadar_Browser_Walkthrough_20261026.webm；55.68秒，1280×800，25fps，VP8无音轨；合成DEMO自动七步连续录制，非正式投稿视频 |
 | 视频性质 | 实际合成UI截图＋本机Tingting合成旁白；持续标识静态分镜/非连续录屏；不是用户声音或真实试用 |
 | 视频证据 | 截图依据f50223e；修订口播不再称263项为当前，分镜哈希绑定；全片2075帧/574音频缓冲解码、10场景预览（与旧版相同）；十段自动核对及听审清单已备，未逐字人工听审 |
 | 视频重建 | scripts/build_storyboard_video.py、render_storyboard_video.swift、verify_storyboard_video.swift；macOS原生工具已验证，Linux CI仅验证输入规则 |

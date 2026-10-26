@@ -24,17 +24,21 @@ FILES = (
 TREES = ('backend/app', 'backend/migrations')
 VIDEO = 'output/video/LeaseRadar_Storyboard_Review_20261024.mp4'
 VIDEO_PROOF = 'output/video/LeaseRadar_Storyboard_Review_20261024.proof.json'
+BROWSER_VIDEO = 'output/video/LeaseRadar_Browser_Walkthrough_20261026.webm'
+BROWSER_PROOF = 'output/video/LeaseRadar_Browser_Walkthrough_20261026.proof.json'
 FULL_FILES = (
     'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md',
     'docs/COMPETITION_REQUIREMENTS.md',
     'docs/submission/README.md', 'docs/submission/VIDEO_DRAFT.md',
     'docs/submission/PDF_REVIEW_20261025.md',
     'docs/submission/VIDEO_LISTENING_CHECKLIST_20261025.md',
+    'docs/submission/BROWSER_WALKTHROUGH_20261026.md',
     'docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md',
     'docs/submission/DEMO_MATERIALS_20261023.md',
     'docs/submission/VIDEO_STORYBOARD.json',
     'scripts/build_storyboard_video.py', 'scripts/render_storyboard_video.swift',
     'scripts/verify_storyboard_video.swift',
+    'scripts/record_demo_browser.js', BROWSER_VIDEO, BROWSER_PROOF,
     VIDEO, VIDEO_PROOF, 'output/video/LeaseRadar_Storyboard_Review_20261024.media.json',
     *(f'docs/submission/video-assets/{name}' for name in (
         '00-intro.jpg', '01-filter.jpg', '02-compare.jpg', '03-evidence.jpg',
@@ -69,6 +73,7 @@ FULL_GUIDE = '''# LeaseRadar 本地完整审阅包
 
 本包合并可运行合成DEMO、介绍PDF审阅稿和已导出的静态分镜视频草稿。
 视频是合成UI截图与本机TTS旁白，不是连续录屏或最终审稿版本；全部演示数据为合成。
+另附约56秒无音轨的自动化浏览器连续操作片段，用于审查七步流程；它也不是最终投稿视频。
 此包没有真实公告、数据库、账号、私有笔记或密钥，也没有对外发布或正式提交证明。
 
 使用Python 3.12/3.13，在解压后的本目录运行：
@@ -142,6 +147,24 @@ def build(root, destination, include_video=False):
                 or not isinstance(decode.get('duration'), (float, int))
                 or abs(media['duration'] - decode['duration']) > 0.1):
             raise ValueError('视频与解码证明不一致；拒绝打包')
+        browser_video = payload[BROWSER_VIDEO]
+        browser_proof = json.loads(payload[BROWSER_PROOF])
+        if (not browser_video.startswith(b'\x1a\x45\xdf\xa3')
+                or not isinstance(browser_proof, dict)
+                or browser_proof.get('app_version') != evidence['app_version']
+                or browser_proof.get('capture_kind') != 'automated_continuous_browser_session'
+                or browser_proof.get('synthetic') is not True
+                or browser_proof.get('continuous_recording') is not True
+                or browser_proof.get('audio') is not False
+                or browser_proof.get('credential_entry_recorded') is not False
+                or browser_proof.get('external_requests_blocked') is not True
+                or browser_proof.get('bytes') != len(browser_video)
+                or browser_proof.get('sha256') != hashlib.sha256(browser_video).hexdigest()
+                or not isinstance(browser_proof.get('steps'), list)
+                or len(browser_proof['steps']) != 7
+                or not isinstance(browser_proof.get('verification'), dict)
+                or browser_proof['verification'].get('full_decode') != 'passed'):
+            raise ValueError('浏览器操作视频与证明不一致；拒绝打包')
     payload['START_HERE.md'] = (FULL_GUIDE if include_video else GUIDE).encode()
     revision = subprocess.run(['git', '-C', str(root), 'rev-parse', 'HEAD'], capture_output=True, text=True)
     dirty = subprocess.run(['git', '-C', str(root), 'status', '--porcelain'], capture_output=True, text=True)

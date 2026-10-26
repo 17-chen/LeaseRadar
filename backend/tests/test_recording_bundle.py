@@ -57,6 +57,15 @@ def add_sample_video(root):
     (root/'output/video/LeaseRadar_Storyboard_Review_20261024.media.json').write_text(json.dumps({
         'capture_kind': 'static_ui_storyboard', 'duration': 10.0,
     }))
+    browser_video = b'\x1a\x45\xdf\xa3synthetic-browser-video'
+    (root/bundle.BROWSER_VIDEO).write_bytes(browser_video)
+    (root/bundle.BROWSER_PROOF).write_text(json.dumps({
+        'app_version': '0.0.1', 'capture_kind': 'automated_continuous_browser_session',
+        'synthetic': True, 'continuous_recording': True, 'audio': False,
+        'credential_entry_recorded': False, 'external_requests_blocked': True,
+        'bytes': len(browser_video), 'sha256': hashlib.sha256(browser_video).hexdigest(),
+        'steps': list(range(7)), 'verification': {'full_decode': 'passed'},
+    }))
 
 
 def test_allowlist_and_hashes_exclude_private_state(tmp_path):
@@ -157,6 +166,7 @@ def test_full_review_bundle_contains_verified_video_and_excludes_private(tmp_pat
         assert z.testzip() is None
         assert manifest['mode'] == 'synthetic_demo_review_bundle'
         assert manifest['video_capture_kind'] == 'static_ui_storyboard'
+        assert bundle.BROWSER_VIDEO in z.namelist()
         assert not manifest['ready_to_submit']
         assert 'video_listening_and_final_form' in manifest['remaining']
         assert 'video_export' not in manifest['remaining']
@@ -184,6 +194,24 @@ def test_full_bundle_rejects_missing_or_unverified_video(tmp_path, damage):
         (root/bundle.VIDEO).unlink()
     archive = tmp_path/'rejected.zip'
     with pytest.raises(ValueError, match='视频|必需文件'):
+        bundle.build(root, archive, include_video=True)
+    assert not archive.exists()
+
+
+@pytest.mark.parametrize('damage', ['browser_video', 'browser_proof', 'browser_missing'])
+def test_full_bundle_rejects_unverified_browser_walkthrough(tmp_path, damage):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    if damage == 'browser_video':
+        (root/bundle.BROWSER_VIDEO).write_bytes(b'not a webm')
+    elif damage == 'browser_proof':
+        proof = json.loads((root/bundle.BROWSER_PROOF).read_text())
+        proof['audio'] = True
+        (root/bundle.BROWSER_PROOF).write_text(json.dumps(proof))
+    else:
+        (root/bundle.BROWSER_VIDEO).unlink()
+    archive = tmp_path/'rejected-browser.zip'
+    with pytest.raises(ValueError, match='浏览器操作视频|必需文件'):
         bundle.build(root, archive, include_video=True)
     assert not archive.exists()
 
