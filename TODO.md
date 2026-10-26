@@ -6,6 +6,8 @@
 
 - [ ] 2026-10-26新建合成DEMO连续浏览器七步已录成55.68秒无音轨WebM并完成关键帧/解码核对；作为补充流程画面。仍需有讲解的最终视频、静态分镜人工听审与正式指引确认；见docs/submission/BROWSER_WALKTHROUGH_20261026.md。
 
+- [ ] 2026-10-26新版89文件审阅包已纳入双视频与PDF，88项Git字节匹配并独立禁外网恢复。最终媒体、评审访问、报名与提交仍待签收；见docs/submission/BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md。
+
 
 - [ ] 2026-10-25最新主线新建DEMO七步与390px比较彩排完成并留私有截图；PDF已同步并逐页QA，视频十段自动核对与逐段听审清单已备。真人逐字听审、PDF/规则最终签收和访问/正式提交仍待完成；见docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md、PDF_REVIEW_20261025.md、VIDEO_LISTENING_CHECKLIST_20261025.md。
 

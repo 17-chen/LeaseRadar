@@ -1,8 +1,10 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-26，Asia/Shanghai。10月25日最新已验证本地包为85文件、源码f7f1fc7；10月26日新增连续浏览器七步补充片段，待重新打包。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-26，Asia/Shanghai。当前89文件本地审阅包源码为512678b，含连续浏览器七步补充片段；API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。包与恢复见docs/submission/BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
 2026-10-26演示续作：从当前a9e6981代码新建8015隔离合成DEMO，Chrome/Playwright连续走完七步，录成55.68秒无音轨WebM，剔除原始捕获首0.8秒空白登录表单；最终首帧为合成候选页。浏览器脚本已通用化并复跑七步，输出SHA和录制方式证明；关键镜头抽帧目视、成品完整解码通过。它是自动化连续浏览器操作，**不是带讲解的最终投稿视频**，原静态分镜逐字听审仍待完成。17项包专项、285项完整回归及1项Poppler集成通过。见docs/submission/BROWSER_WALKTHROUGH_20261026.md。真实来源/邮件未启用，8015已停止，原8001 SSH未触碰。本轮新包与GitHub状态以随后记录为准。
+
+2026-10-26新包：从512678b生成89文件完整审阅包，88项仓库字节匹配，预解压校验及确切ZIP独立禁外网合成登录/筛选/比较/CSV恢复通过。静态分镜与无音轨连续操作片段均在包中并分别标识；SHA256和边界见docs/submission/BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md。`ready_to_submit=false`，GitHub同步/CI以本轮后续记录为准。
 
 2026-10-25材料续作：六页PDF已按新DEMO七步/390px彩排重建并逐页渲染目视，材料日期更新；完整PDF QA见docs/submission/PDF_REVIEW_20261025.md。为现有207.5秒静态分镜新增逐段人工听审清单，十段文字/音频文件与时长自动核对通过，但**没有完成真人逐字听审**；见docs/submission/VIDEO_LISTENING_CHECKLIST_20261025.md。旧82文件包不含新版PDF。完整回归首次因沙箱禁止本机SMTP监听为281过/1失败，允许回环监听后282项全过；Poppler集成、JS语法、依赖一致性和差异检查通过。新包与GitHub状态以本轮后续记录为准。
 
@@ -44,7 +46,7 @@
 | 本机目录 | /Users/chenxin/Documents/瑞幸咖啡 网页检索 |
 | GitHub | https://github.com/17-chen/LeaseRadar，私有 |
 | 分支 | main；新建开发分支默认codex/前缀 |
-| 最新打包源码提交 | f7f1fc7e849082d008bfc2cb6c662d93a00abf5b；前端业务逻辑仍为234918c，PDF在10月25日更新，视频字节未变，API/数据库业务代码基线仍为92ba1a3 |
+| 最新打包源码提交 | 512678b2375152cef9fe529930322e2bb8435526；前端业务逻辑仍为234918c，PDF在10月25日更新，10月26日新增浏览器WebM，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3 |
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
@@ -136,10 +138,10 @@ git log -5 --oneline
 | 视频源素材 | docs/submission/VIDEO_STORYBOARD.json、video-assets；边界与失败路径见VIDEO_DRAFT.md |
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
-| 最新本地完整审阅包 | private/LeaseRadar_Review_20261025_PdfReview.zip；85个payload文件，含10月25日PDF、审查清单与修订口播视频；非最终提交包，详见PDF_REVIEW_BUNDLE_VERIFICATION_20261025.md |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261026_BrowserWalkthrough.zip；89个payload文件，含10月25日PDF、修订口播视频与10月26日无音轨浏览器片段；非最终提交包，详见BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md |
 
 当前视频SHA256：01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54；旧版SHA256见VIDEO_DRAFT.md。
-当前完整审阅包SHA256：9ee30755522930f33dcf2ad08a03b2de04796d92ea5144cbc6f5e80d1a815dec；只在private，未公开发布。
+当前完整审阅包SHA256：5653880185dd98b6be1f9107f8f46c36b57bdc069f8bf79006c3f69bd2a7f30f；只在private，未公开发布。
 最新运行包SHA256：13ab7863a15be7d59cde7c6c369dd793a3dd1ba0fe80a85ad2a682eaed48717e。proof在同名.proof.json；manifest的working_tree_dirty=true来自既有未跟踪文件，不等于包内源码有未提交修改，已有逐文件匹配证明。
 
 打包：`.venv/bin/python scripts/build_recording_bundle.py --output private/新的录制包.zip`；显式清单、拒绝覆盖和符号链接、不含private原始数据，API版本与RELEASE_EVIDENCE版本不同会拒绝。不要通过简单篡改证据JSON绕过保护。小包是本地运行交接，ready_to_submit=false，非最终参赛材料全包。
@@ -173,4 +175,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前85文件包已独立禁外网恢复；七步和390px已在10月25日新建DEMO复核，多端口隔离、模拟会话到期分别有10月23/24日记录；未等待12小时自然过期，不把旧进程当当前运行事实。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前89文件包已独立禁外网恢复；七步和390px已在10月25日新建DEMO复核，10月26日又连续录下桌面七步；多端口隔离、模拟会话到期分别有10月23/24日记录，未等待12小时自然过期。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。

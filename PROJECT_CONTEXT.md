@@ -51,6 +51,8 @@
 
 2026-10-26演示画面：新建8015隔离合成DEMO，Chrome自动连续走完七步并录成55.68秒无音轨WebM；关键帧目视与整片解码通过。录制脚本重跑七步、生成SHA证明，素材真实界面而非静态分镜，且不含密码输入。仍是补充审阅片段，不代替最终有讲解视频；静态分镜人工逐字听审、官方规则和访问/提交仍待完成。详见docs/submission/BROWSER_WALKTHROUGH_20261026.md。
 
+2026-10-26新包：从512678b生成89文件本地含双视频审阅包，88项Git字节匹配、预解压校验与确切ZIP独立禁外网登录/筛选4条/比较/CSV四行恢复通过；`ready_to_submit=false`。见docs/submission/BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md。
+
 2026-10-25材料续作：介绍PDF六页同步最新七步/390px合成DEMO证据并逐页渲染检查；十段静态分镜旁白文本与音频时长自动核对，人工听审清单仍全待完成。完整282项本机回归与1项Poppler集成通过；首次沙箱本地SMTP绑定失败，允许本机回环监听后通过。新版包/CI以本轮后续记录为准。见docs/submission/PDF_REVIEW_20261025.md与VIDEO_LISTENING_CHECKLIST_20261025.md。
 
 2026-10-25新包：从f7f1fc7生成85文件本地PDF更新版审阅包，84项Git字节匹配、预解压校验及独立禁外网合成登录/筛选4条/比较/CSV四行恢复通过。`ready_to_submit=false`，具体哈希及范围见docs/submission/PDF_REVIEW_BUNDLE_VERIFICATION_20261025.md。
