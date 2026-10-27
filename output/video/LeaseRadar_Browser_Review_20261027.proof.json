@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "capture_kind": "edited_automated_browser_demo",
+  "synthetic": true,
+  "continuous_source_recording": true,
+  "edited": true,
+  "system_narration": true,
+  "human_listening_review": false,
+  "ready_to_submit": false,
+  "source_video": "output/video/LeaseRadar_Browser_Walkthrough_20261026.webm",
+  "source_video_sha256": "4ac6ae3eeb088456cee084185d93cf35e88e7b6cf8be2121e4fd3c240d277fdd",
+  "source_commit": "a9e6981122a796e5c6957c3fe79a838fd2b25faa",
+  "narration_plan_sha256": "37bee29995f6fb2c9f644695b38b061db4d066e13c9859eb4e920c891090738a",
+  "frame_count": 558,
+  "decode_check": {
+    "audio_peak": 0.7230519652366638,
+    "decoded_audio_buffers": 145,
+    "decoded_video_frames": 558,
+    "duration": 55.8,
+    "full_decode": "passed",
+    "height": 840,
+    "human_listening_review": false,
+    "nominal_fps": 10,
+    "scene_previews": 8,
+    "width": 1280
+  },
+  "sha256": "55927041480aaa340bb6deab13fc0d05cb400402e5e2c6e5ed3cab9e6f106e6c",
+  "bytes": 6383704
+}

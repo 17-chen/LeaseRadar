@@ -1,0 +1,51 @@
+{
+  "capture_kind" : "edited_automated_browser_demo",
+  "duration" : 55.799999999999997,
+  "fps" : 10,
+  "height" : 840,
+  "timeline" : [
+    {
+      "audio_duration" : 1.6514739229024944,
+      "start" : 0,
+      "step" : "开场"
+    },
+    {
+      "audio_duration" : 5.3286167800453512,
+      "start" : 2.2000000000000002,
+      "step" : "自由筛选"
+    },
+    {
+      "audio_duration" : 4.6618140589569164,
+      "start" : 9.6999999999999993,
+      "step" : "比较三条候选"
+    },
+    {
+      "audio_duration" : 4.5159637188208617,
+      "start" : 17.199999999999999,
+      "step" : "查看金额依据"
+    },
+    {
+      "audio_duration" : 4.5816780045351475,
+      "start" : 24.699999999999999,
+      "step" : "查看周期未知"
+    },
+    {
+      "audio_duration" : 4.6862585034013602,
+      "start" : 32.200000000000003,
+      "step" : "提醒收件箱"
+    },
+    {
+      "audio_duration" : 4.2895691609977327,
+      "start" : 39.700000000000003,
+      "step" : "跟进与笔记"
+    },
+    {
+      "audio_duration" : 3.9877097505668933,
+      "start" : 48.5,
+      "step" : "来源与受阻"
+    }
+  ],
+  "video_codec" : "H264",
+  "voice" : "macOS Tingting",
+  "width" : 1280
+}

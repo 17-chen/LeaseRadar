@@ -13,7 +13,13 @@ enum VerificationError:Error {case invalid(String)}
         guard let video=try await asset.loadTracks(withMediaType:.video).first,
               let audio=try await asset.loadTracks(withMediaType:.audio).first else {throw VerificationError.invalid("missing track")}
         let dimensions=try await video.load(.naturalSize),rate=try await video.load(.nominalFrameRate)
-        guard duration.seconds>60 && duration.seconds<600 && dimensions.width==1920 && dimensions.height==1080 else {throw VerificationError.invalid("duration or dimensions")}
+        let media=url.deletingPathExtension().appendingPathExtension("media.json")
+        let metadata=try JSONSerialization.jsonObject(with:Data(contentsOf:media)) as! [String:Any]
+        let browserReview=metadata["capture_kind"] as? String == "edited_automated_browser_demo"
+        let valid=browserReview
+            ? (duration.seconds>=50 && duration.seconds<=60 && dimensions.width==1280 && dimensions.height==840)
+            : (duration.seconds>60 && duration.seconds<600 && dimensions.width==1920 && dimensions.height==1080)
+        guard valid else {throw VerificationError.invalid("duration or dimensions")}
         let reader=try AVAssetReader(asset:asset)
         let frames=AVAssetReaderTrackOutput(track:video,outputSettings:[kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA])
         reader.add(frames);guard reader.startReading() else {throw reader.error ?? VerificationError.invalid("read video")}
@@ -23,7 +29,8 @@ enum VerificationError:Error {case invalid(String)}
             guard time>=last && CMSampleBufferGetImageBuffer(sample) != nil else {throw VerificationError.invalid("video frame order")}
             last=time;count+=1
         }
-        guard reader.status == .completed && count>1000 else {throw reader.error ?? VerificationError.invalid("video incomplete")}
+        guard reader.status == .completed && (browserReview ? (500...600).contains(count) : count>1000)
+            else {throw reader.error ?? VerificationError.invalid("video incomplete")}
         let sounds=try AVAssetReader(asset:asset)
         let pcm=AVAssetReaderTrackOutput(track:audio,outputSettings:[AVFormatIDKey:kAudioFormatLinearPCM,
             AVLinearPCMIsFloatKey:true,AVLinearPCMBitDepthKey:32,AVLinearPCMIsNonInterleaved:false])
@@ -38,8 +45,6 @@ enum VerificationError:Error {case invalid(String)}
             audioBuffers+=1
         }
         guard sounds.status == .completed && peak>0.01 else {throw sounds.error ?? VerificationError.invalid("silent audio")}
-        let media=url.deletingPathExtension().appendingPathExtension("media.json")
-        let metadata=try JSONSerialization.jsonObject(with:Data(contentsOf:media)) as! [String:Any]
         let timeline=metadata["timeline"] as! [[String:Any]]
         let generator=AVAssetImageGenerator(asset:asset);generator.appliesPreferredTrackTransform=true
         generator.requestedTimeToleranceBefore = .zero;generator.requestedTimeToleranceAfter = .zero

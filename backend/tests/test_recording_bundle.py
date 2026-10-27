@@ -66,6 +66,25 @@ def add_sample_video(root):
         'bytes': len(browser_video), 'sha256': hashlib.sha256(browser_video).hexdigest(),
         'steps': list(range(7)), 'verification': {'full_decode': 'passed'},
     }))
+    review = b'\x00\x00\x00\x18ftypisomsynthetic-review'
+    (root/bundle.BROWSER_REVIEW).write_bytes(review)
+    narration = {'capture_kind': 'edited_automated_browser_demo', 'synthetic': True,
+                 'source_sha256': hashlib.sha256(browser_video).hexdigest()}
+    (root/bundle.BROWSER_NARRATION).write_text(json.dumps(narration))
+    (root/bundle.BROWSER_REVIEW_PROOF).write_text(json.dumps({
+        'capture_kind': 'edited_automated_browser_demo', 'synthetic': True,
+        'continuous_source_recording': True, 'edited': True, 'system_narration': True,
+        'human_listening_review': False, 'ready_to_submit': False,
+        'source_video_sha256': hashlib.sha256(browser_video).hexdigest(),
+        'narration_plan_sha256': hashlib.sha256((root/bundle.BROWSER_NARRATION).read_bytes()).hexdigest(),
+        'bytes': len(review), 'sha256': hashlib.sha256(review).hexdigest(),
+        'frame_count': 558, 'decode_check': {'decoded_video_frames': 558,
+            'full_decode': 'passed', 'human_listening_review': False,
+            'audio_peak': 0.5, 'duration': 55.8},
+    }))
+    (root/bundle.BROWSER_REVIEW_MEDIA).write_text(json.dumps({
+        'capture_kind': 'edited_automated_browser_demo', 'duration': 55.8,
+    }))
 
 
 def test_allowlist_and_hashes_exclude_private_state(tmp_path):
@@ -165,8 +184,11 @@ def test_full_review_bundle_contains_verified_video_and_excludes_private(tmp_pat
         manifest = json.loads(z.read('MANIFEST.json'))
         assert z.testzip() is None
         assert manifest['mode'] == 'synthetic_demo_review_bundle'
-        assert manifest['video_capture_kind'] == 'static_ui_storyboard'
+        assert manifest['video_capture_kind'] == [
+            'static_ui_storyboard', 'automated_continuous_browser_session',
+            'edited_automated_browser_demo']
         assert bundle.BROWSER_VIDEO in z.namelist()
+        assert bundle.BROWSER_REVIEW in z.namelist()
         assert not manifest['ready_to_submit']
         assert 'video_listening_and_final_form' in manifest['remaining']
         assert 'video_export' not in manifest['remaining']
@@ -212,6 +234,27 @@ def test_full_bundle_rejects_unverified_browser_walkthrough(tmp_path, damage):
         (root/bundle.BROWSER_VIDEO).unlink()
     archive = tmp_path/'rejected-browser.zip'
     with pytest.raises(ValueError, match='浏览器操作视频|必需文件'):
+        bundle.build(root, archive, include_video=True)
+    assert not archive.exists()
+
+
+@pytest.mark.parametrize('damage', ['review_video', 'review_proof', 'narration', 'audio_proof'])
+def test_full_bundle_rejects_stale_or_silent_browser_review(tmp_path, damage):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    if damage == 'review_video':
+        (root/bundle.BROWSER_REVIEW).write_bytes(b'not mp4')
+    elif damage == 'narration':
+        (root/bundle.BROWSER_NARRATION).write_text('{}')
+    else:
+        proof = json.loads((root/bundle.BROWSER_REVIEW_PROOF).read_text())
+        if damage == 'review_proof':
+            proof['ready_to_submit'] = True
+        else:
+            proof['decode_check']['audio_peak'] = 0.0
+        (root/bundle.BROWSER_REVIEW_PROOF).write_text(json.dumps(proof))
+    archive = tmp_path/'rejected-review.zip'
+    with pytest.raises(ValueError, match='有声浏览器审阅稿'):
         bundle.build(root, archive, include_video=True)
     assert not archive.exists()
 

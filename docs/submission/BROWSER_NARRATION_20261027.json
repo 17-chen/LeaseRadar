@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "source_video": "output/video/LeaseRadar_Browser_Walkthrough_20261026.webm",
+  "source_sha256": "4ac6ae3eeb088456cee084185d93cf35e88e7b6cf8be2121e4fd3c240d277fdd",
+  "capture_kind": "edited_automated_browser_demo",
+  "synthetic": true,
+  "voice": "macOS Tingting",
+  "segments": [
+    {"start_frame": 0, "step": "开场", "narration": "这是铺讯的合成演示。"},
+    {"start_frame": 22, "step": "自由筛选", "narration": "按面积和月租筛选，六条候选留下四条，未知条件单独保留。"},
+    {"start_frame": 97, "step": "比较三条候选", "narration": "三条候选并排比较。不同价格口径不会被误作同一月租。"},
+    {"start_frame": 172, "step": "查看金额依据", "narration": "点开金额依据，原价、换算公式和截止时间都可回查。"},
+    {"start_frame": 247, "step": "查看周期未知", "narration": "标题写五年，金额周期仍未知，所以月租保持待确认。"},
+    {"start_frame": 322, "step": "提醒收件箱", "narration": "同口径价格变化进入站内收件箱，这里没有真实邮件投递。"},
+    {"start_frame": 397, "step": "跟进与笔记", "narration": "收藏与私人跟进按账号隔离，这段笔记只是合成示例。"},
+    {"start_frame": 485, "step": "来源与受阻", "narration": "受阻会标明，不能把扫描失败说成没有新房源。"}
+  ]
+}

@@ -26,6 +26,10 @@ VIDEO = 'output/video/LeaseRadar_Storyboard_Review_20261024.mp4'
 VIDEO_PROOF = 'output/video/LeaseRadar_Storyboard_Review_20261024.proof.json'
 BROWSER_VIDEO = 'output/video/LeaseRadar_Browser_Walkthrough_20261026.webm'
 BROWSER_PROOF = 'output/video/LeaseRadar_Browser_Walkthrough_20261026.proof.json'
+BROWSER_REVIEW = 'output/video/LeaseRadar_Browser_Review_20261027.mp4'
+BROWSER_REVIEW_PROOF = 'output/video/LeaseRadar_Browser_Review_20261027.proof.json'
+BROWSER_REVIEW_MEDIA = 'output/video/LeaseRadar_Browser_Review_20261027.media.json'
+BROWSER_NARRATION = 'docs/submission/BROWSER_NARRATION_20261027.json'
 FULL_FILES = (
     'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md',
     'docs/COMPETITION_REQUIREMENTS.md',
@@ -33,12 +37,15 @@ FULL_FILES = (
     'docs/submission/PDF_REVIEW_20261025.md',
     'docs/submission/VIDEO_LISTENING_CHECKLIST_20261025.md',
     'docs/submission/BROWSER_WALKTHROUGH_20261026.md',
+    'docs/submission/BROWSER_REVIEW_VIDEO_20261027.md',
     'docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md',
     'docs/submission/DEMO_MATERIALS_20261023.md',
     'docs/submission/VIDEO_STORYBOARD.json',
     'scripts/build_storyboard_video.py', 'scripts/render_storyboard_video.swift',
     'scripts/verify_storyboard_video.swift',
     'scripts/record_demo_browser.js', BROWSER_VIDEO, BROWSER_PROOF,
+    'scripts/build_browser_review_video.py', 'scripts/render_browser_review_video.swift',
+    BROWSER_NARRATION, BROWSER_REVIEW, BROWSER_REVIEW_PROOF, BROWSER_REVIEW_MEDIA,
     VIDEO, VIDEO_PROOF, 'output/video/LeaseRadar_Storyboard_Review_20261024.media.json',
     *(f'docs/submission/video-assets/{name}' for name in (
         '00-intro.jpg', '01-filter.jpg', '02-compare.jpg', '03-evidence.jpg',
@@ -74,6 +81,7 @@ FULL_GUIDE = '''# LeaseRadar 本地完整审阅包
 本包合并可运行合成DEMO、介绍PDF审阅稿和已导出的静态分镜视频草稿。
 视频是合成UI截图与本机TTS旁白，不是连续录屏或最终审稿版本；全部演示数据为合成。
 另附约56秒无音轨的自动化浏览器连续操作片段，用于审查七步流程；它也不是最终投稿视频。
+另附55.8秒有声审阅稿：由前述连续录制画面转码、加明确标识和系统合成旁白，属于剪辑成品，不是人工实时操作或最终投稿视频。
 此包没有真实公告、数据库、账号、私有笔记或密钥，也没有对外发布或正式提交证明。
 
 使用Python 3.12/3.13，在解压后的本目录运行：
@@ -165,6 +173,36 @@ def build(root, destination, include_video=False):
                 or not isinstance(browser_proof.get('verification'), dict)
                 or browser_proof['verification'].get('full_decode') != 'passed'):
             raise ValueError('浏览器操作视频与证明不一致；拒绝打包')
+        review = payload[BROWSER_REVIEW]
+        review_proof = json.loads(payload[BROWSER_REVIEW_PROOF])
+        review_media = json.loads(payload[BROWSER_REVIEW_MEDIA])
+        narration = json.loads(payload[BROWSER_NARRATION])
+        decode = review_proof.get('decode_check') if isinstance(review_proof, dict) else None
+        if (len(review) < 12 or review[4:8] != b'ftyp'
+                or not isinstance(review_proof, dict) or not isinstance(review_media, dict)
+                or not isinstance(narration, dict) or not isinstance(decode, dict)
+                or narration.get('capture_kind') != 'edited_automated_browser_demo'
+                or narration.get('synthetic') is not True
+                or narration.get('source_sha256') != browser_proof['sha256']
+                or review_proof.get('capture_kind') != 'edited_automated_browser_demo'
+                or review_proof.get('synthetic') is not True
+                or review_proof.get('continuous_source_recording') is not True
+                or review_proof.get('edited') is not True
+                or review_proof.get('system_narration') is not True
+                or review_proof.get('human_listening_review') is not False
+                or review_proof.get('ready_to_submit') is not False
+                or review_proof.get('source_video_sha256') != browser_proof['sha256']
+                or review_proof.get('narration_plan_sha256') != hashlib.sha256(payload[BROWSER_NARRATION]).hexdigest()
+                or review_proof.get('sha256') != hashlib.sha256(review).hexdigest()
+                or review_proof.get('bytes') != len(review)
+                or review_proof.get('frame_count') != decode.get('decoded_video_frames')
+                or decode.get('full_decode') != 'passed'
+                or decode.get('human_listening_review') is not False
+                or not isinstance(decode.get('audio_peak'), (int, float)) or decode['audio_peak'] <= 0.01
+                or review_media.get('capture_kind') != 'edited_automated_browser_demo'
+                or not isinstance(review_media.get('duration'), (int, float))
+                or abs(review_media['duration'] - decode.get('duration', 0)) > 0.1):
+            raise ValueError('有声浏览器审阅稿与证明不一致；拒绝打包')
     payload['START_HERE.md'] = (FULL_GUIDE if include_video else GUIDE).encode()
     revision = subprocess.run(['git', '-C', str(root), 'rev-parse', 'HEAD'], capture_output=True, text=True)
     dirty = subprocess.run(['git', '-C', str(root), 'status', '--porcelain'], capture_output=True, text=True)
@@ -176,7 +214,8 @@ def build(root, destination, include_video=False):
         'ready_to_submit': False,
         'app_version': evidence['app_version'],
         'evidence_commit': evidence.get('implementation_commit'),
-        'video_capture_kind': 'static_ui_storyboard' if include_video else None,
+        'video_capture_kind': ['static_ui_storyboard', 'automated_continuous_browser_session',
+                               'edited_automated_browser_demo'] if include_video else None,
         'remaining': (['video_listening_and_final_form', 'pdf_final_review',
                        'contest_rules_and_repository_access', 'authorized_submission']
                       if include_video else
