@@ -4,6 +4,8 @@
 
 2026-10-27新包：96项许可文件中95项与`5fd845a`逐字节一致，另1项为生成的入口指南；预解压校验及确切ZIP独立禁外网合成登录/筛选恢复通过。ZIP SHA256 `9b0748eee40a46cfce4e2538160bae8a20a68c8913940ca25f285f3767a2ace0`，仅在private；原89文件包保留。三种媒体各自标注，`ready_to_submit=false`。GitHub同步及CI以随后记录为准。
 
+2026-10-27 GitHub：`b5f5b83`已推送私有`origin/main`，对应[Tests运行40429647203](https://github.com/17-chen/LeaseRadar/actions/runs/40429647203) completed/success；Linux应用回归、迁移、JS和Poppler集成均通过。macOS媒体编码/真人听审不在CI中。之后若仅更新交接文档，最新CI仍应按新head复查。
+
 2026-10-27视频续作：用已验证的55.68秒合成七步Chrome连续录屏，生成55.8秒1280×840/10fps H.264有声剪辑稿；上沿全程标明自动化浏览器操作与系统合成旁白。完整558帧和145音频缓冲解码、峰值0.723及八阶段抽帧通过；末段原先提前进入旁白已修正，失败与早版保留在private。成片/旁白稿/proof和边界见docs/submission/BROWSER_REVIEW_VIDEO_20261027.md。尚未真人逐字听审，不称最终投稿视频；真实来源、邮件与生产范围未变化。打包器已补三类媒体核验，完整289项回归及1项Poppler集成通过；新包/CI以随后记录为准。
 
 2026-10-26演示续作：从当前a9e6981代码新建8015隔离合成DEMO，Chrome/Playwright连续走完七步，录成55.68秒无音轨WebM，剔除原始捕获首0.8秒空白登录表单；最终首帧为合成候选页。浏览器脚本已通用化并复跑七步，输出SHA和录制方式证明；关键镜头抽帧目视、成品完整解码通过。它是自动化连续浏览器操作，**不是带讲解的最终投稿视频**，原静态分镜逐字听审仍待完成。17项包专项、285项完整回归及1项Poppler集成通过。见docs/submission/BROWSER_WALKTHROUGH_20261026.md。真实来源/邮件未启用，8015已停止，原8001 SSH未触碰。本轮新包与GitHub状态以随后记录为准。
@@ -54,7 +56,7 @@
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40164454438，2026-10-25 completed/success，head=a9e6981；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
+| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40429647203，2026-10-27 completed/success，head=b5f5b83；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
 
 交接编写前工作树无已跟踪修改，仅有用户既有未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg；不要删除、改写或随手git add全部。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 

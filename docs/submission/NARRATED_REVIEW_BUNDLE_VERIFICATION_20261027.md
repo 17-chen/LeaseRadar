@@ -6,4 +6,4 @@
 
 标准库预解压校验器确认清单哈希、大小、CRC和安全路径。将**确切ZIP**独立解压到`private/narrated-bundle-restore-kzb1bsgf`，在禁止外部网络连接的进程中运行新建DEMO，得到6候选、7版本、5站内消息；合成账号登录、场景标识、首页/脚本资源和筛选4条均通过。这个恢复只证明包可在已有依赖的本机环境使用；未验证跨系统离线依赖安装、正式竞赛访问、真实来源、邮件投递或生产部署。
 
-构建前完整本机回归289项通过、Poppler集成1项通过；媒体本机完整解码和抽帧见[BROWSER_REVIEW_VIDEO_20261027.md](BROWSER_REVIEW_VIDEO_20261027.md)。后续GitHub CI需按最新推送另核。真人逐字听审、PDF与规则终审、评审访问方式、报名/提交授权和真实回执均未签收。
+构建前完整本机回归289项通过、Poppler集成1项通过；媒体本机完整解码和抽帧见[BROWSER_REVIEW_VIDEO_20261027.md](BROWSER_REVIEW_VIDEO_20261027.md)。`b5f5b83`已推送私有GitHub，[Tests运行40429647203](https://github.com/17-chen/LeaseRadar/actions/runs/40429647203) completed/success，覆盖Linux应用回归、迁移、JS与Poppler集成，不覆盖macOS媒体编码。真人逐字听审、PDF与规则终审、评审访问方式、报名/提交授权和真实回执均未签收。
