@@ -6,6 +6,8 @@
 
 - [ ] 2026-10-27已有55.8秒自动浏览器操作有声剪辑审阅稿，完整解码/关键帧检查及末段同步修正完成；仍需真人逐字听审、按正式指引确认最终视频形式和正式提交。见docs/submission/BROWSER_REVIEW_VIDEO_20261027.md。
 
+- [ ] 2026-10-27从5fd845a生成96文件有声审阅包，95项Git字节一致并独立禁外网恢复；仍需媒体/PDF终审、访问、报名与正式提交。见docs/submission/NARRATED_REVIEW_BUNDLE_VERIFICATION_20261027.md。
+
 - [ ] 2026-10-26新建合成DEMO连续浏览器七步已录成55.68秒无音轨WebM并完成关键帧/解码核对；作为补充流程画面。仍需有讲解的最终视频、静态分镜人工听审与正式指引确认；见docs/submission/BROWSER_WALKTHROUGH_20261026.md。
 
 - [ ] 2026-10-26新版89文件审阅包已纳入双视频与PDF，88项Git字节匹配并独立禁外网恢复。最终媒体、评审访问、报名与提交仍待签收；见docs/submission/BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md。

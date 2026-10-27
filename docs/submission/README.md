@@ -6,6 +6,8 @@
 
 2026-10-27新增[55.8秒有声浏览器演示审阅稿](../../output/video/LeaseRadar_Browser_Review_20261027.mp4)：在上述连续操作原片上加录制方式标识与新系统旁白，原片和静态分镜均保留；构建、哈希、同步修正及未完成的真人听审见[有声审阅记录](BROWSER_REVIEW_VIDEO_20261027.md)。它仍非正式投稿视频。
 
+基于`5fd845a`的[96文件本地有声审阅包](NARRATED_REVIEW_BUNDLE_VERIFICATION_20261027.md)已完成逐项Git匹配和独立禁外网合成恢复，ZIP仅在private且`ready_to_submit=false`。
+
 2026-10-25材料更新。成品：output/pdf/LeaseRadar_Competition_Intro_Draft.pdf，6页A4；实现证据基于0.1.16/ccd5a1c，后续演示证据另记，来源证据清单RELEASE_EVIDENCE.json。该实现提交的GitHub CI已核对成功；不是报名/正式提交证明。文件名保留Draft供已有链接兼容，内容为本版审阅稿。
 
 ## 内容与数据边界
