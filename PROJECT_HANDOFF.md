@@ -1,6 +1,8 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-27，Asia/Shanghai。新增55.8秒自动浏览器操作有声剪辑审阅稿；从5fd845a生成96文件本地私有审阅包并独立恢复，见docs/submission/NARRATED_REVIEW_BUNDLE_VERIFICATION_20261027.md。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-28，Asia/Shanghai。新增207.6秒十场景连续浏览器画面有声审阅稿及本地预览页；原片、成片、旁白稿、proof和听审边界见docs/submission/FULL_BROWSER_REVIEW_VIDEO_20261028.md。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+
+2026-10-28新媒体：从`41c9e76`新建合成DEMO录制十场景连续Chrome画面，零裁切原片207.48秒；生成207.6秒有声审阅稿，原片与成片完整解码、十阶段目视和本地Chrome预览元数据检查通过。保留一次错误裁切样本于private；系统合成旁白未经过真人逐字听审。完整293项回归及1项Poppler集成通过，JS语法、依赖和差异检查通过。新包与GitHub状态以随后记录为准。
 
 2026-10-27新包：96项许可文件中95项与`5fd845a`逐字节一致，另1项为生成的入口指南；预解压校验及确切ZIP独立禁外网合成登录/筛选恢复通过。ZIP SHA256 `9b0748eee40a46cfce4e2538160bae8a20a68c8913940ca25f285f3767a2ace0`，仅在private；原89文件包保留。三种媒体各自标注，`ready_to_submit=false`。GitHub同步及CI以随后记录为准。
 
@@ -52,11 +54,11 @@
 | 本机目录 | /Users/chenxin/Documents/瑞幸咖啡 网页检索 |
 | GitHub | https://github.com/17-chen/LeaseRadar，私有 |
 | 分支 | main；新建开发分支默认codex/前缀 |
-| 最新打包源码提交 | 5fd845a3e83f002ddd018068293c1258717f3bd7；前端业务逻辑仍为234918c，PDF在10月25日更新，10月26日新增浏览器WebM，10月27日新增有声剪辑，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3 |
+| 本轮开始源码提交 | 41c9e76；前端业务逻辑仍为234918c，PDF在10月25日更新，10月28日新增长版连续浏览器演示，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3；最新提交以git log为准 |
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40429647203，2026-10-27 completed/success，head=b5f5b83；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
+| 本轮开始最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40429972979，head=41c9e76，completed/success；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
 
 交接编写前工作树无已跟踪修改，仅有用户既有未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg；不要删除、改写或随手git add全部。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 

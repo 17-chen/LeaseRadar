@@ -15,9 +15,13 @@ enum VerificationError:Error {case invalid(String)}
         let dimensions=try await video.load(.naturalSize),rate=try await video.load(.nominalFrameRate)
         let media=url.deletingPathExtension().appendingPathExtension("media.json")
         let metadata=try JSONSerialization.jsonObject(with:Data(contentsOf:media)) as! [String:Any]
-        let browserReview=metadata["capture_kind"] as? String == "edited_automated_browser_demo"
-        let valid=browserReview
+        let kind=metadata["capture_kind"] as? String
+        let shortBrowser=kind == "edited_automated_browser_demo"
+        let fullBrowser=kind == "edited_full_automated_browser_demo"
+        let valid=shortBrowser
             ? (duration.seconds>=50 && duration.seconds<=60 && dimensions.width==1280 && dimensions.height==840)
+            : fullBrowser
+            ? (duration.seconds>=200 && duration.seconds<=220 && dimensions.width==1280 && dimensions.height==840)
             : (duration.seconds>60 && duration.seconds<600 && dimensions.width==1920 && dimensions.height==1080)
         guard valid else {throw VerificationError.invalid("duration or dimensions")}
         let reader=try AVAssetReader(asset:asset)
@@ -29,7 +33,7 @@ enum VerificationError:Error {case invalid(String)}
             guard time>=last && CMSampleBufferGetImageBuffer(sample) != nil else {throw VerificationError.invalid("video frame order")}
             last=time;count+=1
         }
-        guard reader.status == .completed && (browserReview ? (500...600).contains(count) : count>1000)
+        guard reader.status == .completed && (shortBrowser ? (500...600).contains(count) : fullBrowser ? (2000...2200).contains(count) : count>1000)
             else {throw reader.error ?? VerificationError.invalid("video incomplete")}
         let sounds=try AVAssetReader(asset:asset)
         let pcm=AVAssetReaderTrackOutput(track:audio,outputSettings:[AVFormatIDKey:kAudioFormatLinearPCM,

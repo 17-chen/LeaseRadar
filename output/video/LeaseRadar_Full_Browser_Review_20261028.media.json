@@ -1,0 +1,61 @@
+{
+  "capture_kind" : "edited_full_automated_browser_demo",
+  "duration" : 207.59999999999999,
+  "fps" : 10,
+  "height" : 840,
+  "timeline" : [
+    {
+      "audio_duration" : 18.172471655328799,
+      "start" : 0,
+      "step" : "铺讯：从公告到跟进"
+    },
+    {
+      "audio_duration" : 20.462585034013607,
+      "start" : 20.199999999999999,
+      "step" : "自由筛选，保留未知"
+    },
+    {
+      "audio_duration" : 20.45419501133787,
+      "start" : 41.700000000000003,
+      "step" : "同口径比较，差异可见"
+    },
+    {
+      "audio_duration" : 18.958231292517006,
+      "start" : 63.200000000000003,
+      "step" : "查回字段依据"
+    },
+    {
+      "audio_duration" : 17.019546485260772,
+      "start" : 83.200000000000003,
+      "step" : "未知周期不制造精确答案"
+    },
+    {
+      "audio_duration" : 18.771428571428572,
+      "start" : 101.3,
+      "step" : "变化进入站内收件箱"
+    },
+    {
+      "audio_duration" : 17.782312925170068,
+      "start" : 121.09999999999999,
+      "step" : "收藏与私人跟进"
+    },
+    {
+      "audio_duration" : 19.384625850340136,
+      "start" : 139.90000000000001,
+      "step" : "受阻不是没有新房源"
+    },
+    {
+      "audio_duration" : 19.649931972789116,
+      "start" : 160.30000000000001,
+      "step" : "回到个人工作队列"
+    },
+    {
+      "audio_duration" : 25.919274376417235,
+      "start" : 181,
+      "step" : "验证范围与下一步"
+    }
+  ],
+  "video_codec" : "H264",
+  "voice" : "macOS Tingting",
+  "width" : 1280
+}

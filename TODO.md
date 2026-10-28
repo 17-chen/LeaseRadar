@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [ ] 2026-10-28新增207.6秒十场景连续浏览器有声审阅稿，原片/成片完整解码、十阶段画面目视和本地Chrome预览通过；仍需真人逐字听审、正式视频形式/规则及提交签收。见docs/submission/FULL_BROWSER_REVIEW_VIDEO_20261028.md。
+
 - [ ] 2026-10-27已有55.8秒自动浏览器操作有声剪辑审阅稿，完整解码/关键帧检查及末段同步修正完成；仍需真人逐字听审、按正式指引确认最终视频形式和正式提交。见docs/submission/BROWSER_REVIEW_VIDEO_20261027.md。
 
 - [ ] 2026-10-27从5fd845a生成96文件有声审阅包，95项Git字节一致并独立禁外网恢复；仍需媒体/PDF终审、访问、报名与正式提交。见docs/submission/NARRATED_REVIEW_BUNDLE_VERIFICATION_20261027.md。

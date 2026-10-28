@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PLAN = ROOT / 'docs/submission/BROWSER_NARRATION_20261027.json'
+DEFAULT_PLAN = ROOT / 'docs/submission/BROWSER_NARRATION_20261027.json'
 
 
 def sha256(path):
@@ -23,6 +23,7 @@ def sha256(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True, help='新MP4路径，拒绝覆盖')
+    parser.add_argument('--plan', type=Path, default=DEFAULT_PLAN, help='已提交的合成旁白时间线')
     parser.add_argument('--ffmpeg', type=Path, default=Path(os.environ.get('PLAYWRIGHT_FFMPEG',
         '/Users/chenxin/Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac')))
     args = parser.parse_args()
@@ -31,23 +32,32 @@ def main():
         parser.error('输出必须是不存在的新MP4文件')
     if not args.ffmpeg.is_file():
         parser.error('需要Playwright随附的ffmpeg，用--ffmpeg指定')
-    plan_bytes = PLAN.read_bytes()
+    plan_path = args.plan.resolve()
+    if plan_path not in (DEFAULT_PLAN.resolve(),
+                         (ROOT / 'docs/submission/FULL_BROWSER_NARRATION_20261028.json').resolve()):
+        parser.error('只接受仓库内明确列出的合成旁白时间线')
+    plan_bytes = plan_path.read_bytes()
     plan = json.loads(plan_bytes)
     source = ROOT / plan['source_video']
     proof = source.with_suffix('.proof.json')
     source_proof = json.loads(proof.read_text())
-    if (plan['capture_kind'] != 'edited_automated_browser_demo' or plan['synthetic'] is not True
-            or source_proof['capture_kind'] != 'automated_continuous_browser_session'
+    full = plan['capture_kind'] == 'edited_full_automated_browser_demo'
+    expected_source = 'paced_automated_continuous_browser_session' if full else 'automated_continuous_browser_session'
+    if (plan['capture_kind'] not in ('edited_automated_browser_demo', 'edited_full_automated_browser_demo')
+            or plan['synthetic'] is not True
+            or source_proof['capture_kind'] != expected_source
             or source_proof['synthetic'] is not True
             or source_proof['audio'] is not False
             or sha256(source) != plan['source_sha256']
             or sha256(source) != source_proof['sha256']):
         raise ValueError('浏览器原片/证明不匹配或非合成场景')
     segments = plan['segments']
-    if len(segments) != 8 or [s['start_frame'] for s in segments] != [0, 22, 97, 172, 247, 322, 397, 485]:
+    expected_frames = ([0, 202, 417, 632, 832, 1013, 1211, 1399, 1603, 1810] if full
+                       else [0, 22, 97, 172, 247, 322, 397, 485])
+    if len(segments) != len(expected_frames) or [s['start_frame'] for s in segments] != expected_frames:
         raise ValueError('旁白时间线无效')
     for segment in segments:
-        if not 1 <= len(segment['narration']) <= 100 or not 1 <= len(segment['step']) <= 30:
+        if not 1 <= len(segment['narration']) <= 600 or not 1 <= len(segment['step']) <= 50:
             raise ValueError('旁白文字无效')
     output.parent.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix='browser-review-', dir=ROOT / 'private'))
@@ -56,7 +66,7 @@ def main():
     subprocess.run([str(args.ffmpeg), '-hide_banner', '-loglevel', 'error', '-i', str(source),
                     '-r', '10', str(frames / 'frame-%05d.png')], check=True, timeout=120)
     frame_count = len(list(frames.glob('frame-*.png')))
-    if not 500 <= frame_count <= 600:
+    if not ((2000 <= frame_count <= 2200) if full else (500 <= frame_count <= 600)):
         raise ValueError(f'抽帧数异常：{frame_count}，保留现场 {work}')
     rendered = []
     for i, segment in enumerate(segments):
@@ -71,6 +81,7 @@ def main():
         rendered.append({**segment, 'audio': str(m4a)})
     manifest = work / 'render.json'
     manifest.write_text(json.dumps({'frames': str(frames), 'frame_count': frame_count,
+                                    'capture_kind': plan['capture_kind'],
                                     'segments': rendered}, ensure_ascii=False))
     cache = ROOT / 'private/browser-review-swift-cache'
     binary = work / 'render-video'
@@ -91,7 +102,7 @@ def main():
     subprocess.run([str(verify), str(output), str(qa)], check=True, timeout=180)
     decoded = json.loads((qa / 'decode-proof.json').read_text())
     result = {
-        'schema': 1, 'capture_kind': 'edited_automated_browser_demo', 'synthetic': True,
+        'schema': 1, 'capture_kind': plan['capture_kind'], 'synthetic': True,
         'continuous_source_recording': True, 'edited': True, 'system_narration': True,
         'human_listening_review': False, 'ready_to_submit': False,
         'source_video': plan['source_video'], 'source_video_sha256': sha256(source),

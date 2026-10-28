@@ -85,6 +85,34 @@ def add_sample_video(root):
     (root/bundle.BROWSER_REVIEW_MEDIA).write_text(json.dumps({
         'capture_kind': 'edited_automated_browser_demo', 'duration': 55.8,
     }))
+    full = b'\x1a\x45\xdf\xa3synthetic-full-browser-video'
+    (root/bundle.FULL_BROWSER_VIDEO).write_bytes(full)
+    (root/bundle.FULL_BROWSER_PROOF).write_text(json.dumps({
+        'app_version': '0.0.1', 'capture_kind': 'paced_automated_continuous_browser_session',
+        'synthetic': True, 'continuous_recording': True, 'audio': False,
+        'credential_entry_recorded': False, 'external_requests_blocked': True,
+        'trim_seconds': 0, 'bytes': len(full), 'sha256': hashlib.sha256(full).hexdigest(),
+        'observations': list(range(10)), 'verification': {'full_decode': 'passed'},
+    }))
+    long_review = b'\x00\x00\x00\x18ftypisomsynthetic-long-review'
+    (root/bundle.FULL_BROWSER_REVIEW).write_bytes(long_review)
+    full_plan = {'capture_kind': 'edited_full_automated_browser_demo', 'synthetic': True,
+                 'source_sha256': hashlib.sha256(full).hexdigest(), 'segments': list(range(10))}
+    (root/bundle.FULL_BROWSER_NARRATION).write_text(json.dumps(full_plan))
+    (root/bundle.FULL_BROWSER_REVIEW_PROOF).write_text(json.dumps({
+        'capture_kind': 'edited_full_automated_browser_demo', 'synthetic': True,
+        'continuous_source_recording': True, 'edited': True, 'system_narration': True,
+        'human_listening_review': False, 'ready_to_submit': False,
+        'source_video_sha256': hashlib.sha256(full).hexdigest(),
+        'narration_plan_sha256': hashlib.sha256((root/bundle.FULL_BROWSER_NARRATION).read_bytes()).hexdigest(),
+        'bytes': len(long_review), 'sha256': hashlib.sha256(long_review).hexdigest(),
+        'frame_count': 2076, 'decode_check': {'decoded_video_frames': 2076,
+            'full_decode': 'passed', 'human_listening_review': False,
+            'audio_peak': 0.5, 'duration': 207.6},
+    }))
+    (root/bundle.FULL_BROWSER_REVIEW_MEDIA).write_text(json.dumps({
+        'capture_kind': 'edited_full_automated_browser_demo', 'duration': 207.6,
+    }))
 
 
 def test_allowlist_and_hashes_exclude_private_state(tmp_path):
@@ -186,9 +214,12 @@ def test_full_review_bundle_contains_verified_video_and_excludes_private(tmp_pat
         assert manifest['mode'] == 'synthetic_demo_review_bundle'
         assert manifest['video_capture_kind'] == [
             'static_ui_storyboard', 'automated_continuous_browser_session',
-            'edited_automated_browser_demo']
+            'edited_automated_browser_demo', 'paced_automated_continuous_browser_session',
+            'edited_full_automated_browser_demo']
         assert bundle.BROWSER_VIDEO in z.namelist()
         assert bundle.BROWSER_REVIEW in z.namelist()
+        assert bundle.FULL_BROWSER_VIDEO in z.namelist()
+        assert bundle.FULL_BROWSER_REVIEW in z.namelist()
         assert not manifest['ready_to_submit']
         assert 'video_listening_and_final_form' in manifest['remaining']
         assert 'video_export' not in manifest['remaining']
@@ -255,6 +286,28 @@ def test_full_bundle_rejects_stale_or_silent_browser_review(tmp_path, damage):
         (root/bundle.BROWSER_REVIEW_PROOF).write_text(json.dumps(proof))
     archive = tmp_path/'rejected-review.zip'
     with pytest.raises(ValueError, match='有声浏览器审阅稿'):
+        bundle.build(root, archive, include_video=True)
+    assert not archive.exists()
+
+
+@pytest.mark.parametrize('damage', ['source', 'source_proof', 'narration', 'silent_review'])
+def test_full_bundle_rejects_invalid_ten_scene_media(tmp_path, damage):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    if damage == 'source':
+        (root/bundle.FULL_BROWSER_VIDEO).write_bytes(b'changed')
+    elif damage == 'source_proof':
+        proof = json.loads((root/bundle.FULL_BROWSER_PROOF).read_text())
+        proof['trim_seconds'] = 1.8
+        (root/bundle.FULL_BROWSER_PROOF).write_text(json.dumps(proof))
+    elif damage == 'narration':
+        (root/bundle.FULL_BROWSER_NARRATION).write_text('{}')
+    else:
+        proof = json.loads((root/bundle.FULL_BROWSER_REVIEW_PROOF).read_text())
+        proof['decode_check']['audio_peak'] = 0
+        (root/bundle.FULL_BROWSER_REVIEW_PROOF).write_text(json.dumps(proof))
+    archive = tmp_path/'rejected-ten-scene.zip'
+    with pytest.raises(ValueError, match='十场景'):
         bundle.build(root, archive, include_video=True)
     assert not archive.exists()
 

@@ -5,7 +5,7 @@ import AVFoundation
 import ImageIO
 
 struct Segment: Decodable { let start_frame:Int; let step:String; let narration:String; let audio:String }
-struct Manifest: Decodable { let frames:String; let frame_count:Int; let segments:[Segment] }
+struct Manifest: Decodable { let frames:String; let frame_count:Int; let capture_kind:String; let segments:[Segment] }
 enum RenderError:Error { case invalid(String) }
 let fps:Int32=10, width=1280, height=840
 
@@ -40,7 +40,11 @@ func pixel(_ path:String, pool:CVPixelBufferPool) throws -> CVPixelBuffer {
         let manifestURL=URL(fileURLWithPath:CommandLine.arguments[1]),output=URL(fileURLWithPath:CommandLine.arguments[2])
         guard !FileManager.default.fileExists(atPath:output.path) else { throw RenderError.invalid("output exists") }
         let plan=try JSONDecoder().decode(Manifest.self,from:Data(contentsOf:manifestURL))
-        guard (500...600).contains(plan.frame_count),plan.segments.count==8 else { throw RenderError.invalid("frame or segment count") }
+        let short = plan.capture_kind == "edited_automated_browser_demo"
+        let full = plan.capture_kind == "edited_full_automated_browser_demo"
+        guard (short && (500...600).contains(plan.frame_count) && plan.segments.count==8)
+            || (full && (2000...2200).contains(plan.frame_count) && plan.segments.count==10)
+            else { throw RenderError.invalid("frame or segment count") }
         let silent=manifestURL.deletingLastPathComponent().appendingPathComponent("silent.mp4")
         guard !FileManager.default.fileExists(atPath:silent.path) else { throw RenderError.invalid("silent output exists") }
         let writer=try AVAssetWriter(outputURL:silent,fileType:.mp4)
@@ -90,7 +94,7 @@ func pixel(_ path:String, pool:CVPixelBufferPool) throws -> CVPixelBuffer {
         await withCheckedContinuation { (c:CheckedContinuation<Void,Never>) in exporter.exportAsynchronously{c.resume()} }
         guard exporter.status == .completed else { throw exporter.error ?? RenderError.invalid("export failed") }
         let result:[String:Any]=["width":width,"height":height,"fps":fps,"duration":total.seconds,
-            "video_codec":"H264","voice":"macOS Tingting","capture_kind":"edited_automated_browser_demo", "timeline":timeline]
+            "video_codec":"H264","voice":"macOS Tingting","capture_kind":plan.capture_kind, "timeline":timeline]
         let data=try JSONSerialization.data(withJSONObject:result,options:[.prettyPrinted,.sortedKeys])
         try data.write(to:output.deletingPathExtension().appendingPathExtension("media.json"))
         print("exported \(total.seconds)s")

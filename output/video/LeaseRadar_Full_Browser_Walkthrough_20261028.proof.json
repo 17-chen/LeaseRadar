@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "capture_kind": "paced_automated_continuous_browser_session",
+  "synthetic": true,
+  "audio": false,
+  "credential_entry_recorded": false,
+  "external_requests_blocked": true,
+  "source_commit": "41c9e76f956b41d347c1ca24128d13573598995a",
+  "playwright_core": "1.62.1",
+  "raw_sha256": "389123adf544147bdeebf2d98fade275f9d58c110c6f3be05207d785896224c9",
+  "video": "full-browser.webm",
+  "bytes": 14421396,
+  "sha256": "e7c973b4b27201a9b0a6841154a03d14f7a13da0e296018b885b2af735df0fa3",
+  "planned_duration_seconds": 207.5,
+  "observations": [
+    {
+      "scene": 1,
+      "title": "开场",
+      "seconds": 0
+    },
+    {
+      "scene": 2,
+      "title": "自由筛选",
+      "seconds": 19.812
+    },
+    {
+      "scene": 3,
+      "title": "比较三条候选",
+      "seconds": 41.314
+    },
+    {
+      "scene": 4,
+      "title": "查看金额依据",
+      "seconds": 62.843
+    },
+    {
+      "scene": 5,
+      "title": "查看周期未知",
+      "seconds": 82.842
+    },
+    {
+      "scene": 6,
+      "title": "提醒收件箱",
+      "seconds": 100.939
+    },
+    {
+      "scene": 7,
+      "title": "跟进与笔记",
+      "seconds": 120.707
+    },
+    {
+      "scene": 8,
+      "title": "来源与受阻",
+      "seconds": 139.556
+    },
+    {
+      "scene": 9,
+      "title": "我的收藏",
+      "seconds": 159.919
+    },
+    {
+      "scene": 10,
+      "title": "范围与收尾",
+      "seconds": 180.553
+    }
+  ],
+  "browser_ready_delay_seconds": 1.802,
+  "trim_seconds": 0,
+  "app_version": "0.1.16",
+  "continuous_recording": true,
+  "browser": "Google Chrome via Playwright-core 1.62.1",
+  "viewport": "1280x800",
+  "format": "WebM / VP8",
+  "duration_seconds": 207.48,
+  "fps": 25,
+  "verification": {
+    "full_decode": "passed",
+    "decoded_to_frames": 2076,
+    "ten_scene_visual_review": "passed",
+    "audio_track": "none",
+    "human_listening_review": "not_applicable"
+  },
+  "submission_status": "review_only"
+}
