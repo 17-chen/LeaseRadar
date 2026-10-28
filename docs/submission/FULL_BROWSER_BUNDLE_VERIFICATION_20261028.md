@@ -6,4 +6,4 @@
 
 标准库预解压校验器通过哈希、大小、CRC、安全路径检查。将**确切ZIP**独立解压至`private/full-browser-bundle-mq9bqhpn`，在禁止外部网络连接的进程中建立全新合成DEMO，确认6候选、7版本、5站内消息、合成账号登录、场景标识、首页与静态资源、筛选返回4条。这个恢复证明包可在已有依赖的本机环境使用；未验收跨系统离线依赖安装、真实来源或邮件、生产部署与正式评审访问。
 
-构建前293项应用回归、1项Poppler集成、JS语法、依赖及差异检查通过。长版原片/成片解码和十场景画面核对见[FULL_BROWSER_REVIEW_VIDEO_20261028.md](FULL_BROWSER_REVIEW_VIDEO_20261028.md)；Chrome本地预览页读取成片207.6秒/1280×840元数据，未发生页面脚本错误。真人逐字听审、PDF/规则终审、评审访问方式、报名与提交授权和真实回执仍未完成。GitHub同步与CI按后续提交核查。
+构建前293项应用回归、1项Poppler集成、JS语法、依赖及差异检查通过。长版原片/成片解码和十场景画面核对见[FULL_BROWSER_REVIEW_VIDEO_20261028.md](FULL_BROWSER_REVIEW_VIDEO_20261028.md)；Chrome本地预览页读取成片207.6秒/1280×840元数据，未发生页面脚本错误。`90029b4`已推送私有GitHub，[Tests运行40633005440](https://github.com/17-chen/LeaseRadar/actions/runs/40633005440) completed/success。真人逐字听审、PDF/规则终审、评审访问方式、报名与提交授权和真实回执仍未完成。
