@@ -2,6 +2,8 @@
 
 2026-10-28新增[207.6秒十场景连续浏览器有声审阅稿](../../output/video/LeaseRadar_Full_Browser_Review_20261028.mp4)及[本地视频预览页](../../output/video/index.html)。[录制/验证/待听审记录](FULL_BROWSER_REVIEW_VIDEO_20261028.md)区分自动Chrome连续画面、无声原片、系统合成配音和旧静态分镜；新稿尚未经真人逐字听审，`ready_to_submit=false`。
 
+从`e58d268`生成的[105文件私有审阅包](FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md)已完成逐项Git核对与确切ZIP独立禁外网合成恢复；包仅在本机private，仍不可作为正式提交。
+
 2026-10-25已重建[介绍PDF审阅稿](../../output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)，同步最新七步与390px彩排事实；六页检查见[PDF审阅](PDF_REVIEW_20261025.md)。视频仍是[修订口播的静态分镜草稿](../../output/video/LeaseRadar_Storyboard_Review_20261024.mp4)，逐段核对入口见[听审清单](VIDEO_LISTENING_CHECKLIST_20261025.md)，不是连续录屏或最终提交版。早先[82文件审阅包](REHEARSAL_BUNDLE_VERIFICATION_20261025.md)保留历史记录，**不含这次PDF更新**；当前重建包另见本目录最新验证记录。历史工程证据仍标2026-10-21/ccd5a1c，不把后续彩排混入历史测试数。
 
 2026-10-26另录[55.68秒连续浏览器操作片段](../../output/video/LeaseRadar_Browser_Walkthrough_20261026.webm)，自动点击新建合成DEMO七步、无音轨，核验见[录制审阅](BROWSER_WALKTHROUGH_20261026.md)。它只补充实际页面流程画面，带旁白静态分镜仍待人工逐字听审；两者均非最终提交视频。

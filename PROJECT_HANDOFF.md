@@ -4,6 +4,8 @@
 
 2026-10-28新媒体：从`41c9e76`新建合成DEMO录制十场景连续Chrome画面，零裁切原片207.48秒；生成207.6秒有声审阅稿，原片与成片完整解码、十阶段目视和本地Chrome预览元数据检查通过。保留一次错误裁切样本于private；系统合成旁白未经过真人逐字听审。完整293项回归及1项Poppler集成通过，JS语法、依赖和差异检查通过。新包与GitHub状态以随后记录为准。
 
+2026-10-28新包：从`e58d268`生成105文件私有审阅包，104个仓库文件与提交逐字节一致，预解压校验与确切ZIP独立禁外网合成恢复通过；SHA256与边界见docs/submission/FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md。`ready_to_submit=false`，真实接入范围不变。GitHub状态以随后记录为准。
+
 2026-10-27新包：96项许可文件中95项与`5fd845a`逐字节一致，另1项为生成的入口指南；预解压校验及确切ZIP独立禁外网合成登录/筛选恢复通过。ZIP SHA256 `9b0748eee40a46cfce4e2538160bae8a20a68c8913940ca25f285f3767a2ace0`，仅在private；原89文件包保留。三种媒体各自标注，`ready_to_submit=false`。GitHub同步及CI以随后记录为准。
 
 2026-10-27 GitHub：`b5f5b83`已推送私有`origin/main`，对应[Tests运行40429647203](https://github.com/17-chen/LeaseRadar/actions/runs/40429647203) completed/success；Linux应用回归、迁移、JS和Poppler集成均通过。macOS媒体编码/真人听审不在CI中。之后若仅更新交接文档，最新CI仍应按新head复查。
