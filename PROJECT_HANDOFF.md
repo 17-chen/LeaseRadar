@@ -4,6 +4,8 @@
 
 用户随后回复确认：已报名并收到组委会确认邮件，以个人方式参赛；按用户说明登记，未读取原邮件，不写入私人联系方式。视频平台未定，消息未附实际评审链接。PDF/对照表和邮件稿已据此更新；剩余重点为源码评审访问、视频链接与最终听审。此前“报名未确认”的当时记录不代表最新用户状态。
 
+据此从`5154540`重建Individual版114文件完整包与258,842字节小包，逐项Git/哈希及确切ZIP独立禁外网恢复通过；最新PDF第6页同步用户确认事实并重做QA。路径/SHA见SUBMISSION_PACKETS_VERIFICATION_20261029.md。旧f9980e3包保留历史，不是最新报名状态。`2427cb0` CI已成功，随后材料提交需按最新head核对。
+
 2026-10-29提交前核查：用户明确明天10月30日交。实时官网和报名弹窗已通过浏览器读取，主体选项**包含学生团队**，更新早先仅凭索引无法确定学生团队资格的记录；本人报名/邮件现已由用户确认，实际姓名等私有资料未写入仓库。三类材料、10月31日24:00、确认邮件流程及原创/授权/赛事展示承诺均已看到，未填写/勾选/提交。对照与明日动作见docs/submission/SUBMISSION_READINESS_20261029.md，未发送邮件稿见SUBMISSION_EMAIL_DRAFT.md。
 
 本轮六页PDF更新到326项/ccb0fb0与eca595e CI、207.6秒有声稿/42条字幕，262项/ccd5a1c历史证据分开；最终六页渲染/文字检查通过，见PDF_REVIEW_20261029.md。完整326项本机回归、1项Poppler、字幕重建、JS/依赖/差异检查通过。源码仍私有、视频仅本机，评审访问和真人逐字听审未签收，因此不能认定已满足全部正式提交条件。新包与GitHub记录另记。
@@ -163,8 +165,8 @@ git log -5 --oneline
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
 | 10月28日本地完整审阅包 | private/LeaseRadar_Review_20261028_FullBrowser.zip；105个payload文件，五类媒体与PDF，独立恢复通过；不含10月29日字幕，详见FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md；后续新包另记 |
-| 最新本地完整审阅包 | private/LeaseRadar_Review_20261029_SubmissionPrep.zip；114个payload文件，基于f9980e3，新版PDF/提交对照/邮件草稿已纳入，独立恢复通过；见SUBMISSION_PACKETS_VERIFICATION_20261029.md |
-| 提交核对小包 | private/LeaseRadar_Submission_Preflight_20261029.zip；258,421字节，含PDF/对照表/邮件草稿；待补实际资料/访问链接，尚未正式发送 |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261029_Individual.zip；114个payload文件，基于5154540，PDF/对照/邮件稿含用户确认报名及个人参赛状态，独立恢复通过；见SUBMISSION_PACKETS_VERIFICATION_20261029.md |
+| 提交核对小包 | private/LeaseRadar_Submission_Individual_20261029.zip；258,842字节，含PDF/对照/邮件稿；报名已由用户确认，待补实际署名/访问链接和听审，未正式发送 |
 | 长版字幕审阅 | output/video中的VTT、captions.json和review.js；运行python3 scripts/serve_video_review.py，只监听回环且支持分段跳转；句内时码为估算，未真人听审 |
 
 当前视频SHA256：01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54；旧版SHA256见VIDEO_DRAFT.md。

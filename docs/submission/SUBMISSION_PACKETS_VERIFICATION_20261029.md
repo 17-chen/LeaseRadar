@@ -1,5 +1,18 @@
 # 明日提交准备包核验 · 2026-10-29
 
+## 最新：用户确认报名与个人参赛后
+
+用户确认已报名并收到组委会确认邮件、个人参赛。PDF/提交对照/邮件稿已按这一事实更新，未读取原邮件或写入姓名、电话等私人资料；视频平台待定，尚未收到实际评审链接。下面两个最新包仍`ready_to_submit=false`，因为源码/视频访问与听审未签收。
+
+固定提交`5154540ccc134d2fcc63dbca05e2dbe430a01cf1`：
+
+- 完整包`private/LeaseRadar_Review_20261029_Individual.zip`，60,619,092字节，SHA256 `5f1dfe8164b2c6d561986999d976c637e5b8c22404bc05bd6a889ef76c16a535`。114个payload文件，113项仓库字节匹配，预解压验证及确切ZIP独立禁外网6/7/5合成初始化、登录/资源/筛选4条与字幕检查通过；恢复目录`private/individual-prep-restore-ms77_j7l`。
+- 小包`private/LeaseRadar_Submission_Individual_20261029.zip`，258,842字节，SHA256 `94c1a2738661780ded5b061823164966359e1d35f199bb20c63d88bed41837c8`。4项payload及清单，前三项PDF/对照/邮件稿逐字节匹配固定提交，另1项为生成指南；CRC/大小/哈希通过，报名状态明确为用户已确认。
+
+最新PDF为276,422字节，SHA256 `6d8ef6942f0ce0cb29eda04e5cf0aff4aafadcdb219bc651528e0dc5867a4a45`，第6页同步个人报名事实后重新渲染目视，其余五页像素与已核验版一致。27项打包专项再次通过；此前完整326项/1项Poppler通过，`2427cb0`的[CI运行40873855827](https://github.com/17-chen/LeaseRadar/actions/runs/40873855827)成功。之后材料/交接提交按最终head另核。
+
+## 用户回复前的历史版本
+
 固定源码提交`f9980e3f48760a7c48a51c864d24e1b5137cf106`，以下两包均只在本机private目录，未上传ZIP、未对外发送，均`ready_to_submit=false`。
 
 ## 完整审阅/恢复包
