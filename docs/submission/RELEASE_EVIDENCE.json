@@ -48,7 +48,10 @@
     "method": "live_browser_page_and_registration_form",
     "student_team_option_observed": true,
     "deadline_displayed": "10月31日24:00",
-    "registration_submitted": false,
-    "registration_confirmation_seen": false
+    "registration_submitted": null,
+    "registration_confirmation_seen": false,
+    "registration_user_confirmed": true,
+    "identity_user_reported": "individual",
+    "registration_action_by_agent": false
   }
 }
