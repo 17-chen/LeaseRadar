@@ -4,6 +4,8 @@
 
 2026-10-29续作：接续开工时已有的字幕脚本/页面修改，补生成验证、逐段定位及HTTP字节范围服务，修复普通静态服务下跳转停在0秒。326项本机回归、1项Poppler集成、字幕重建/JS/依赖/差异检查通过；1280px和390px分别验证十次实际播放定位及对应字幕，无页面错误或整体横向溢出。首次静态服务及换行失败记录保留private；视频字节未改，未真人逐字听审。README和材料入口已统一到长版及字幕。新包/提交状态另记。
 
+2026-10-29新包：从`ccb0fb0`生成111文件字幕审阅包，110项仓库字节匹配，预解压校验通过；确切ZIP独立禁外网合成恢复、字幕重建检查与回环媒体206请求通过。SHA256及范围见docs/submission/CAPTION_BUNDLE_VERIFICATION_20261029.md。包仅在private，`ready_to_submit=false`；原视频字节、真实接入与外部通道未改。最终GitHub提交/CI以本轮实际核查为准。
+
 2026-10-28新媒体：从`41c9e76`新建合成DEMO录制十场景连续Chrome画面，零裁切原片207.48秒；生成207.6秒有声审阅稿，原片与成片完整解码、十阶段目视和本地Chrome预览元数据检查通过。保留一次错误裁切样本于private；系统合成旁白未经过真人逐字听审。完整293项回归及1项Poppler集成通过，JS语法、依赖和差异检查通过。新包与GitHub状态以随后记录为准。
 
 2026-10-28新包：从`e58d268`生成105文件私有审阅包，104个仓库文件与提交逐字节一致，预解压校验与确切ZIP独立禁外网合成恢复通过；SHA256与边界见docs/submission/FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md。`ready_to_submit=false`，真实接入范围不变。GitHub状态以随后记录为准。
@@ -153,6 +155,7 @@ git log -5 --oneline
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
 | 10月28日本地完整审阅包 | private/LeaseRadar_Review_20261028_FullBrowser.zip；105个payload文件，五类媒体与PDF，独立恢复通过；不含10月29日字幕，详见FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md；后续新包另记 |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261029_Captions.zip；111个payload文件，基于ccb0fb0，含字幕/审阅服务，独立恢复通过，见CAPTION_BUNDLE_VERIFICATION_20261029.md；仍非提交完成证明 |
 | 长版字幕审阅 | output/video中的VTT、captions.json和review.js；运行python3 scripts/serve_video_review.py，只监听回环且支持分段跳转；句内时码为估算，未真人听审 |
 
 当前视频SHA256：01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54；旧版SHA256见VIDEO_DRAFT.md。
@@ -190,4 +193,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。10月28日105文件包已独立禁外网恢复，10月29日新增字幕后须用新包；七步和390px已在10月25日新建DEMO复核，10月26日又连续录下桌面七步；多端口隔离、模拟会话到期分别有10月23/24日记录，未等待12小时自然过期。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。10月29日111文件字幕包已独立恢复合成应用与分段审阅服务；七步和390px已在10月25日新建DEMO复核，10月26日又连续录下桌面七步；多端口隔离、模拟会话到期分别有10月23/24日记录，未等待12小时自然过期。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。

@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [ ] 2026-10-29字幕与可定位审阅页、本机分段服务和111文件包恢复已完成；接下来使用该入口进行真人听审，并完成PDF/规则终审、访问与正式提交。见docs/submission/CAPTION_REVIEW_20261029.md及CAPTION_BUNDLE_VERIFICATION_20261029.md；不是仅等配置即可完成产品。
+
 - [ ] 2026-10-28从`e58d268`生成105文件本地审阅包，预解压校验、104项Git字节比对及确切ZIP独立禁外网合成恢复通过；真人听审、PDF/规则终审、评审访问与正式提交仍待签收。见docs/submission/FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md。
 
 - [ ] 2026-10-28新增207.6秒十场景连续浏览器有声审阅稿，原片/成片完整解码、十阶段画面目视和本地Chrome预览通过；仍需真人逐字听审、正式视频形式/规则及提交签收。见docs/submission/FULL_BROWSER_REVIEW_VIDEO_20261028.md。

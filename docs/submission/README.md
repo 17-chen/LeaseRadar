@@ -2,6 +2,8 @@
 
 2026-10-29新增[长版字幕、逐段稿与可定位审阅页](CAPTION_REVIEW_20261029.md)，运行 `python3 scripts/serve_video_review.py` 本机查看。句内字幕时码为估算，真人逐字听审仍未完成；10月28日105文件包不含新增字幕，新包另记。
 
+[111文件字幕审阅包](CAPTION_BUNDLE_VERIFICATION_20261029.md)已从`ccb0fb0`生成并完成逐项Git匹配、确切ZIP独立合成恢复和回环分段服务检查；包只在private，仍标不可正式提交。
+
 2026-10-28新增[207.6秒十场景连续浏览器有声审阅稿](../../output/video/LeaseRadar_Full_Browser_Review_20261028.mp4)及[本地视频预览页](../../output/video/index.html)。[录制/验证/待听审记录](FULL_BROWSER_REVIEW_VIDEO_20261028.md)区分自动Chrome连续画面、无声原片、系统合成配音和旧静态分镜；新稿尚未经真人逐字听审，`ready_to_submit=false`。
 
 从`e58d268`生成的[105文件私有审阅包](FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md)已完成逐项Git核对与确切ZIP独立禁外网合成恢复；包仅在本机private，仍不可作为正式提交。
