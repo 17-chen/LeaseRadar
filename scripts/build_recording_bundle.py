@@ -3,6 +3,7 @@
 import argparse
 from datetime import datetime, timezone
 import hashlib
+import importlib.util
 import io
 import json
 import re
@@ -11,6 +12,9 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+_caption_spec = importlib.util.spec_from_file_location('browser_captions', ROOT / 'scripts/build_browser_captions.py')
+caption_builder = importlib.util.module_from_spec(_caption_spec)
+_caption_spec.loader.exec_module(caption_builder)
 FILES = (
     'backend/alembic.ini', 'backend/requirements.lock', 'scripts/demo.py',
     'scripts/verify_recording_bundle.py',
@@ -38,6 +42,8 @@ FULL_BROWSER_REVIEW_MEDIA = 'output/video/LeaseRadar_Full_Browser_Review_2026102
 FULL_BROWSER_NARRATION = 'docs/submission/FULL_BROWSER_NARRATION_20261028.json'
 FULL_FILES = (
     'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md', 'output/video/index.html',
+    'output/video/review.js', 'scripts/build_browser_captions.py', 'scripts/serve_video_review.py',
+    caption_builder.CAPTIONS, caption_builder.TRANSCRIPT,
     'docs/COMPETITION_REQUIREMENTS.md',
     'docs/submission/README.md', 'docs/submission/VIDEO_DRAFT.md',
     'docs/submission/PDF_REVIEW_20261025.md',
@@ -45,6 +51,7 @@ FULL_FILES = (
     'docs/submission/BROWSER_WALKTHROUGH_20261026.md',
     'docs/submission/BROWSER_REVIEW_VIDEO_20261027.md',
     'docs/submission/FULL_BROWSER_REVIEW_VIDEO_20261028.md',
+    'docs/submission/CAPTION_REVIEW_20261029.md',
     'docs/submission/DEMO_FREEZE_REHEARSAL_20261025.md',
     'docs/submission/DEMO_MATERIALS_20261023.md',
     'docs/submission/VIDEO_STORYBOARD.json',
@@ -106,6 +113,8 @@ python3 -m venv .venv
 终端显示本机地址与私有DEMO_GUIDE.md路径，账号仅在本机新生成的指南内。
 端口占用可换其他空闲端口；过期路线需创建新DEMO，不修改系统时间或旧数据。
 PDF在output/pdf，视频及原有校验元数据在output/video，边界见docs/submission/README.md。
+长版字幕与十段定位审阅：运行`python3 scripts/serve_video_review.py`，打开回环地址；
+字幕未烧录进MP4，句内时间为估算，真人逐字听审仍待完成。
 MANIFEST.json列出每项字节数和SHA256，只是完整性清单，不是可信签名。
 解压前可用`python3 scripts/verify_recording_bundle.py 压缩包路径`检查清单、CRC和安全路径；也可用仓库中同名脚本。
 视频已导出但尚未逐字听审；正式比赛指引、评审访问、视频托管和提交均待确认。
@@ -263,6 +272,12 @@ def build(root, destination, include_video=False):
                 or not isinstance(full_media.get('duration'), (int, float))
                 or abs(full_media['duration'] - full_decode.get('duration', 0)) > 0.1):
             raise ValueError('十场景有声审阅稿与证明不一致；拒绝打包')
+        captions, transcript = caption_builder.render(
+            payload[FULL_BROWSER_NARRATION], payload[FULL_BROWSER_REVIEW_MEDIA],
+            payload[FULL_BROWSER_REVIEW_PROOF])
+        if (payload[caption_builder.CAPTIONS] != captions
+                or payload[caption_builder.TRANSCRIPT] != transcript):
+            raise ValueError('字幕或逐段稿与旁白/媒体不一致；拒绝打包')
     payload['START_HERE.md'] = (FULL_GUIDE if include_video else GUIDE).encode()
     revision = subprocess.run(['git', '-C', str(root), 'rev-parse', 'HEAD'], capture_output=True, text=True)
     dirty = subprocess.run(['git', '-C', str(root), 'status', '--porcelain'], capture_output=True, text=True)

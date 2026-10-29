@@ -8,13 +8,21 @@ body{margin:32px auto;padding:0 20px;max-width:1200px;background:#f4f6ef;color:#
 h1{font-size:28px}h2{font-size:21px;margin-top:34px}video{width:100%;background:#111;display:block}
 .note{padding:14px 18px;border:1px solid #d5ded3;background:white}.warning{border-left:4px solid #ae7b2c}
 .meta{color:#52675e}a{color:#1a664e}li{margin:5px 0}details{margin:24px 0;padding:14px 18px;background:white;border:1px solid #d5ded3}
+button{font:inherit;text-align:left;background:#fff;color:#1a664e;border:1px solid #a8b9ae;border-radius:5px;padding:8px 12px;cursor:pointer}button:focus-visible{outline:3px solid #ae7b2c;outline-offset:2px}#transcript{padding-left:24px}#transcript p{font-size:15px}video::cue{font-size:18px;background:rgba(0,0,0,.85);color:white}
 </style>
 <h1>铺讯 · 合成演示视频审阅</h1>
+<p class="meta">本机预览：在项目目录运行 <code>python3 scripts/serve_video_review.py</code>，打开终端显示的地址。服务支持按场景跳转；仅直接打开HTML文件时，逐段稿可能无法加载。</p>
 <p class="note warning">所有画面均为本地合成 DEMO。浏览器操作由脚本自动完成，旁白由系统合成；这些视频不是人工实时操作、真实房源、试用业绩或已提交作品。声音和最终形式仍需人工审阅。</p>
 <h2>十场景连续操作有声稿 · 2026-10-28</h2>
 <p class="meta">约3分28秒 · 1280×840 · H.264/AAC · 剪辑自连续浏览器页面录制 · 本地审阅稿</p>
-<video controls preload="metadata" src="LeaseRadar_Full_Browser_Review_20261028.mp4" aria-label="铺讯十场景自动化浏览器操作有声审阅稿"></video>
+<video id="full-review" controls preload="metadata" src="LeaseRadar_Full_Browser_Review_20261028.mp4" aria-label="铺讯十场景自动化浏览器操作有声审阅稿"><track kind="captions" src="LeaseRadar_Full_Browser_Review_20261028.zh-CN.vtt" srclang="zh-CN" label="中文审阅字幕（时码估算）" default></video>
 <p>覆盖筛选、三项比较、已知与未知金额依据、站内提醒、合成跟进、来源受阻以及我的收藏。<a href="LeaseRadar_Full_Browser_Review_20261028.mp4" download>下载有声审阅稿</a> · <a href="LeaseRadar_Full_Browser_Walkthrough_20261028.webm" download>下载无声连续原片</a></p>
+<p class="note">字幕文字来自实际配音稿，场景起点与音频时长来自成片记录，句内时码按字数估算，尚未逐字听审。可在播放器中关闭字幕；下载 MP4 后需同时加载 <a href="LeaseRadar_Full_Browser_Review_20261028.zh-CN.vtt" download>VTT 字幕</a>，字幕没有烧录到视频。</p>
+<details><summary>逐段核对旁白与画面</summary>
+<p id="transcript-status" role="status">正在加载逐段稿。</p>
+<ol id="transcript"></ol>
+<p><a href="LeaseRadar_Full_Browser_Review_20261028.captions.json" download>下载带时间码的逐段稿</a>。请记录场景、时间码、问题和修正建议；此页不保存人工签收结果。</p>
+</details>
 <details><summary>其他审阅素材</summary>
 <h2>55秒七步有声剪辑 · 2026-10-27</h2>
 <video controls preload="none" src="LeaseRadar_Browser_Review_20261027.mp4" aria-label="铺讯七步自动化浏览器操作有声短版"></video>
@@ -25,4 +33,5 @@ h1{font-size:28px}h2{font-size:21px;margin-top:34px}video{width:100%;background:
 <p><a href="LeaseRadar_Storyboard_Review_20261024.mp4" download>下载静态分镜</a></p>
 </details>
 <p class="note">请从头听看有声稿，记录错读、停顿、画面遮挡和不一致的时间码。完整第二来源、真实OCR准确率、生产运行与真实邮件投递仍待验收。当前没有公开发布或正式提交。</p>
+<script src="review.js" defer></script>
 </html>

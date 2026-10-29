@@ -1,6 +1,8 @@
 # LeaseRadar（铺讯）新聊天交接
 
-> 更新：2026-10-28，Asia/Shanghai。新增207.6秒十场景连续浏览器画面有声审阅稿及本地预览页；原片、成片、旁白稿、proof和听审边界见docs/submission/FULL_BROWSER_REVIEW_VIDEO_20261028.md。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+> 更新：2026-10-29，Asia/Shanghai。长版新增42条字幕、十场景逐段稿及支持实际跳转的本机审阅服务，见docs/submission/CAPTION_REVIEW_20261029.md。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
+
+2026-10-29续作：接续开工时已有的字幕脚本/页面修改，补生成验证、逐段定位及HTTP字节范围服务，修复普通静态服务下跳转停在0秒。326项本机回归、1项Poppler集成、字幕重建/JS/依赖/差异检查通过；1280px和390px分别验证十次实际播放定位及对应字幕，无页面错误或整体横向溢出。首次静态服务及换行失败记录保留private；视频字节未改，未真人逐字听审。README和材料入口已统一到长版及字幕。新包/提交状态另记。
 
 2026-10-28新媒体：从`41c9e76`新建合成DEMO录制十场景连续Chrome画面，零裁切原片207.48秒；生成207.6秒有声审阅稿，原片与成片完整解码、十阶段目视和本地Chrome预览元数据检查通过。保留一次错误裁切样本于private；系统合成旁白未经过真人逐字听审。完整293项回归及1项Poppler集成通过，JS语法、依赖和差异检查通过。新包与GitHub状态以随后记录为准。
 
@@ -58,13 +60,13 @@
 | 本机目录 | /Users/chenxin/Documents/瑞幸咖啡 网页检索 |
 | GitHub | https://github.com/17-chen/LeaseRadar，私有 |
 | 分支 | main；新建开发分支默认codex/前缀 |
-| 本轮开始源码提交 | 41c9e76；前端业务逻辑仍为234918c，PDF在10月25日更新，10月28日新增长版连续浏览器演示，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3；最新提交以git log为准 |
+| 本轮开始源码提交 | 5066bc6；前端业务逻辑仍为234918c，PDF在10月25日更新，10月28日新增长版连续浏览器演示，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3；最新提交以git log为准 |
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 最近已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40633005440，head=90029b4，completed/success；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续文档提交仍须另核 |
+| 本轮开始已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40633314137，head=5066bc6，completed/success；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
 
-交接编写前工作树无已跟踪修改，仅有用户既有未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg；不要删除、改写或随手git add全部。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
+10月29日开工已有output/video/index.html修改、未跟踪review.js及build_browser_captions.py，本轮接续并验证；另有长期用户未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg，继续保留且不纳入提交。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 
 近期提交定位：92ba1a3演示Cookie隔离；eb430a1分镜视频与媒体验证；f50223e材料刷新/打包版本保护；ccd5a1c提取结果加固；13ce43d收藏/跟进快捷视图；abf2d8a工作台与筛选CSV。
 
@@ -150,7 +152,8 @@ git log -5 --oneline
 | 视频源素材 | docs/submission/VIDEO_STORYBOARD.json、video-assets；边界与失败路径见VIDEO_DRAFT.md |
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
-| 最新本地完整审阅包 | private/LeaseRadar_Review_20261026_BrowserWalkthrough.zip；89个payload文件，含10月25日PDF、修订口播视频与10月26日无音轨浏览器片段；非最终提交包，详见BROWSER_WALKTHROUGH_BUNDLE_VERIFICATION_20261026.md |
+| 10月28日本地完整审阅包 | private/LeaseRadar_Review_20261028_FullBrowser.zip；105个payload文件，五类媒体与PDF，独立恢复通过；不含10月29日字幕，详见FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md；后续新包另记 |
+| 长版字幕审阅 | output/video中的VTT、captions.json和review.js；运行python3 scripts/serve_video_review.py，只监听回环且支持分段跳转；句内时码为估算，未真人听审 |
 
 当前视频SHA256：01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54；旧版SHA256见VIDEO_DRAFT.md。
 当前完整审阅包SHA256：5653880185dd98b6be1f9107f8f46c36b57bdc069f8bf79006c3f69bd2a7f30f；只在private，未公开发布。
@@ -187,4 +190,4 @@ PATH='/Users/chenxin/.cache/codex-runtimes/codex-primary-runtime/dependencies/na
 
 测试会使用独立临时DB、合成本地SMTP；不要对真实DB运行破坏式测试。迁移/备份/真实服务恢复按DEPLOYMENT.md审查后执行，别为了看界面先对默认LIVE库创建账号/清库/导入。配置、源开关与真实收件人更改都不属于“接手读资料”步骤。
 
-下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。当前89文件包已独立禁外网恢复；七步和390px已在10月25日新建DEMO复核，10月26日又连续录下桌面七步；多端口隔离、模拟会话到期分别有10月23/24日记录，未等待12小时自然过期。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。
+下一轮优先顺序：视频逐字听审/最终形式→PDF与包终审→访问方式及正式提交。10月28日105文件包已独立禁外网恢复，10月29日新增字幕后须用新包；七步和390px已在10月25日新建DEMO复核，10月26日又连续录下桌面七步；多端口隔离、模拟会话到期分别有10月23/24日记录，未等待12小时自然过期。具体验收门槛、用户事项及生产后续在docs/REMAINING_WORK.md。

@@ -97,7 +97,9 @@ def add_sample_video(root):
     long_review = b'\x00\x00\x00\x18ftypisomsynthetic-long-review'
     (root/bundle.FULL_BROWSER_REVIEW).write_bytes(long_review)
     full_plan = {'capture_kind': 'edited_full_automated_browser_demo', 'synthetic': True,
-                 'source_sha256': hashlib.sha256(full).hexdigest(), 'segments': list(range(10))}
+                 'source_sha256': hashlib.sha256(full).hexdigest(), 'segments': [
+                     {'start_frame': i * 200, 'step': f'合成场景{i}', 'narration': '合成字幕。保留未知。'}
+                     for i in range(10)]}
     (root/bundle.FULL_BROWSER_NARRATION).write_text(json.dumps(full_plan))
     (root/bundle.FULL_BROWSER_REVIEW_PROOF).write_text(json.dumps({
         'capture_kind': 'edited_full_automated_browser_demo', 'synthetic': True,
@@ -112,7 +114,27 @@ def add_sample_video(root):
     }))
     (root/bundle.FULL_BROWSER_REVIEW_MEDIA).write_text(json.dumps({
         'capture_kind': 'edited_full_automated_browser_demo', 'duration': 207.6,
+        'fps': 10, 'width': 1280, 'height': 840, 'timeline': [
+            {'start': i * 20, 'step': f'合成场景{i}', 'audio_duration': 10}
+            for i in range(10)],
     }))
+    captions, transcript = bundle.caption_builder.render(*[
+        (root / name).read_bytes() for name in (
+            bundle.FULL_BROWSER_NARRATION, bundle.FULL_BROWSER_REVIEW_MEDIA,
+            bundle.FULL_BROWSER_REVIEW_PROOF)])
+    (root/bundle.caption_builder.CAPTIONS).write_bytes(captions)
+    (root/bundle.caption_builder.TRANSCRIPT).write_bytes(transcript)
+
+
+@pytest.mark.parametrize('name', [bundle.caption_builder.CAPTIONS, bundle.caption_builder.TRANSCRIPT])
+def test_full_bundle_rejects_stale_captions(tmp_path, name):
+    root = sample_root(tmp_path)
+    add_sample_video(root)
+    (root/name).write_bytes((root/name).read_bytes() + b'changed')
+    destination = tmp_path/'stale-captions.zip'
+    with pytest.raises(ValueError, match='字幕或逐段稿'):
+        bundle.build(root, destination, include_video=True)
+    assert not destination.exists()
 
 
 def test_allowlist_and_hashes_exclude_private_state(tmp_path):

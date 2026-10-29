@@ -80,8 +80,8 @@ SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本�
 
 新建合成DEMO后可点击页面“开始演示”，七步打开筛选、比较、金额/周期依据、提醒、跟进和受阻；真实环境没有该入口。旧演示数据不重置，重新创建即可获得路线。见[路线验收](docs/DEMO_ROUTE_VERIFICATION.md)。
 
-提交材料：[介绍PDF审阅稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)（6页，0.1.16）与[重建/QA说明](docs/submission/README.md)。当前有静态分镜视频草稿；最终形式、逐字听审、正式要求与提交授权仍待完成。
+提交材料：[介绍PDF审阅稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)（6页，0.1.16）与[207.6秒十场景有声浏览器审阅稿](output/video/LeaseRadar_Full_Browser_Review_20261028.mp4)。画面为合成DEMO自动浏览器连续录制，系统合成配音；短版和旧静态分镜保留。运行 `python3 scripts/serve_video_review.py` 可在本机查看字幕、逐段稿并点击标题定位，见[字幕审阅说明](docs/submission/CAPTION_REVIEW_20261029.md)。句内字幕时码为估算，真人听审、材料终审和正式提交仍待完成。
 
-录制交接：运行 `.venv/bin/python scripts/build_recording_bundle.py --output private/recording-new.zip` 生成带运行代码、合成素材、[讲解稿](docs/submission/RECORDING_SCRIPT.md)和SHA256清单的本地ZIP；加`--include-video`可生成含静态分镜及补充浏览器操作片段的完整审阅包。两种包均拒绝覆盖，不含真实数据库或账号。[10月25日审阅包独立恢复](docs/submission/PDF_REVIEW_BUNDLE_VERIFICATION_20261025.md)记录当时包与恢复结果；10月26日新增[连续浏览器操作片段](docs/submission/BROWSER_WALKTHROUGH_20261026.md)（约56秒、合成DEMO自动七步、无音轨）。原[静态分镜视频草稿](output/video/LeaseRadar_Storyboard_Review_20261024.mp4)约3分28秒、带合成旁白，仍待人工听审。[介绍PDF审阅稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)于10月25日同步七步与390px彩排，历史工程证据仍标10月21日。最终视频、发布及正式提交尚未完成。
+录制交接：运行 `.venv/bin/python scripts/build_recording_bundle.py --output private/recording-new.zip` 生成带运行代码、合成素材、[讲解稿](docs/submission/RECORDING_SCRIPT.md)和SHA256清单的小型本地ZIP；加`--include-video`纳入现有五类媒体、字幕与审阅页。两种包均拒绝覆盖，排除真实数据库和账号，完整包检查媒体及字幕一致性，仍标`ready_to_submit=false`。历史独立恢复见[10月28日105文件包](docs/submission/FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md)，它不含10月29日新增字幕。最新构建与边界见[材料入口](docs/submission/README.md)。
 
 需要把现有视频草稿与可运行演示放进一份本地审阅包时，使用 `--include-video` 和新的 `--output` 路径；范围、校验和恢复记录见[完整包验收](docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md)。该包仍不是正式提交完成证明。
