@@ -6,6 +6,8 @@
 
 本轮六页PDF更新到326项/ccb0fb0与eca595e CI、207.6秒有声稿/42条字幕，262项/ccd5a1c历史证据分开；最终六页渲染/文字检查通过，见PDF_REVIEW_20261029.md。完整326项本机回归、1项Poppler、字幕重建、JS/依赖/差异检查通过。源码仍私有、视频仅本机，评审访问和真人逐字听审未签收，因此不能认定已满足全部正式提交条件。新包与GitHub记录另记。
 
+从`f9980e3`生成114文件提交前完整审阅包，113项Git字节一致、确切ZIP独立禁外网合成恢复和字幕检查通过；另生成258,421字节小型核对包，含PDF/对照表/邮件草稿。哈希与范围见docs/submission/SUBMISSION_PACKETS_VERIFICATION_20261029.md。两包仅在private且未正式就绪；本人报名与发布/发送仍未执行。
+
 2026-10-29续作：接续开工时已有的字幕脚本/页面修改，补生成验证、逐段定位及HTTP字节范围服务，修复普通静态服务下跳转停在0秒。326项本机回归、1项Poppler集成、字幕重建/JS/依赖/差异检查通过；1280px和390px分别验证十次实际播放定位及对应字幕，无页面错误或整体横向溢出。首次静态服务及换行失败记录保留private；视频字节未改，未真人逐字听审。README和材料入口已统一到长版及字幕。新包/提交状态另记。
 
 2026-10-29新包：从`ccb0fb0`生成111文件字幕审阅包，110项仓库字节匹配，预解压校验通过；确切ZIP独立禁外网合成恢复、字幕重建检查与回环媒体206请求通过。SHA256及范围见docs/submission/CAPTION_BUNDLE_VERIFICATION_20261029.md。包仅在private，`ready_to_submit=false`；原视频字节、真实接入与外部通道未改。最终GitHub提交/CI以本轮实际核查为准。
@@ -159,7 +161,8 @@ git log -5 --oneline
 | 逐镜头稿 | docs/submission/RECORDING_SCRIPT.md；五分钟建议稿与现有约3分28秒分镜不是完全同一时间线 |
 | 最新本地小运行包 | private/LeaseRadar_Recording_92ba1a3.zip；58个payload文件，57个仓库文件逐字节匹配92ba1a3；另有MANIFEST，未含视频 |
 | 10月28日本地完整审阅包 | private/LeaseRadar_Review_20261028_FullBrowser.zip；105个payload文件，五类媒体与PDF，独立恢复通过；不含10月29日字幕，详见FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md；后续新包另记 |
-| 最新本地完整审阅包 | private/LeaseRadar_Review_20261029_Captions.zip；111个payload文件，基于ccb0fb0，含字幕/审阅服务，独立恢复通过，见CAPTION_BUNDLE_VERIFICATION_20261029.md；仍非提交完成证明 |
+| 最新本地完整审阅包 | private/LeaseRadar_Review_20261029_SubmissionPrep.zip；114个payload文件，基于f9980e3，新版PDF/提交对照/邮件草稿已纳入，独立恢复通过；见SUBMISSION_PACKETS_VERIFICATION_20261029.md |
+| 提交核对小包 | private/LeaseRadar_Submission_Preflight_20261029.zip；258,421字节，含PDF/对照表/邮件草稿；待补实际资料/访问链接，尚未正式发送 |
 | 长版字幕审阅 | output/video中的VTT、captions.json和review.js；运行python3 scripts/serve_video_review.py，只监听回环且支持分段跳转；句内时码为估算，未真人听审 |
 
 当前视频SHA256：01f296ea063f1178614fc712b03a62a3375b89237e6924979e426754c516ff54；旧版SHA256见VIDEO_DRAFT.md。
