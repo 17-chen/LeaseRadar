@@ -2,6 +2,10 @@
 
 > 更新：2026-10-29，Asia/Shanghai。长版新增42条字幕、十场景逐段稿及支持实际跳转的本机审阅服务，见docs/submission/CAPTION_REVIEW_20261029.md。API仍标0.1.16，工程材料的历史实现证据仍据ccd5a1c。本文保存项目事实与用户决策，不是全功能完成或正式提交证明。
 
+2026-10-29提交前核查：用户明确明天10月30日交。实时官网和报名弹窗已通过浏览器读取，主体选项**包含学生团队**，更新早先仅凭索引无法确定学生团队资格的记录；本人报名/审核/资料仍未确认。三类材料、10月31日24:00、确认邮件流程及原创/授权/赛事展示承诺均已看到，未填写/勾选/提交。对照与明日动作见docs/submission/SUBMISSION_READINESS_20261029.md，未发送邮件稿见SUBMISSION_EMAIL_DRAFT.md。
+
+本轮六页PDF更新到326项/ccb0fb0与eca595e CI、207.6秒有声稿/42条字幕，262项/ccd5a1c历史证据分开；最终六页渲染/文字检查通过，见PDF_REVIEW_20261029.md。完整326项本机回归、1项Poppler、字幕重建、JS/依赖/差异检查通过。源码仍私有、视频仅本机，评审访问和真人逐字听审未签收，因此不能认定已满足全部正式提交条件。新包与GitHub记录另记。
+
 2026-10-29续作：接续开工时已有的字幕脚本/页面修改，补生成验证、逐段定位及HTTP字节范围服务，修复普通静态服务下跳转停在0秒。326项本机回归、1项Poppler集成、字幕重建/JS/依赖/差异检查通过；1280px和390px分别验证十次实际播放定位及对应字幕，无页面错误或整体横向溢出。首次静态服务及换行失败记录保留private；视频字节未改，未真人逐字听审。README和材料入口已统一到长版及字幕。新包/提交状态另记。
 
 2026-10-29新包：从`ccb0fb0`生成111文件字幕审阅包，110项仓库字节匹配，预解压校验通过；确切ZIP独立禁外网合成恢复、字幕重建检查与回环媒体206请求通过。SHA256及范围见docs/submission/CAPTION_BUNDLE_VERIFICATION_20261029.md。包仅在private，`ready_to_submit=false`；原视频字节、真实接入与外部通道未改。最终GitHub提交/CI以本轮实际核查为准。
@@ -62,11 +66,11 @@
 | 本机目录 | /Users/chenxin/Documents/瑞幸咖啡 网页检索 |
 | GitHub | https://github.com/17-chen/LeaseRadar，私有 |
 | 分支 | main；新建开发分支默认codex/前缀 |
-| 本轮开始源码提交 | 5066bc6；前端业务逻辑仍为234918c，PDF在10月25日更新，10月28日新增长版连续浏览器演示，原静态分镜字节未变，API/数据库业务代码基线仍为92ba1a3；最新提交以git log为准 |
+| 本轮开始源码提交 | eca595e；前端业务逻辑仍为234918c，PDF在10月29日提交前更新，10月28日长版视频/10月29日字幕已具备，API/数据库业务代码基线仍为92ba1a3；最新提交以git log为准 |
 | API标识版本 | backend/app/main.py：0.1.16；后续材料/会话修复未升版本 |
 | 数据库迁移头 | 0011_document_downloads |
 | 依赖 | backend/requirements.lock；本机Python3.13，GitHub CI Python3.12 |
-| 本轮开始已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40633314137，head=5066bc6，completed/success；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
+| 本轮开始已核实CI | https://github.com/17-chen/LeaseRadar/actions/runs/40834936441，head=eca595e，completed/success；含Linux Python3.12应用测试、迁移、JS及Poppler集成。后续提交仍须另核 |
 
 10月29日开工已有output/video/index.html修改、未跟踪review.js及build_browser_captions.py，本轮接续并验证；另有长期用户未跟踪Un8(1)/、output/ui-refresh.jpg、output/ui-workbench.jpg，继续保留且不纳入提交。本文提交本身会产生后续文档提交，以git log为准，不让交接基线自指。
 
@@ -143,7 +147,7 @@ git log -5 --oneline
 
 | 材料 | 位置与实际状态 |
 | --- | --- |
-| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月25日审阅稿；工程依据仍为10月21日ccd5a1c/262测试，非终稿；见PDF_REVIEW_20261025.md |
+| 介绍PDF | output/pdf/LeaseRadar_Competition_Intro_Draft.pdf；6页，0.1.16，10月29日审阅版；326项/ccb0fb0与262项/ccd5a1c分开，长版/字幕/正式缺口已更新；见PDF_REVIEW_20261029.md |
 | PDF构建 | scripts/build_competition_intro.py；独立可选文档依赖，修改须按PDF技能渲染全部页面审阅 |
 | 集中材料证据 | docs/submission/RELEASE_EVIDENCE.json；保留旧实现证据，不机械改测试数字 |
 | 分镜视频 | output/video/LeaseRadar_Storyboard_Review_20261024.mp4；207.5秒，1920×1080，10fps，H.264/AAC |

@@ -1,5 +1,7 @@
 # 参赛介绍材料审阅稿
 
+10月29日提交前检查：[明天提交对照表](SUBMISSION_READINESS_20261029.md)区分已备材料、评审访问/报名缺口和内部质量检查；[未发送邮件草稿](SUBMISSION_EMAIL_DRAFT.md)待补实际资料。六页PDF已按最新326项/长版视频/字幕事实更新并逐页检查，见[本版PDF验证](PDF_REVIEW_20261029.md)。此前111文件包不含本轮更新PDF，不能作为最新材料包。
+
 2026-10-29新增[长版字幕、逐段稿与可定位审阅页](CAPTION_REVIEW_20261029.md)，运行 `python3 scripts/serve_video_review.py` 本机查看。句内字幕时码为估算，真人逐字听审仍未完成；10月28日105文件包不含新增字幕，新包另记。
 
 [111文件字幕审阅包](CAPTION_BUNDLE_VERIFICATION_20261029.md)已从`ccb0fb0`生成并完成逐项Git匹配、确切ZIP独立合成恢复和回环分段服务检查；包只在private，仍标不可正式提交。

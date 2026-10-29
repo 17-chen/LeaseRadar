@@ -2,7 +2,27 @@
   "schema": 1,
   "app_version": "0.1.16",
   "evidence_date": "2026-10-21",
-  "material_date": "2026-10-25",
+  "material_date": "2026-10-29",
+  "latest_checks": {
+    "date": "2026-10-29",
+    "source_commit": "ccb0fb0",
+    "local_tests_passed": 326,
+    "poppler_integration_passed": 1,
+    "ci_head": "eca595e",
+    "ci_url": "https://github.com/17-chen/LeaseRadar/actions/runs/40834936441",
+    "ci_conclusion": "success"
+  },
+  "browser_review": {
+    "video": "output/video/LeaseRadar_Full_Browser_Review_20261028.mp4",
+    "duration_seconds": 207.6,
+    "continuous_source_recording": true,
+    "automated_browser": true,
+    "system_narration": true,
+    "captions": "output/video/LeaseRadar_Full_Browser_Review_20261028.zh-CN.vtt",
+    "caption_timing": "estimated_within_measured_scenes",
+    "human_listening_review": false,
+    "published_url": null
+  },
   "implementation_commit": "ccd5a1c",
   "local_tests_passed": 262,
   "poppler_integration_passed": 1,
@@ -21,5 +41,14 @@
     "docs/PERSONAL_VIEWS_VERIFICATION.md",
     "docs/WORKBENCH_VERIFICATION.md",
     "docs/SOURCE_AUDIT.md"
-  ]
+  ],
+  "contest_rules_check": {
+    "date": "2026-10-29",
+    "url": "https://www.oschina.net/oa2026/",
+    "method": "live_browser_page_and_registration_form",
+    "student_team_option_observed": true,
+    "deadline_displayed": "10月31日24:00",
+    "registration_submitted": false,
+    "registration_confirmation_seen": false
+  }
 }
