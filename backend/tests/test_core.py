@@ -36,6 +36,13 @@ def test_inclusive_bounds(area):
 def test_unknown_use_never_passes_coffee():
     assert match({'operation':None}, {'operation':'coffee_beverage'})['verdict']=='unknown'
 
+def test_keyword_ignores_surrounding_spaces_and_letter_case():
+    fields = {'title': 'LeaseRadar 合成商铺', 'address': 'Test Road 11'}
+    assert match(fields, {'keyword': ' leaseradar '})['checks']['keyword'] == 'pass'
+    assert match(fields, {'keyword': ' test road '})['checks']['keyword'] == 'pass'
+    assert match(fields, {'keyword': '  '})['verdict'] == 'pass'
+    assert match(fields, {'keyword': 'missing'})['checks']['keyword'] == 'fail'
+
 def test_registration_not_auction():
     fields={'registration_deadline':'2026-10-16T16:00:00+08:00','auction_deadline':'2026-10-18T10:00:00+08:00'}
     assert match(fields, {'registration_open':True}, datetime(2026,10,17,tzinfo=timezone.utc))['verdict']=='fail'

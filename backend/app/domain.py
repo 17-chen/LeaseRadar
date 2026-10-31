@@ -58,8 +58,9 @@ def match(fields, filters, at=None):
             if limit is not None:
                 checks[f'{field}_{side}'] = 'unknown' if value is None else ('pass' if (value >= limit if side == 'min' else value <= limit) else 'fail')
     keyword = filters.get('keyword')
-    if keyword:
-        checks['keyword'] = 'pass' if keyword in str(fields.get('title', '')) + str(fields.get('address', '')) else 'fail'
+    if keyword and keyword.strip():
+        haystack = f"{fields.get('title') or ''} {fields.get('address') or ''}".casefold()
+        checks['keyword'] = 'pass' if keyword.strip().casefold() in haystack else 'fail'
     if filters.get('registration_open') or filters.get('status') == 'open':
         deadline = fields.get('registration_deadline')
         disclosure = fields.get('disclosure_deadline')
