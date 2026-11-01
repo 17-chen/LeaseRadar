@@ -41,7 +41,8 @@ FULL_BROWSER_REVIEW_PROOF = 'output/video/LeaseRadar_Full_Browser_Review_2026102
 FULL_BROWSER_REVIEW_MEDIA = 'output/video/LeaseRadar_Full_Browser_Review_20261028.media.json'
 FULL_BROWSER_NARRATION = 'docs/submission/FULL_BROWSER_NARRATION_20261028.json'
 FULL_FILES = (
-    'README.md', 'SECURITY.md', 'docs/DATA_POLICY.md', 'output/video/index.html',
+    'README.md', 'README.zh-CN.md', 'docs/archive/README.before-bilingual.zh-CN.md',
+    'SECURITY.md', 'docs/DATA_POLICY.md', 'output/video/index.html',
     'output/video/review.js', 'scripts/build_browser_captions.py', 'scripts/serve_video_review.py',
     caption_builder.CAPTIONS, caption_builder.TRANSCRIPT,
     'docs/COMPETITION_REQUIREMENTS.md',

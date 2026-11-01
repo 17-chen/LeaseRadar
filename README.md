@@ -1,89 +1,216 @@
 # LeaseRadar · 铺讯
 
-面向门店拓展的招租公告发现、筛选与跟进工作空间。比赛优先，兼顾真实使用；筛选条件由用户选择，未选项不限。
+**Discover leasing announcements, check the evidence, and keep expansion follow-ups in one workspace.**
 
-**状态：0.1.16-dev，附件提取与结果校验加固。** 不是完整规格验收或生产上线版本。GitHub仓库已于2026-10-30按用户授权公开。
+**English** · [简体中文](README.zh-CN.md)
 
-10月30日提交准备：[提交要求对照与剩余动作](docs/submission/SUBMISSION_READINESS_20261029.md)。六页介绍PDF、可运行源码与长版演示文件已有；用户确认已报名并收到确认邮件、个人参赛；源码仓库已公开并验证匿名可读；视频链接由用户自行处理，听审与正式提交状态另行确认。
+[![CI](https://github.com/17-chen/LeaseRadar/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/17-chen/LeaseRadar/actions/workflows/test.yml)
+![Python](https://img.shields.io/badge/Python-3.12_%7C_3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
+![Storage](https://img.shields.io/badge/Data-SQLite_%2B_SQLAlchemy-4169E1)
+![Stage](https://img.shields.io/badge/Stage-Local_development-F59E0B)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
-## 已实现
+[Quick start](#quick-start) · [Features](#features) · [Preview](#workspace-preview) · [Architecture](#architecture) · [Project status](#project-status) · [Documentation](#documentation-and-contributions)
 
-- 登录、HttpOnly会话、CSRF、服务端admin/member权限与个人订阅/笔记隔离。
-- 关键词、城市/区县、面积、月租基准、物业类型、环境、经营用途和状态自由筛选；未知条件可保留待确认。
-- 候选清单提供近7天发现、7天内报名截止和条件待核实快捷视图；右侧依据面板保留列表上下文。快捷视图不写入订阅，未知价格周期不换算。
-- CSV导出使用当前已应用的筛选/快捷视图及排序，包含全部匹配页；未知值留空并保留公式注入防护。
-- “我的收藏”和“跟进中”按当前账号隔离，保留已截止的个人记录用于收尾；同挂牌关联出处上的个人操作也可找到，点击对应出处继续跟进。
-- PDF文字层只需Poppler；无文字页才需要OCR工具。空白OCR、无效页码/格式或无正文结果明确失败，提取结果不自动修改业务字段。真实隔离容器与PDF/OCR准确率仍未验收。
-- 农交云实际列表/详情分页采集、原文快照、版本和字段依据；DOCX表格精确标的身份与金额核对后识别首年租金。
-- 保存订阅、三值匹配、首次历史摘要、事务事件/outbox和站内收件箱；可配置报名截止提醒，延期/关闭/放弃/暂停后作废旧提醒。
-- 收藏、跟进状态/笔记、2–5条比较、CSV公式注入防护；人工纠正/源更新冲突审核、同挂牌出处聚合及可撤销重挂关联。
-- 每日摘要/静默/催办例外、完整历史分页、来源覆盖预算与持久告警、核准链接导入、独立DEMO回放与字段评测工具。
-- 来源健康、分页续扫、活跃/关注详情复查、403/429退避、数据库持久任务、本地worker；部署包提供PostgreSQL/Redis/Celery。
+Public leasing announcements are scattered across websites, and important terms often live in attachments. LeaseRadar brings discovery, configurable filters, comparable rent, field evidence, change notifications, and personal follow-ups into a traceable workflow for retail expansion teams.
 
-## 比赛合成演示
+**An unknown price period stays unknown. Every derived rent figure needs evidence.** A title that mentions five years does not establish that its price covers all five years; an announcement's stated use does not establish an operating permit.
 
-安装下述依赖后执行 `.venv/bin/python scripts/demo.py`，浏览器打开终端给出的本地地址，账号和步骤见新生成的私有DEMO_GUIDE.md。每次创建独立数据，外部采集/邮件/下载关闭，不覆盖真实库。详见[演示方案与10月31日倒排](docs/COMPETITION_DEMO.md)。
+> [!NOTE]
+> This is a local development application, currently `0.1.16`, with a Chinese interface. The overview is available in English and Chinese. Production deployment, complete second-source coverage, real PDF/OCR accuracy, and external email delivery still need acceptance testing. The demo uses synthetic data and disables external collection, email, and downloads.
 
-新启动的DEMO按数据库隔离登录Cookie，同一浏览器可同时打开真实环境和多个演示端口。已有真实登录兼容；旧DEMO升级重启后需重新登录，详见[会话隔离验收](docs/SESSION_ISOLATION_VERIFICATION.md)。
+## Features
 
-## 运行
+| Capability | What is implemented |
+| --- | --- |
+| Announcement monitoring | Source adapters, pagination/backfill, detail rechecks, immutable versions, private snapshots, and visible blocked/retry states |
+| Flexible filtering | Keywords, location, area, verified monthly rent, property/use conditions, and registration status; pass/fail/unknown matching |
+| Comparable rent | Compare 2–5 candidates by price type; retain original amounts, calculation evidence, deposits, and unknown periods separately |
+| Field evidence | Inspect original text and attachments; distinguish source changes, extraction updates, manual corrections, and conflicts |
+| Personal workspace | Favorites, follow-up stages, private notes, account isolation, and export of all results matching the applied filters |
+| Notifications | In-app changes and registration reminders; configurable SMTP, summaries, delivery receipts, and review of uncertain sends |
+| Document review | Controlled PDF/DOCX downloads and private extraction/review jobs; DOCX body/table positions and validated PDF/OCR output |
+| Durable operation | Database jobs, leases, recovery, transactional events/outbox, coverage budgets, and backup utilities |
 
-```sh
+These are implemented capabilities. Real-source validation and production limits are described in [project status](#project-status).
+
+## Workspace preview
+
+The actual application running with **synthetic demo data**: two verified monthly rent bases beside a candidate whose price period remains unknown. The interface is currently Chinese.
+
+![Synthetic candidate comparison showing verified rent and an unknown price period](docs/submission/assets/synthetic-comparison.png)
+
+<details>
+<summary>More demo screens: filters, evidence, and source health</summary>
+
+### Apply your own filters
+
+![Synthetic listing filters and candidate results](docs/submission/video-assets/01-filter.jpg)
+
+### Inspect the basis for a field
+
+![Synthetic candidate detail and field evidence](docs/submission/video-assets/03-evidence.jpg)
+
+### Keep blocked sources visible
+
+![Synthetic source-health view with a blocked source](docs/submission/video-assets/07-blocked.jpg)
+
+</details>
+
+A [207.6-second narrated browser walkthrough](output/video/LeaseRadar_Full_Browser_Review_20261028.mp4) and a [six-page introduction PDF](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf) are available in the repository. The recording uses automated browser actions and system narration over synthetic data; it is a review draft, not real-user trial evidence. See the [materials index (中文)](docs/submission/README.md) for captions and dated verification.
+
+## From announcement to follow-up
+
+```mermaid
+flowchart LR
+    SOURCE["Public announcements"] --> EVIDENCE["Snapshots + field evidence"]
+    EVIDENCE --> VERSION["Listings + immutable versions"]
+    VERSION --> MATCH["Pass / fail / unknown filters"]
+    MATCH --> COMPARE["Comparison + personal follow-up"]
+    VERSION --> EVENT["Changes + registration reminders"]
+    EVENT --> INBOX["In-app inbox"]
+    classDef input fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A
+    classDef evidence fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95
+    classDef data fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    classDef output fill:#FFF7ED,stroke:#EA580C,color:#7C2D12
+    class SOURCE input
+    class EVIDENCE evidence
+    class VERSION,MATCH data
+    class COMPARE,EVENT,INBOX output
+```
+
+Amounts use `Decimal`; explicit timestamps carry time zones. Registration deadlines take precedence over bidding deadlines. Events and outbox records are committed together with unique identities; external email delivery is tracked separately and is not promised to be exactly once.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    WEB["HTML / CSS / JavaScript"] --> API["FastAPI: sessions, roles, CSRF"]
+    API --> DB[("SQLite + SQLAlchemy / Alembic")]
+    WORKER["Local database-job Worker"] <--> DB
+    WORKER --> SOURCES["Allowlisted source adapters"]
+    SOURCES --> FILES["Private snapshots + attachments"]
+    WORKER --> REVIEW["Document extraction / review jobs"]
+    REVIEW --> FILES
+    DB --> OUTBOX["Transactional events + outbox"]
+    OUTBOX --> INBOX["In-app inbox / configured SMTP"]
+    classDef web fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A
+    classDef service fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95
+    classDef data fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    class WEB web
+    class API,WORKER,SOURCES,REVIEW service
+    class DB,FILES,OUTBOX,INBOX data
+```
+
+The verified local path uses SQLite and a persistent database queue. PostgreSQL, Redis, Celery, and an isolated extraction worker are supplied as deployment configurations; their production operation is not yet accepted. Extraction results require validation and human review before changing business fields. The application uses deterministic extraction and rules, with no LLM dependency.
+
+## Quick start
+
+### 1. Try the isolated synthetic demo
+
+Requires **Git and Python 3.12 or 3.13**. From a fresh clone on macOS/Linux:
+
+```bash
+git clone https://github.com/17-chen/LeaseRadar.git
+cd LeaseRadar
 python3 -m venv .venv
 .venv/bin/pip install -r backend/requirements.lock
+.venv/bin/python scripts/demo.py --port 8002
+```
+
+Open `http://127.0.0.1:8002/`. The terminal prints the path to a newly generated private `DEMO_GUIDE.md`, containing the local account and walkthrough. Each run creates a fresh directory under `private/demo-runs/`; existing databases are preserved. On Windows, use `.venv\Scripts\python.exe` and `.venv\Scripts\pip.exe` for the corresponding commands.
+
+Click **开始演示** to follow the seven-step route: filters → comparison → known-price evidence → unknown period → inbox → follow-up → blocked source. The fixture contains **6 candidates, 7 versions, and 5 in-app notices**. Favorites and filtered CSV export are also available.
+
+Stop with `Ctrl-C`. If the port is occupied, choose another unused port. If an old demo's deadlines have expired, create a new demo rather than changing its timestamps or treating it as current data.
+
+### 2. Run a personal local workspace
+
+From an installed checkout, apply migrations and create a local administrator:
+
+```bash
 PYTHONPATH=backend .venv/bin/python -m app.cli migrate
 PYTHONPATH=backend .venv/bin/python -m app.cli create-admin
 PYTHONPATH=backend .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-另开终端运行后台：
+Start the job Worker in another terminal from the project root:
 
-```sh
+```bash
 PYTHONPATH=backend .venv/bin/python -m app.local_worker
 ```
 
-打开 http://127.0.0.1:8000 。来源默认关闭，管理员可手动采集或启用30分钟轮询；本机休眠/关机影响运行。生产常驻部署请看[部署手册](docs/DEPLOYMENT.md)。
+Open `http://127.0.0.1:8000/`. Sources are disabled by default. Monitoring depends on the Worker and host staying awake; closing the terminal or shutting down the machine interrupts processing. Private runtime settings, authorized email recipients, attachment workers, backups, and deployment configuration are documented in the [deployment guide (中文)](docs/DEPLOYMENT.md) and [configuration checklist (中文)](docs/FINAL_SETUP_CHECKLIST.md).
 
-## 验证与限制
+### 3. Review the recorded walkthrough
 
-2026-10-13：161项本机测试通过；通知摘要/静默、完整历史、人工纠正与可撤销关联、租约归属、DNS连接固定、回放/评测工具及0007恢复已验证。浏览器桌面与390px手机验收使用隔离DEMO数据，未混入真实库。见[本阶段验收](docs/WORKFLOWS_VERIFICATION.md)。
+```bash
+python3 scripts/serve_video_review.py --port 8017
+```
 
-农交云采集2页24条记录，随后第一页12条DOCX增强复查，6条价格周期得到附件证据。高校扫描5页仅发现1条链接型公告，其关键字段未覆盖，不计作完整第二来源接通。温州产权平台只验证首页可访问，适配器未实现。本阶段又完成2条农交云详情及1条高校已入库详情复查，均为提取更新，未扩大独立第二来源关键字段覆盖。具体见[审计](docs/SOURCE_AUDIT.md)与[验证报告](docs/VERIFICATION.md)。
+Open `http://127.0.0.1:8017/` for the narrated video, Chinese captions, and ten scene-jump controls. This loopback-only server supports byte ranges for seeking. Caption text matches the narration script, while timing within each scene is estimated; full human listening review is still pending. See the [caption review record (中文)](docs/submission/CAPTION_REVIEW_20261029.md).
 
-未验证/未实现：Docker实际运行、生产部署、真实外部邮件投递、完整第二来源字段、完整覆盖保证、真实PDF/OCR样本、复杂条款自动提取、来源告警真实投递/服务商回执验收及真实评测指标。不能宣称全网覆盖、确定允许咖啡经营、最低总成本或已开展完整试用。详见[路线图](ROADMAP.md)。
+## Project status
 
-## 项目资料
+Evidence snapshot: **2026-11-01**. Test counts describe engineering checks, not field accuracy or business results.
 
-新聊天接续开发先读[详细交接](PROJECT_HANDOFF.md)与[剩余工作/提交门槛](docs/REMAINING_WORK.md)，再核查Git与运行环境；不要假定新聊天继承旧对话或旧服务已更新。
+| Area | Evidence and remaining work |
+| --- | --- |
+| Automated checks | [CI for `5e19d0b`](https://github.com/17-chen/LeaseRadar/actions/runs/41220130408) passed 327 application tests and 1 Poppler integration test; it also checks migrations and frontend JavaScript syntax. These are recorded results, not tests rerun for this README edit. |
+| Real sources | Historical validation covered 24 Nongjiyun listings and 1 university link-only record, with 6 DOCX rent-period checks. The university adapter has a historical full-text sample, but complete second-source field coverage remains unfinished. See the [source audit (中文)](docs/SOURCE_AUDIT.md). |
+| Recovery and demo | Isolated synthetic workflows, account/session boundaries, SQLite migration/backup recovery, and exact review-ZIP restoration have dated records in the [handoff (中文)](PROJECT_HANDOFF.md) and [materials index (中文)](docs/submission/README.md). |
+| Documents and email | DOCX and controlled extraction paths have implementation and local checks. Real PDF/OCR accuracy, container isolation acceptance, and real provider delivery remain unverified. |
+| Production | Docker configurations exist; public application hosting, production concurrency, PostgreSQL recovery, sustained source coverage, and real-user trials are not accepted. |
 
-[项目上下文](PROJECT_CONTEXT.md) · [任务清单](TODO.md) · [架构](ARCHITECTURE.md) · [技术决策](docs/DECISION_LOG.md) · [原始交接](docs/handoff/README_FIRST.md) · [比赛要求](docs/COMPETITION_REQUIREMENTS.md)
+The repository is public. An application hosting URL, public video-sharing link, and formal contest submission receipt have not been verified in project records. Historical materials retain their original dates and may describe earlier repository visibility.
 
-## English
+## Development and checks
 
-LeaseRadar helps retail expansion teams discover public leasing announcements, filter candidates, inspect field evidence, compare rent on verified bases, and track follow-ups. This initial local development release includes a FastAPI backend, a responsive HTML/JavaScript frontend, deterministic HTML/DOCX extraction and a durable database job queue. It does not yet satisfy the full production specification. Unknown terms remain unknown; sample replay and live data must stay separate. See the deployment guide and roadmap for setup and current limitations.
+Run from the project root after installing the locked dependencies:
 
-Code license: MIT. Public source content and original handoff material are not relicensed by this repository; see[数据政策](docs/DATA_POLICY.md)。
+```bash
+PYTHONPATH=backend .venv/bin/python -m pytest -q backend/tests
+node --check frontend/app.js
+node --check output/video/review.js
+.venv/bin/python scripts/build_browser_captions.py --check
+.venv/bin/python -m pip check
+git diff --check
+```
 
-SMTP通知与来源异常：可配置单用户邮件通道与摘要已通过本地协议/注入发送测试，真实邮件默认关闭。邮件回执与站内通知分别显示；来源页提供管理员当前异常及恢复历史。启用与状态语义见 [运行与部署](docs/DEPLOYMENT.md)。
+Poppler integration checks run separately when `pdftotext` and `pdfinfo` are on `PATH`:
 
-历史阶段：0.1.7-dev，161项本机回归、0009恢复及DEMO发送审核验证。见[告警与发送审核验收](docs/DELIVERY_REVIEW_VERIFICATION.md)。升级先备份、migrate至0009，再重启API/worker。外部资料可以最后统一补齐，见[最后配置清单](docs/FINAL_SETUP_CHECKLIST.md)。
+```bash
+PYTHONPATH=backend .venv/bin/python -m pytest -q backend/integration/test_document_tools.py
+```
 
-条款与附件：网页支持有依据的租金递增/免租/分段计算；PDF/DOCX上传进入私有审核队列，OCR文字不自动改字段。PDF/OCR需独立隔离提取worker，本机工具缺失/容器未启动仍保持待处理，见本阶段验收。
+Tests use isolated databases and synthetic/local notification endpoints. Media rebuilding has additional optional tooling: the current narrated-video renderer uses macOS speech tools and Swift/AVFoundation. See the [contributing guide](CONTRIBUTING.md) before changing domain rules or source adapters.
 
-来源告警邮件默认单独关闭，启用后只向已配置管理员发异常/恢复通知。结果不明须服务商依据才能审核重试；关闭保留历史且不自动恢复。备份现包含上传附件队列。
+## Repository map
 
-最新附件能力：DOCX正文段落与表格按文档顺序进入私有审核，保留段/表/行依据，删除修订不计入文字；损坏请求保留失败结果，不阻塞后续附件。未自动提取业务条款，未扩大真实来源。见[正文与队列验收](docs/DOCX_BODY_VERIFICATION.md)。
+| Path | Purpose |
+| --- | --- |
+| [`frontend/`](frontend/) | Chinese workspace UI, evidence panels, comparison, and account interactions |
+| [`backend/app/`](backend/app/) | API, domain rules, source adapters, jobs, notifications, and document review |
+| [`backend/migrations/`](backend/migrations/) | Alembic schema migrations |
+| [`backend/tests/`](backend/tests/) · [`backend/integration/`](backend/integration/) | Isolated regressions and real-tool integration checks |
+| [`fixtures/`](fixtures/) | Synthetic replay, adapter, and evaluation samples |
+| [`scripts/`](scripts/) | Fresh demo setup, media review, and archive verification utilities |
+| [`docs/`](docs/) · [`output/`](output/) | Architecture, dated evidence, synthetic screenshots, and review artifacts |
+| `private/` | Local accounts, databases, snapshots, attachments, and backups; excluded from Git |
 
-来源附件审核：启用SOURCE_DOCUMENTS_ENABLED并指定SOURCE_DOCUMENTS_USER_ID管理员后，采集/详情复查会将已保存且带SHA256的来源附件复制到私有审核队列；默认关闭。仅启用此审核开关不会自动下载未缓存附件；受控下载有单独开关。需先备份、迁移0010并重启API/worker；见[来源附件验收](docs/SOURCE_DOCUMENTS_VERIFICATION.md)。
+## Documentation and contributions
 
-受控下载：SOURCE_DOCUMENT_DOWNLOADS_ENABLED默认false，同时要求来源附件审核开关和有效管理员。支持核准HTTPS地址的.pdf/.docx，5MB、最多3次、Retry-After与共享来源租约；401/403保留blocked，不跳转或绕过。页面显示下载和审核的独立状态。213项回归及一份真实DOCX下载已验证；不是完整第二来源接通或PDF/OCR准确率验收。升级至0011后使用，见[下载验收](docs/DOCUMENT_DOWNLOADS_VERIFICATION.md)。
+- [中文首页](README.zh-CN.md)
+- [Architecture (中文)](ARCHITECTURE.md) · [Deployment (中文)](docs/DEPLOYMENT.md)
+- [Demo guide (中文)](docs/COMPETITION_DEMO.md) · [Introduction and video materials (中文)](docs/submission/README.md)
+- [Roadmap (中文)](ROADMAP.md) · [Open tasks (中文)](TODO.md) · [Changelog (中文)](CHANGELOG.md)
+- [Project context (中文)](PROJECT_CONTEXT.md) · [Detailed handoff (中文)](PROJECT_HANDOFF.md)
+- [Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md)
+- [Previous README and stage notes (中文)](docs/archive/README.before-bilingual.zh-CN.md)
 
-0.1.11：高校独立适配器增强价格/面积冲突、日期语义与原文条款依据；已核对1条历史全文，不等于当前第二来源完整接通。见[验收记录](docs/WZPT_ADAPTER_VERIFICATION.md)。剩余范围与估算见[交付计划](docs/DELIVERY_PLAN.md)：比赛核心5–8个、完整可独立开发范围15–25个有效开发日，外部配置等待另计。
+Bug reports and documentation improvements in either language are welcome. Include reproduction steps and distinguish synthetic, replayed, and live inputs. Remove credentials, original private documents, and personal notes before sharing logs or screenshots.
 
-新建合成DEMO后可点击页面“开始演示”，七步打开筛选、比较、金额/周期依据、提醒、跟进和受阻；真实环境没有该入口。旧演示数据不重置，重新创建即可获得路线。见[路线验收](docs/DEMO_ROUTE_VERIFICATION.md)。
+## License
 
-提交材料：[介绍PDF审阅稿](output/pdf/LeaseRadar_Competition_Intro_Draft.pdf)（6页，0.1.16）与[207.6秒十场景有声浏览器审阅稿](output/video/LeaseRadar_Full_Browser_Review_20261028.mp4)。画面为合成DEMO自动浏览器连续录制，系统合成配音；短版和旧静态分镜保留。运行 `python3 scripts/serve_video_review.py` 可在本机查看字幕、逐段稿并点击标题定位，见[字幕审阅说明](docs/submission/CAPTION_REVIEW_20261029.md)。句内字幕时码为估算，真人听审、材料终审和正式提交仍待完成。
-
-录制交接：运行 `.venv/bin/python scripts/build_recording_bundle.py --output private/recording-new.zip` 生成带运行代码、合成素材、[讲解稿](docs/submission/RECORDING_SCRIPT.md)和SHA256清单的小型本地ZIP；加`--include-video`纳入现有五类媒体、字幕与审阅页。两种包均拒绝覆盖，排除真实数据库和账号，完整包检查媒体及字幕一致性，仍标`ready_to_submit=false`。历史独立恢复见[10月28日105文件包](docs/submission/FULL_BROWSER_BUNDLE_VERIFICATION_20261028.md)，它不含10月29日新增字幕。最新构建与边界见[材料入口](docs/submission/README.md)。
-
-需要把现有视频草稿与可运行演示放进一份本地审阅包时，使用 `--include-video` 和新的 `--output` 路径；范围、校验和恢复记录见[完整包验收](docs/submission/FULL_REVIEW_BUNDLE_VERIFICATION.md)。该包仍不是正式提交完成证明。
+Original project code is available under the [MIT License](LICENSE). Source announcements, attachments, trademarks, and original handoff materials have their own rights; see the [data policy (中文)](docs/DATA_POLICY.md) and [dependency license notes (中文)](docs/DEPENDENCY_LICENSES.md).

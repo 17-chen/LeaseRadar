@@ -2,6 +2,10 @@
 
 接手事实与按依赖拆分的工作见PROJECT_HANDOFF.md、docs/REMAINING_WORK.md；旧阶段记录保留，当前以最新核验为准。
 
+## 2026-11-01仓库展示
+
+- [x] 对齐VideoMind/First Aid Co-Pilot的双语首页结构，保留历史README；链接检查及27项审阅包专项通过。
+
 ## 进行中
 
 - [ ] 明天10月30日交付：六页PDF工程审查已完成，实时表单有学生团队；用户确认已报名并收到确认邮件、个人参赛，仍需补评审源码/视频可访问链接，逐字听审后按确认邮件提交并留回执。见docs/submission/SUBMISSION_READINESS_20261029.md；当前不是可直接发送的完成状态。
