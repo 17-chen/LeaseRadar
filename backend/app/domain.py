@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
@@ -32,10 +32,10 @@ def normalize_price(fields):
         monthly, formula = amount, str(amount)
     else:
         return result
-    result.update(first_year_monthly=str(monthly.quantize(Decimal('.01'))),
+    result.update(first_year_monthly=str(monthly.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)),
                   formula=formula, normalization_status='known')
     if area is not None and area > 0:
-        result['unit_monthly'] = str((monthly / area).quantize(Decimal('.01')))
+        result['unit_monthly'] = str((monthly / area).quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
     return result
 
 def match(fields, filters, at=None):

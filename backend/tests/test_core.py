@@ -29,6 +29,12 @@ def test_decimal_price_and_area():
     assert p['unit_monthly'] == '166.67'
     assert p['cost_complete'] is False
 
+def test_normalized_prices_round_half_up_at_cent_boundaries():
+    monthly = normalize_price({'raw_amount': '1.005', 'period_basis': 'monthly'})
+    assert monthly['first_year_monthly'] == '1.01'
+    per_area = normalize_price({'raw_amount': '2.01', 'area_m2': '2', 'period_basis': 'monthly'})
+    assert per_area['unit_monthly'] == '1.01'
+
 @pytest.mark.parametrize('area', ['30', '100'])
 def test_inclusive_bounds(area):
     assert match({'area_m2':area}, {'area_m2_min':'30', 'area_m2_max':'100'})['verdict']=='pass'
