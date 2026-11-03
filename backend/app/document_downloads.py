@@ -33,29 +33,81 @@ def format_for(url):
     return 'pdf' if p.path.lower().endswith('.pdf') else 'docx' if p.path.lower().endswith('.docx') else None
 
 
-def enqueue_downloads(db,version):
+def download_candidates(db,version,record):
+    """Bounded metadata inspection, shared by ingestion and historical backfill."""
+    files=version.fields.get('attachments',[])
+    if not isinstance(files,list):return []
+    result=[];seen=set()
+    for item in files[:20]:
+        if not isinstance(item,dict) or item.get('sha256'):continue
+        url=item.get('url');kind=format_for(url)
+        if not kind or url in seen:continue
+        seen.add(url)
+        if db.scalar(select(DocumentDownload.id).where(DocumentDownload.source_id==record.source_id,DocumentDownload.url==url,DocumentDownload.state=='blocked')):continue
+        if db.scalar(select(DocumentDownload.id).where(DocumentDownload.version_id==version.id,DocumentDownload.url==url)):continue
+        result.append((url,kind))
+    return result
+
+
+def enqueue_downloads(db,version,source_id=None):
     try:user_id=owner(db)
     except ValueError:return 0
     if user_id is None:return 0
-    record=db.scalar(select(SourceRecord).where(SourceRecord.listing_id==version.listing_id))
+    query=select(SourceRecord).where(SourceRecord.listing_id==version.listing_id)
+    if source_id is not None:query=query.where(SourceRecord.source_id==source_id)
+    record=db.scalar(query.order_by(SourceRecord.id))
     if not record:return 0
-    files=version.fields.get('attachments',[])
-    if not isinstance(files,list):return 0
     pending=db.scalar(select(func.count()).select_from(DocumentDownload).where(DocumentDownload.user_id==user_id,DocumentDownload.state.in_(['queued','retry_wait','downloading'])))
     count=0
-    for item in files[:20]:
+    for url,kind in download_candidates(db,version,record):
         if count>=5 or pending>=20:break
-        if not isinstance(item,dict) or item.get('sha256'):continue
-        url=item.get('url');kind=format_for(url)
-        if not kind:continue
-        if db.scalar(select(DocumentDownload.id).where(DocumentDownload.source_id==record.source_id,DocumentDownload.url==url,DocumentDownload.state=='blocked')):continue
-        if db.scalar(select(DocumentDownload.id).where(DocumentDownload.version_id==version.id,DocumentDownload.url==url)):continue
         try:
             with db.begin_nested():
                 db.add(DocumentDownload(version_id=version.id,source_id=record.source_id,user_id=user_id,url=url,format=kind));db.flush()
         except IntegrityError:continue
         count+=1;pending+=1
     return count
+
+
+def backfill_downloads(db,source_id,after_listing=0,limit=25,apply=False):
+    """Plan/enqueue one bounded batch. Caller commits before using the cursor.
+
+    Inspect current versions only. A partially queued listing is deliberately
+    revisited, so queue capacity never causes the cursor to skip its attachments.
+    Neither mode fetches URLs, republishes versions, or retries terminal jobs.
+    """
+    if source_id not in ('nongjy','wzpt'):raise ValueError('未知来源')
+    if not isinstance(after_listing,int) or after_listing<0:raise ValueError('游标须为非负挂牌ID')
+    if not isinstance(limit,int) or not 1<=limit<=100:raise ValueError('单批挂牌数须为1–100')
+    if apply:
+        connection=db.connection()
+        # sqlite3 legacy transaction control does not BEGIN for SELECT/SAVEPOINT.
+        # Unlike ingestion, this entry point has no earlier INSERT. Keep nested
+        # uniqueness savepoints inside a real transaction owned by the caller.
+        if connection.dialect.name=='sqlite' and not connection.connection.driver_connection.in_transaction:
+            connection.exec_driver_sql('BEGIN')
+    user_id=owner(db)
+    if user_id is None:raise ValueError('附件补扫须先启用来源附件审核及下载，并配置管理员')
+    pending=db.scalar(select(func.count()).select_from(DocumentDownload).where(DocumentDownload.user_id==user_id,DocumentDownload.state.in_(['queued','retry_wait','downloading'])))
+    rows=db.scalars(select(Listing).where(Listing.id.in_(select(SourceRecord.listing_id).where(SourceRecord.source_id==source_id)),Listing.id>after_listing).order_by(Listing.id).limit(limit+1)).all()
+    result={'mode':'apply' if apply else 'preview','source':source_id,'scanned':0,'planned':0,'queued':0,'after_listing':after_listing,'next_after_listing':after_listing,'has_more':len(rows)>limit,'stop':'batch_limit' if len(rows)>limit else 'complete'}
+    for listing in rows[:limit]:
+        result['scanned']+=1
+        record=db.scalar(select(SourceRecord).where(SourceRecord.listing_id==listing.id,SourceRecord.source_id==source_id).order_by(SourceRecord.id))
+        version=db.get(Version,listing.current_version_id) if listing.current_version_id else None
+        candidates=download_candidates(db,version,record) if version else []
+        available=min(5,max(0,20-pending))
+        planned=min(available,len(candidates))
+        result['planned']+=planned
+        queued=enqueue_downloads(db,version,source_id=source_id) if apply and planned else 0
+        result['queued']+=queued
+        pending+=queued if apply else planned
+        if len(candidates)>(queued if apply else planned):
+            result['has_more']=True
+            result['stop']='queue_capacity' if pending>=20 else 'listing_limit'
+            break
+        result['next_after_listing']=listing.id
+    return result
 
 
 def download(url,kind):

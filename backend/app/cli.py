@@ -19,6 +19,11 @@ def main():
     admin = sub.add_parser('create-admin'); admin.add_argument('--username', default='admin')
     crawl = sub.add_parser('crawl-once'); crawl.add_argument('source', choices=['nongjy', 'wzpt']); crawl.add_argument('--pages', type=int, default=1); crawl.add_argument('--backfill', action='store_true')
     details = sub.add_parser('refresh-details'); details.add_argument('source', choices=['nongjy', 'wzpt']); details.add_argument('--limit', type=int, default=5)
+    attachments = sub.add_parser('backfill-attachments', help='预览历史当前版本附件补扫；--apply才入队，不直接联网')
+    attachments.add_argument('source', choices=['nongjy', 'wzpt'])
+    attachments.add_argument('--after-listing', type=int, default=0)
+    attachments.add_argument('--limit', type=int, default=25)
+    attachments.add_argument('--apply', action='store_true')
     sub.add_parser('remind-once')
     sub.add_parser('email-once')
     check = sub.add_parser('source-check'); check.add_argument('source', choices=['nongjy', 'wzpt'])
@@ -88,6 +93,13 @@ def main():
         if not 1 <= args.limit <= 5: parser.error('每次复查限1–5条')
         from .service import refresh_details, deliver_local
         print(json.dumps(refresh_details(args.source, args.limit), ensure_ascii=False)); deliver_local()
+    elif args.command == 'backfill-attachments':
+        from .document_downloads import backfill_downloads
+        with Session() as db:
+            try:result=backfill_downloads(db,args.source,args.after_listing,args.limit,args.apply)
+            except ValueError as exc:parser.error(str(exc))
+            if args.apply:db.commit()
+        print(json.dumps(result,ensure_ascii=False))
     elif args.command == 'remind-once':
         from .notifications import generate_deadline_reminders
         from .service import deliver_local

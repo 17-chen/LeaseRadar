@@ -30,7 +30,7 @@ Public leasing announcements are scattered across websites, and important terms 
 | Field evidence | Inspect original text and attachments; distinguish source changes, extraction updates, manual corrections, and conflicts |
 | Personal workspace | Favorites, follow-up stages, private notes, account isolation, and export of all results matching the applied filters |
 | Notifications | In-app changes and registration reminders; configurable SMTP, summaries, delivery receipts, and review of uncertain sends |
-| Document review | Controlled PDF/DOCX downloads and private extraction/review jobs; DOCX body/table positions and validated PDF/OCR output |
+| Document review | Controlled PDF/DOCX downloads, bounded historical queue backfill, and private extraction/review jobs; DOCX body/table positions and validated PDF/OCR output |
 | Durable operation | Database jobs, leases, recovery, transactional events/outbox, coverage budgets, and backup utilities |
 
 These are implemented capabilities. Real-source validation and production limits are described in [project status](#project-status).
@@ -202,7 +202,7 @@ Tests use isolated databases and synthetic/local notification endpoints. Media r
 ## Documentation and contributions
 
 - [中文首页](README.zh-CN.md)
-- [Architecture (中文)](ARCHITECTURE.md) · [Deployment (中文)](docs/DEPLOYMENT.md)
+- [Architecture (中文)](ARCHITECTURE.md) · [Deployment (中文)](docs/DEPLOYMENT.md) · [Historical attachment backfill (中文)](docs/ATTACHMENT_BACKFILL.md)
 - [Demo guide (中文)](docs/COMPETITION_DEMO.md) · [Introduction and video materials (中文)](docs/submission/README.md)
 - [Roadmap (中文)](ROADMAP.md) · [Open tasks (中文)](TODO.md) · [Changelog (中文)](CHANGELOG.md)
 - [Project context (中文)](PROJECT_CONTEXT.md) · [Detailed handoff (中文)](PROJECT_HANDOFF.md)

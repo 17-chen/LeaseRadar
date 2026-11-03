@@ -30,7 +30,7 @@
 | 字段依据 | 回查原文和附件；区分真实来源变化、重新提取、人工纠正及字段冲突 |
 | 个人工作台 | 收藏、跟进阶段、私人笔记、账号隔离，以及当前已应用条件的跨页结果导出 |
 | 提醒与通知 | 站内变化与报名截止提醒；配置式SMTP、每日摘要、独立回执和结果不明审核 |
-| 文档审核 | 受控PDF/DOCX下载、私有提取/审核任务；DOCX正文/表行定位及PDF/OCR结果校验 |
+| 文档审核 | 受控PDF/DOCX下载、历史有界补扫入队、私有提取/审核任务；DOCX正文/表行定位及PDF/OCR结果校验 |
 | 持久运行 | 数据库任务、租约恢复、事务事件/outbox、来源覆盖预算及备份工具 |
 
 以上表示已有代码能力，真实来源验证与生产限制见下方[项目状态](#项目状态)。
@@ -202,7 +202,7 @@ PYTHONPATH=backend .venv/bin/python -m pytest -q backend/integration/test_docume
 ## 文档与贡献
 
 - [English overview](README.md)
-- [架构说明](ARCHITECTURE.md) · [部署手册](docs/DEPLOYMENT.md)
+- [架构说明](ARCHITECTURE.md) · [部署手册](docs/DEPLOYMENT.md) · [历史附件补扫](docs/ATTACHMENT_BACKFILL.md)
 - [演示路线](docs/COMPETITION_DEMO.md) · [介绍与视频材料](docs/submission/README.md)
 - [路线图](ROADMAP.md) · [任务清单](TODO.md) · [更新记录](CHANGELOG.md)
 - [项目上下文](PROJECT_CONTEXT.md) · [详细交接](PROJECT_HANDOFF.md)

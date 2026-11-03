@@ -127,3 +127,7 @@ worker自动处理邮件；手动单轮执行 `PYTHONPATH=backend .venv/bin/pyth
 0.1.9升级：正常停止API/采集/附件worker，备份数据库、snapshots及document_queue；执行migrate到0010，重启各进程。SOURCE_DOCUMENTS_ENABLED默认false；启用须SOURCE_DOCUMENTS_USER_ID有效管理员；不需要SMTP。只处理后续采集/复查所见的已有哈希快照，没有历史全库自动补扫。
 
 0.1.10升级：停止API/采集/附件worker，备份DB、snapshots和document_queue，migrate至0011后重启。默认SOURCE_DOCUMENT_DOWNLOADS_ENABLED=false；来源附件开关与有效管理员是其前置条件。每轮下载一份，与来源采集共用租约；429/临时故障延迟同源请求，401/403仅保留受阻不绕过。真实部署仍需验证PostgreSQL、多worker容量及PDF隔离容器。
+
+## 历史附件有界补扫 · 2026-11-03
+
+新增`backfill-attachments`命令，默认仅预览，`--apply`明确入队，不直接联网；已运行的worker可能立即处理新任务。按来源/挂牌ID游标续扫，保留受阻与失败，部分挂牌/容量不足时不跳过附件。配置、完整命令及边界见[历史附件补扫](ATTACHMENT_BACKFILL.md)。此为当前版本缺哈希链接的有界下载补扫，不代表历史哈希快照/全量附件已覆盖；上述0.1.9/0.1.10升级段落按历史版本理解。
