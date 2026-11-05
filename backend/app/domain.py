@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from datetime import datetime, timezone
+import re
 from zoneinfo import ZoneInfo
 
 def aware_time(value):
@@ -13,8 +14,11 @@ def aware_time(value):
 def decimal(value):
     if value is None or value == '':
         return None
+    text = str(value).strip()
+    if ',' in text and not re.fullmatch(r'[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?', text):
+        return None
     try:
-        n = Decimal(str(value).replace(',', ''))
+        n = Decimal(text.replace(',', ''))
         return n if n.is_finite() else None
     except InvalidOperation:
         return None

@@ -35,6 +35,16 @@ def test_normalized_prices_round_half_up_at_cent_boundaries():
     per_area = normalize_price({'raw_amount': '2.01', 'area_m2': '2', 'period_basis': 'monthly'})
     assert per_area['unit_monthly'] == '1.01'
 
+def test_malformed_grouping_does_not_change_price_or_area():
+    valid = normalize_price({'raw_amount': '1,234.50', 'area_m2': '1,000', 'period_basis': 'monthly'})
+    assert valid['first_year_monthly'] == '1234.50'
+    assert valid['unit_monthly'] == '1.23'
+    ambiguous_price = normalize_price({'raw_amount': '1,2', 'period_basis': 'monthly'})
+    assert ambiguous_price['normalization_status'] == 'unknown'
+    ambiguous_area = normalize_price({'raw_amount': '120', 'area_m2': '1,2', 'period_basis': 'monthly'})
+    assert ambiguous_area['first_year_monthly'] == '120.00'
+    assert ambiguous_area['unit_monthly'] is None
+
 @pytest.mark.parametrize('area', ['30', '100'])
 def test_inclusive_bounds(area):
     assert match({'area_m2':area}, {'area_m2_min':'30', 'area_m2_max':'100'})['verdict']=='pass'
