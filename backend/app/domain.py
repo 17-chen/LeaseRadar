@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, Overflow, ROUND_HALF_UP
 from datetime import datetime, timezone
 import re
 from zoneinfo import ZoneInfo
@@ -30,16 +30,22 @@ def normalize_price(fields):
     basis = fields.get('period_basis')
     if amount is None or amount < 0:
         return result
-    if basis == 'first_year':
-        monthly, formula = amount / 12, f'{amount} ÷ 12'
-    elif basis == 'monthly':
-        monthly, formula = amount, str(amount)
-    else:
+    try:
+        if basis == 'first_year':
+            monthly, formula = amount / 12, f'{amount} ÷ 12'
+        elif basis == 'monthly':
+            monthly, formula = amount, str(amount)
+        else:
+            return result
+        rounded_monthly = monthly.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, Overflow):
         return result
-    result.update(first_year_monthly=str(monthly.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)),
-                  formula=formula, normalization_status='known')
+    result.update(first_year_monthly=str(rounded_monthly), formula=formula, normalization_status='known')
     if area is not None and area > 0:
-        result['unit_monthly'] = str((monthly / area).quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
+        try:
+            result['unit_monthly'] = str((monthly / area).quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
+        except (InvalidOperation, Overflow):
+            pass
     return result
 
 def match(fields, filters, at=None):

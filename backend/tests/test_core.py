@@ -45,6 +45,14 @@ def test_malformed_grouping_does_not_change_price_or_area():
     assert ambiguous_area['first_year_monthly'] == '120.00'
     assert ambiguous_area['unit_monthly'] is None
 
+def test_extreme_numeric_inputs_remain_unknown_instead_of_crashing():
+    oversized = normalize_price({'raw_amount': '1e1000', 'period_basis': 'monthly'})
+    assert oversized['normalization_status'] == 'unknown'
+    assert oversized['first_year_monthly'] is None
+    tiny_area = normalize_price({'raw_amount': '100', 'area_m2': '1e-1000', 'period_basis': 'monthly'})
+    assert tiny_area['first_year_monthly'] == '100.00'
+    assert tiny_area['unit_monthly'] is None
+
 @pytest.mark.parametrize('area', ['30', '100'])
 def test_inclusive_bounds(area):
     assert match({'area_m2':area}, {'area_m2_min':'30', 'area_m2_max':'100'})['verdict']=='pass'
