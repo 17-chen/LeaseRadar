@@ -38,8 +38,13 @@ def response_error(response):
                        retry_after=delay, blocked=status in (401, 403))
 
 def public_addresses(url):
-    parsed = urlsplit(url)
-    if parsed.scheme != 'https' or parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password or parsed.port not in (None, 443):
+    try:
+        parsed = urlsplit(url)
+        approved = (parsed.scheme == 'https' and parsed.hostname in ALLOWED_HOSTS
+                    and not parsed.username and not parsed.password and parsed.port in (None, 443))
+    except ValueError as exc:
+        raise SourceError('URL不在已核准HTTPS来源范围') from exc
+    if not approved:
         raise SourceError('URL不在已核准HTTPS来源范围')
     addresses = []
     for info in socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM):
