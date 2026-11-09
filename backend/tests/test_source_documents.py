@@ -103,6 +103,27 @@ def test_unhashed_and_external_metadata_never_read_or_fetched(source_fixture):
         assert db.scalar(select(func.count()).select_from(DocumentReview))==0
 
 
+@pytest.mark.parametrize('url',[
+    'https://www.nongjy.cn:8443/synthetic.docx',
+    'https://www.nongjy.cn:invalid/synthetic.docx',
+    'https://www.nongjy.cn/synthetic.docx#other',
+])
+def test_cached_source_url_uses_download_origin_boundaries(source_fixture,url):
+    root,files,admin=source_fixture
+    files[0]['url']=url
+    with Session() as db:
+        observe(db);db.commit()
+        assert db.scalar(select(func.count()).select_from(DocumentReview))==0
+
+
+def test_cached_source_accepts_explicit_https_port(source_fixture):
+    root,files,admin=source_fixture
+    files[0]['url']='https://www.nongjy.cn:443/synthetic.docx'
+    with Session() as db:
+        observe(db);db.commit()
+        assert db.scalar(select(func.count()).select_from(DocumentReview))==1
+
+
 def test_changed_content_at_same_url_creates_new_review(source_fixture):
     root,files,admin=source_fixture
     with Session() as db:observe(db);db.commit()

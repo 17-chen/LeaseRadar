@@ -43,7 +43,13 @@ def enqueue_cached(db,version):
         # Stored metadata is not permission to fetch. This path only reads local
         # hash-named snapshots that the existing source downloader already saved.
         suffix='docx' if parsed.path.lower().endswith('.docx') else 'pdf' if parsed.path.lower().endswith('.pdf') else None
-        if parsed.scheme!='https' or parsed.hostname not in ('www.nongjy.cn','www.wzpt.edu.cn','www.wzcqpt.com') or parsed.username or parsed.password or suffix is None:continue
+        try:
+            allowed=(parsed.scheme=='https' and parsed.hostname in ('www.nongjy.cn','www.wzpt.edu.cn','www.wzcqpt.com')
+                     and not parsed.username and not parsed.password and parsed.port in (None,443)
+                     and not parsed.fragment and suffix is not None)
+        except ValueError:
+            continue
+        if not allowed:continue
         existing=db.scalar(select(DocumentReview.id).where(DocumentReview.listing_id==version.listing_id,DocumentReview.origin_url==url,DocumentReview.sha256==digest))
         if existing:continue
         path=DATA/'snapshots'/f'{digest}.{suffix}'
