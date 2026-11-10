@@ -61,7 +61,7 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
         from .source_documents import enqueue_cached
         enqueue_cached(db,previous)
         from .document_downloads import enqueue_downloads
-        enqueue_downloads(db,previous)
+        enqueue_downloads(db,previous,source_id)
         return listing.id, False
     # A previous state can recur. Versions describe observations rather than globally unique hashes.
     version = Version(listing_id=listing.id, raw_id=raw.id, business_hash=business_hash,
@@ -69,7 +69,7 @@ def ingest(db, source_id, url, html, event_kind=None, attachment_cache=None, obs
     db.add(version); db.flush()
     from .document_downloads import enqueue_downloads
     db.flush()  # Publish pending SourceRecord identity inside this transaction.
-    enqueue_downloads(db,version)
+    enqueue_downloads(db,version,source_id)
     from .source_documents import enqueue_cached
     enqueue_cached(db,version)
     listing.current_version_id = version.id

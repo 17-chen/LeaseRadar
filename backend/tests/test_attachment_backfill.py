@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch
 import pytest
 from sqlalchemy import select,func
-from app.db import Session,DocumentDownload,Version,Listing,SourceRecord
+from app.db import Session,DocumentDownload,Version,Listing,SourceRecord,RawDocument
 from app.service import ingest
 from app.document_downloads import backfill_downloads
 from test_core import sample
@@ -90,6 +90,27 @@ def test_uses_current_version_and_preserves_blocked_and_failed_jobs(download_fix
         rows=db.scalars(select(DocumentDownload).order_by(DocumentDownload.id)).all()
         assert [r.state for r in rows]==['blocked','failed','queued']
         assert rows[-1].url.endswith('/current.pdf') and rows[-1].version_id==newer.id
+
+
+def test_merged_listing_only_backfills_its_current_source(download_fixture):
+    with Session() as db:
+        listing,_=historical(db)
+        raw=RawDocument(url='https://www.wzpt.edu.cn/c1a2/page.htm',sha256='b'*64,text='',snapshot_path='synthetic')
+        db.add(raw);db.flush()
+        version=Version(listing_id=listing,raw_id=raw.id,business_hash='other-source',
+                        fields={'attachments':[{'url':'https://www.wzpt.edu.cn/merged.pdf'}]})
+        db.add(version);db.flush()
+        db.add(SourceRecord(source_id='wzpt',record_id='2',listing_id=listing,
+                            url=raw.url))
+        db.get(Listing,listing).current_version_id=version.id
+        db.commit()
+        assert backfill_downloads(db,'nongjy')['planned']==0
+        assert backfill_downloads(db,'nongjy',apply=True)['queued']==0
+        assert backfill_downloads(db,'wzpt')['planned']==1
+        assert backfill_downloads(db,'wzpt',apply=True)['queued']==1
+        db.commit()
+        row=db.scalar(select(DocumentDownload))
+        assert row.source_id=='wzpt' and row.version_id==version.id
 
 
 def test_malformed_cached_and_unsafe_metadata_not_queued(download_fixture):

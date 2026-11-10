@@ -9,12 +9,21 @@ from urllib.parse import urlsplit
 import httpx
 from sqlalchemy import select,update,func
 from sqlalchemy.exc import IntegrityError
-from .db import Session,DocumentDownload,DocumentReview,Version,SourceRecord,Source,Listing,now
+from .db import Session,DocumentDownload,DocumentReview,Version,SourceRecord,Source,Listing,RawDocument,now
 from .source_documents import configuration
 from .document_jobs import upload
 from .collectors import stream_public,response_error,SourceError
 
 MAX_BYTES=5_000_000
+SOURCE_HOSTS={'nongjy':'www.nongjy.cn','wzpt':'www.wzpt.edu.cn'}
+
+
+def version_belongs_to_source(db,version,source_id):
+    """A merged listing may have records from several sources; use the raw origin."""
+    raw=db.get(RawDocument,version.raw_id) if version else None
+    if raw is None:return False
+    try:return urlsplit(raw.url).hostname==SOURCE_HOSTS.get(source_id)
+    except ValueError:return False
 
 
 def owner(db):
@@ -49,12 +58,13 @@ def download_candidates(db,version,record):
     return result
 
 
-def enqueue_downloads(db,version,source_id=None):
+def enqueue_downloads(db,version,source_id):
     try:user_id=owner(db)
     except ValueError:return 0
     if user_id is None:return 0
+    if not version_belongs_to_source(db,version,source_id):return 0
     query=select(SourceRecord).where(SourceRecord.listing_id==version.listing_id)
-    if source_id is not None:query=query.where(SourceRecord.source_id==source_id)
+    query=query.where(SourceRecord.source_id==source_id)
     record=db.scalar(query.order_by(SourceRecord.id))
     if not record:return 0
     pending=db.scalar(select(func.count()).select_from(DocumentDownload).where(DocumentDownload.user_id==user_id,DocumentDownload.state.in_(['queued','retry_wait','downloading'])))
@@ -95,7 +105,7 @@ def backfill_downloads(db,source_id,after_listing=0,limit=25,apply=False):
         result['scanned']+=1
         record=db.scalar(select(SourceRecord).where(SourceRecord.listing_id==listing.id,SourceRecord.source_id==source_id).order_by(SourceRecord.id))
         version=db.get(Version,listing.current_version_id) if listing.current_version_id else None
-        candidates=download_candidates(db,version,record) if version else []
+        candidates=download_candidates(db,version,record) if version_belongs_to_source(db,version,source_id) else []
         available=min(5,max(0,20-pending))
         planned=min(available,len(candidates))
         result['planned']+=planned
