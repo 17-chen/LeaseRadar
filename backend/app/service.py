@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 from .db import Session, Source, Job, CrawlRun, RawDocument, Asset, Listing, SourceRecord, Version, Evidence, Subscription, Event, Outbox, Followup, now
 from .config import DATA, MODE
-from .domain import normalize_price, decimal
+from .domain import normalize_price, decimal, date_only
 from .collectors import fetch, PARSERS, DISCOVERERS, SourceError
 from .notifications import aware_time, queue_change, cancel_invalid_reminders, generate_deadline_reminders, TERMINAL_STATES, STOPPED_FOLLOWUPS
 
@@ -188,10 +188,10 @@ def detail_targets(db, source_id, at, limit=5):
         fields = version.fields
         deadline = aware_time(fields.get('registration_deadline'))
         inactive = fields.get('status') in TERMINAL_STATES or (deadline and deadline < at - timedelta(hours=72))
-        disclosure = fields.get('disclosure_deadline')
-        if disclosure:
+        disclosure = date_only(fields.get('disclosure_deadline'))
+        if disclosure is not None:
             from zoneinfo import ZoneInfo
-            inactive = inactive or disclosure < (at.astimezone(ZoneInfo('Asia/Shanghai')) - timedelta(days=3)).date().isoformat()
+            inactive = inactive or disclosure < (at.astimezone(ZoneInfo('Asia/Shanghai')) - timedelta(days=3)).date()
         elif not deadline:
             created = aware_time(listing.created_at)
             inactive = inactive or (created and created < at - timedelta(days=30))

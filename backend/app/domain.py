@@ -1,5 +1,5 @@
 from decimal import Decimal, InvalidOperation, Overflow, ROUND_HALF_UP
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import re
 from zoneinfo import ZoneInfo
 
@@ -9,6 +9,14 @@ def aware_time(value):
         result = datetime.fromisoformat(value)
         return result.astimezone(timezone.utc) if result.tzinfo is not None else None
     except (ValueError, TypeError):
+        return None
+
+def date_only(value):
+    if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
         return None
 
 def decimal(value):
@@ -74,9 +82,12 @@ def match(fields, filters, at=None):
     if filters.get('registration_open') or filters.get('status') == 'open':
         deadline = fields.get('registration_deadline')
         disclosure = fields.get('disclosure_deadline')
-        historical = disclosure and disclosure < at.astimezone(ZoneInfo('Asia/Shanghai')).date().isoformat()
+        disclosure_day = date_only(disclosure)
+        historical = disclosure_day is not None and disclosure_day < at.astimezone(ZoneInfo('Asia/Shanghai')).date()
         if historical or fields.get('status') in ('closed', 'withdrawn', 'sold', 'failed'):
             checks['registration_open'] = 'fail'
+        elif disclosure and disclosure_day is None:
+            checks['registration_open'] = 'unknown'
         elif deadline:
             cutoff = aware_time(deadline)
             checks['registration_open'] = 'unknown' if cutoff is None else 'pass' if cutoff > at else 'fail'

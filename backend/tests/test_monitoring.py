@@ -43,6 +43,17 @@ def test_detail_selection_handles_active_watched_and_stopped_history():
         db.commit()
         assert [url.rsplit('/',1)[-1] for _,url in detail_targets(db,'nongjy',at)]==['1','3']
 
+def test_malformed_disclosure_does_not_suppress_active_detail_refresh():
+    at=AT()
+    with Session() as db:
+        listing_id,_=ingest(db,'nongjy','https://www.nongjy.cn/web/propertyBid/detail/1',html_deadline(at,50),attachment_cache={})
+        listing=db.get(Listing,listing_id)
+        version=db.get(Version,listing.current_version_id)
+        version.fields={**version.fields,'disclosure_deadline':'0000-00-00'}
+        db.scalar(select(SourceRecord)).last_checked_at=(at-timedelta(hours=1)).isoformat()
+        db.commit()
+        assert len(detail_targets(db,'nongjy',at))==1
+
 def test_partial_detail_failure_keeps_success_and_resumes_remaining(monkeypatch):
     import app.service as service
     at=AT()

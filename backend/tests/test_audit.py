@@ -27,6 +27,12 @@ def test_disclosure_uses_china_calendar_date():
     at=datetime(2026,10,11,18,tzinfo=timezone.utc)
     assert match({'disclosure_deadline':'2026-10-11'},{'registration_open':True},at)['verdict']=='fail'
 
+@pytest.mark.parametrize('disclosure',['0000-00-00','2026-1-2',42])
+def test_malformed_disclosure_is_unknown_not_expired(disclosure):
+    fields={'disclosure_deadline':disclosure,'registration_deadline':'2099-01-01T00:00:00+08:00'}
+    assert match(fields,{'registration_open':True},AT)['verdict']=='unknown'
+    assert match({**fields,'status':'closed'},{'registration_open':True},AT)['verdict']=='fail'
+
 def test_school_publisher_does_not_imply_campus_or_price():
     fields,evidence,_=wzpt_parse(wzhtml(),WZ)
     assert fields['environment'] is None and 'environment' not in evidence
