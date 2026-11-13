@@ -143,7 +143,8 @@ def download(url,kind):
 def eligible(db,row,user_id):
     version=db.get(Version,row.version_id)
     listing=db.get(Listing,version.listing_id) if version else None
-    return row.user_id==user_id and listing is not None and listing.current_version_id==row.version_id
+    return (row.user_id==user_id and listing is not None and listing.current_version_id==row.version_id
+            and version_belongs_to_source(db,version,row.source_id))
 
 
 def process_download():

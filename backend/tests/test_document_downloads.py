@@ -5,7 +5,7 @@ import hashlib
 import httpx
 import pytest
 from sqlalchemy import select,func
-from app.db import Session,DocumentDownload,DocumentReview,Version,Source,User
+from app.db import Session,DocumentDownload,DocumentReview,Version,Source,User,RawDocument,Listing
 import app.document_downloads as downloads
 from app.service import ingest
 from app.document_worker import process_one
@@ -116,6 +116,27 @@ def test_stale_version_cancelled_without_fetch(download_fixture):
         rows=db.scalars(select(DocumentDownload).order_by(DocumentDownload.id)).all()
         assert rows[0].state=='cancelled' and rows[1].state=='downloaded'
     assert len(calls)==1
+
+
+def test_preexisting_wrong_source_job_cancelled_without_fetch(download_fixture):
+    root,data,calls=download_fixture
+    with Session() as db:
+        listing_id,_=observe(db)
+        raw=RawDocument(url='https://www.wzpt.edu.cn/c1a2/page.htm',sha256='b'*64,
+                        text='',snapshot_path='synthetic')
+        db.add(raw);db.flush()
+        version=Version(listing_id=listing_id,raw_id=raw.id,business_hash='other-source',
+                        fields={'attachments':[{'url':'https://www.wzpt.edu.cn/merged.pdf'}]})
+        db.add(version);db.flush()
+        db.get(Listing,listing_id).current_version_id=version.id
+        db.add(DocumentDownload(version_id=version.id,source_id='nongjy',user_id=1,
+                                url='https://www.wzpt.edu.cn/merged.pdf',format='pdf'))
+        db.commit()
+    downloads.process_download()
+    with Session() as db:
+        rows=db.scalars(select(DocumentDownload).order_by(DocumentDownload.id)).all()
+        assert rows[-1].state=='cancelled' and rows[-1].attempts==0
+    assert calls==[]
 
 
 def test_old_token_cannot_publish_review(download_fixture,monkeypatch):
