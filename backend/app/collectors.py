@@ -147,8 +147,12 @@ def nongjy_parse(html, url):
     for label, key in [('报名截止时间', 'registration_deadline'), ('竞价截止时间', 'auction_deadline')]:
         found = re.search(label + r'：\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', text)
         if found:
-            fields[key] = iso_date(found.group(1))
             evidence[key] = found.group(0)
+            try:
+                fields[key] = iso_date(found.group(1))
+            except ValueError:
+                fields[key] = None
+                fields['warnings'].append(label + '无效，截止时间待人工核对')
     # Business state only from visible summary, never from instructions/body hypotheticals.
     summary = soup.select_one('.cont-info-left-title').parent.get_text(' ', strip=True)
     for marker, state in [('已流标', 'failed'), ('已成交', 'sold'), ('已撤回', 'withdrawn'), ('报名已截止', 'closed')]:
@@ -170,7 +174,7 @@ def nongjy_parse(html, url):
             break
     fields['attachments'] = [{'name': a.get_text(' ', strip=True), 'url': urljoin(url, a['href'])}
                               for a in soup.select('a[href]') if re.search(r'\.(docx?|pdf|xlsx?)(?:\?|$)', a['href'], re.I)]
-    fields['warnings'] = ['价格周期尚未由对应标的表格或合同核实；不换算月租', '经营用途未核实']
+    fields['warnings'].extend(['价格周期尚未由对应标的表格或合同核实；不换算月租', '经营用途未核实'])
     fields['bundle'] = bool(re.search(r'[二三四五六七八九十两\d]+间|\d+幢.*\d+幢', fields['title']))
     if fields['bundle']: fields['warnings'].append('整体出租，面积和价格按整体保留，不拆分到成员')
     if fields['attachments'] or soup.select('img[src]'):

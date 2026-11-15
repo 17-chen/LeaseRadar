@@ -23,6 +23,15 @@ def test_price_period_unknown_is_not_five_year_total():
     f, _, _ = nongjy_parse(sample(), 'https://www.nongjy.cn/web/propertyBid/detail/1')
     assert normalize_price(f)['first_year_monthly'] is None
 
+def test_invalid_nongjy_deadline_keeps_other_fields_and_raw_evidence():
+    html = sample().replace('2099-10-16 16:00:00', '2099-02-30 16:00:00')
+    fields, evidence, _ = nongjy_parse(html, 'https://www.nongjy.cn/web/propertyBid/detail/1')
+    assert fields['registration_deadline'] is None
+    assert fields['auction_deadline'] == '2099-10-18T10:00:00+08:00'
+    assert fields['title'] == '合成样例：测试路11号商铺五年租赁权'
+    assert evidence['registration_deadline'] == '报名截止时间：2099-02-30 16:00:00'
+    assert any('报名截止时间无效' in warning for warning in fields['warnings'])
+
 def test_decimal_price_and_area():
     p = normalize_price({'raw_amount':'120000', 'area_m2':'60', 'period_basis':'first_year'})
     assert p['first_year_monthly'] == '10000.00'
