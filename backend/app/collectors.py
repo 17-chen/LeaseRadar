@@ -47,7 +47,11 @@ def public_addresses(url):
     if not approved:
         raise SourceError('URL不在已核准HTTPS来源范围')
     addresses = []
-    for info in socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM):
+    try:
+        resolved = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise SourceError('来源DNS解析失败', retryable=exc.errno == socket.EAI_AGAIN) from exc
+    for info in resolved:
         if not ipaddress.ip_address(info[4][0]).is_global:
             raise SourceError('拒绝非公网地址')
         if info[4][0] not in addresses: addresses.append(info[4][0])

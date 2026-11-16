@@ -87,6 +87,17 @@ def test_abnormal_empty_list_fails():
 def test_ssrf_rejects_url(url):
     with pytest.raises(SourceError): validate_url(url)
 
+@pytest.mark.parametrize('dns_error,retryable', [("EAI_AGAIN", True), ("EAI_NONAME", False)])
+def test_source_dns_failure_retry_policy(monkeypatch, dns_error, retryable):
+    import socket
+    import app.collectors as collectors
+    def unavailable(*args, **kwargs):
+        raise socket.gaierror(getattr(socket, dns_error), 'synthetic DNS failure')
+    monkeypatch.setattr(collectors.socket, 'getaddrinfo', unavailable)
+    with pytest.raises(SourceError, match='DNS解析失败') as error:
+        validate_url('https://www.nongjy.cn/web/propertyBid/detail/1')
+    assert error.value.retryable is retryable
+
 def test_repeat_crawl_and_notification_idempotency():
     with Session() as db:
         u=db.scalar(select(User).where(User.username=='member'))
