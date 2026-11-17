@@ -1,13 +1,18 @@
 from pathlib import Path
 from datetime import datetime,timezone
 import pytest
-from app.collectors import wzpt_parse,SourceError
+from app.collectors import wzpt_parse,wzpt_discover,SourceError
 from app.domain import normalize_price,match
 
 URL='https://www.wzpt.edu.cn/2025/0710/c739771a2844693/page.htm'
 FIXTURE=Path(__file__).resolve().parents[2]/'fixtures/wzpt/labeled_notice.html'
 
 def table(rows):return '<title>合成公告</title><div class="wp_articlecontent"><table>'+''.join('<tr><td>'+k+'</td><td>'+v+'</td></tr>' for k,v in rows)+'</table></div>'
+
+def test_wzpt_zero_page_total_cannot_report_coverage():
+    links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
+    with pytest.raises(SourceError, match='分页总数无效'):
+        wzpt_discover(links + '<span>页码 1 / 0</span>')
 
 def test_fixture_evidence_and_no_permission_inference():
     fields,evidence,text=wzpt_parse(FIXTURE.read_text(),URL)

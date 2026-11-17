@@ -83,6 +83,11 @@ def test_registration_not_auction():
 def test_abnormal_empty_list_fails():
     with pytest.raises(SourceError): nongjy_discover('<html>Maintenance</html>')
 
+def test_nongjy_zero_page_total_cannot_report_coverage():
+    html = '<a href="/web/propertyBid/detail/1">合成公告</a><span>1 / 0 页</span>'
+    with pytest.raises(SourceError, match='分页总数无效'):
+        nongjy_discover(html)
+
 @pytest.mark.parametrize('url', ['https://127.0.0.1/', 'http://www.nongjy.cn/', 'https://www.nongjy.cn.evil.test/', 'https://user@www.nongjy.cn/', 'https://www.nongjy.cn:8080/', 'https://www.nongjy.cn:bad/', 'https://[::1/'])
 def test_ssrf_rejects_url(url):
     with pytest.raises(SourceError): validate_url(url)
