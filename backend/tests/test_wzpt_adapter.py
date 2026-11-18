@@ -14,6 +14,19 @@ def test_wzpt_zero_page_total_cannot_report_coverage():
     with pytest.raises(SourceError, match='分页总数无效'):
         wzpt_discover(links + '<span>页码 1 / 0</span>')
 
+def test_wzpt_discovery_skips_external_articles_before_fetch():
+    links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
+    links += '<a href="https://outside.example/2025/1/page.htm">招租外链</a>'
+    links += '<a href="/2025/lease/page.htm">招租公告</a>'
+    refs, pages = wzpt_discover(links + '<span>页码 1 / 2</span>')
+    assert refs == ['https://www.wzpt.edu.cn/2025/lease/page.htm']
+    assert pages == 2
+
+def test_wzpt_external_articles_cannot_satisfy_list_health_check():
+    links = ''.join(f'<a href="https://outside.example/2025/{i}/page.htm">普通文章</a>' for i in range(5))
+    with pytest.raises(SourceError, match='文章列表未识别'):
+        wzpt_discover(links + '<span>页码 1 / 2</span>')
+
 def test_fixture_evidence_and_no_permission_inference():
     fields,evidence,text=wzpt_parse(FIXTURE.read_text(),URL)
     assert fields['raw_amount']=='234000' and fields['period_basis']=='first_year' and fields['area_m2']=='1500'

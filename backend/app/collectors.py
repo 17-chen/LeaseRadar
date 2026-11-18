@@ -190,11 +190,21 @@ def nongjy_parse(html, url):
 
 def wzpt_discover(html, page=1):
     soup = BeautifulSoup(html, 'html.parser')
-    article_links = [a for a in soup.select('a[href]') if re.search(r'/page.htm$', a['href'])]
+    def approved_article(a):
+        if not re.search(r'/page.htm$', a['href']): return None
+        try:
+            target = urljoin('https://www.wzpt.edu.cn', a['href'])
+            parsed = urlsplit(target)
+            if parsed.scheme == 'https' and parsed.hostname == 'www.wzpt.edu.cn' and not parsed.username and not parsed.password and parsed.port in (None, 443):
+                return target
+        except ValueError:
+            pass
+        return None
+    article_links = [(a, approved_article(a)) for a in soup.select('a[href]')]
+    article_links = [(a, target) for a, target in article_links if target]
     if len(article_links) < 5:
         raise SourceError('高校栏目正常文章列表未识别')
-    refs = [urljoin('https://www.wzpt.edu.cn', a['href']) for a in soup.select('a[href]')
-            if re.search(r'租赁|招租|出租', a.get_text()) and re.search(r'/page.htm$', a['href'])]
+    refs = [target for a, target in article_links if re.search(r'租赁|招租|出租', a.get_text())]
     total = re.search(r'页码\s*\d+\s*/\s*(\d+)', soup.get_text(' ', strip=True))
     if not total: raise SourceError('高校栏目分页未识别')
     pages = int(total.group(1))
