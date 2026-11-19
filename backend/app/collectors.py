@@ -113,8 +113,8 @@ def nongjy_discover(html, page=1):
     if not total:
         raise SourceError('未识别分页总数')
     pages = int(total.group(1))
-    if pages < 1:
-        raise SourceError('分页总数无效，不能报告覆盖成功')
+    if pages < 1 or page < 1 or page > pages:
+        raise SourceError('分页页码与总数不一致，不能报告覆盖成功')
     return ['https://www.nongjy.cn' + p for p in paths], pages
 
 def nongjy_parse(html, url):
@@ -208,7 +208,7 @@ def wzpt_discover(html, page=1):
     total = re.search(r'页码\s*\d+\s*/\s*(\d+)', soup.get_text(' ', strip=True))
     if not total: raise SourceError('高校栏目分页未识别')
     pages = int(total.group(1))
-    if pages < 1: raise SourceError('高校栏目分页总数无效，不能报告覆盖成功')
+    if pages < 1 or page < 1 or page > pages: raise SourceError('高校栏目分页页码与总数不一致，不能报告覆盖成功')
     return list(dict.fromkeys(refs)), pages
 
 def wzpt_parse(html, url):

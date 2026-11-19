@@ -85,8 +85,13 @@ def test_abnormal_empty_list_fails():
 
 def test_nongjy_zero_page_total_cannot_report_coverage():
     html = '<a href="/web/propertyBid/detail/1">合成公告</a><span>1 / 0 页</span>'
-    with pytest.raises(SourceError, match='分页总数无效'):
+    with pytest.raises(SourceError, match='页码与总数不一致'):
         nongjy_discover(html)
+
+def test_nongjy_page_beyond_reported_total_cannot_report_coverage():
+    html = '<a href="/web/propertyBid/detail/1">合成公告</a><span>3 / 2 页</span>'
+    with pytest.raises(SourceError, match='页码与总数不一致'):
+        nongjy_discover(html, page=3)
 
 @pytest.mark.parametrize('url', ['https://127.0.0.1/', 'http://www.nongjy.cn/', 'https://www.nongjy.cn.evil.test/', 'https://user@www.nongjy.cn/', 'https://www.nongjy.cn:8080/', 'https://www.nongjy.cn:bad/', 'https://[::1/'])
 def test_ssrf_rejects_url(url):

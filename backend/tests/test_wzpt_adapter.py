@@ -11,8 +11,13 @@ def table(rows):return '<title>合成公告</title><div class="wp_articlecontent
 
 def test_wzpt_zero_page_total_cannot_report_coverage():
     links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
-    with pytest.raises(SourceError, match='分页总数无效'):
+    with pytest.raises(SourceError, match='页码与总数不一致'):
         wzpt_discover(links + '<span>页码 1 / 0</span>')
+
+def test_wzpt_page_beyond_reported_total_cannot_report_coverage():
+    links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
+    with pytest.raises(SourceError, match='页码与总数不一致'):
+        wzpt_discover(links + '<span>页码 3 / 2</span>', page=3)
 
 def test_wzpt_discovery_skips_external_articles_before_fetch():
     links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
