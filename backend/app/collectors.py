@@ -202,7 +202,7 @@ def wzpt_discover(html, page=1):
         return None
     article_links = [(a, approved_article(a)) for a in soup.select('a[href]')]
     article_links = [(a, target) for a, target in article_links if target]
-    if len(article_links) < 5:
+    if len({target for _, target in article_links}) < 5:
         raise SourceError('高校栏目正常文章列表未识别')
     refs = [target for a, target in article_links if re.search(r'租赁|招租|出租', a.get_text())]
     total = re.search(r'页码\s*\d+\s*/\s*(\d+)', soup.get_text(' ', strip=True))

@@ -32,6 +32,11 @@ def test_wzpt_external_articles_cannot_satisfy_list_health_check():
     with pytest.raises(SourceError, match='文章列表未识别'):
         wzpt_discover(links + '<span>页码 1 / 2</span>')
 
+def test_wzpt_duplicate_links_cannot_satisfy_list_health_check():
+    links = '<a href="/2025/1/page.htm">普通文章</a>' * 5
+    with pytest.raises(SourceError, match='文章列表未识别'):
+        wzpt_discover(links + '<span>页码 1 / 2</span>')
+
 def test_fixture_evidence_and_no_permission_inference():
     fields,evidence,text=wzpt_parse(FIXTURE.read_text(),URL)
     assert fields['raw_amount']=='234000' and fields['period_basis']=='first_year' and fields['area_m2']=='1500'
