@@ -19,6 +19,11 @@ def test_wzpt_page_beyond_reported_total_cannot_report_coverage():
     with pytest.raises(SourceError, match='页码与总数不一致'):
         wzpt_discover(links + '<span>页码 3 / 2</span>', page=3)
 
+def test_wzpt_stale_page_cannot_report_requested_page_coverage():
+    links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
+    with pytest.raises(SourceError, match='页码与总数不一致'):
+        wzpt_discover(links + '<span>页码 1 / 2</span>', page=2)
+
 def test_wzpt_discovery_skips_external_articles_before_fetch():
     links = ''.join(f'<a href="/2025/{i}/page.htm">普通文章</a>' for i in range(5))
     links += '<a href="https://outside.example/2025/1/page.htm">招租外链</a>'

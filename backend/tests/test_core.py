@@ -93,6 +93,11 @@ def test_nongjy_page_beyond_reported_total_cannot_report_coverage():
     with pytest.raises(SourceError, match='页码与总数不一致'):
         nongjy_discover(html, page=3)
 
+def test_nongjy_stale_page_cannot_report_requested_page_coverage():
+    html = '<a href="/web/propertyBid/detail/1">合成公告</a><span>1 / 2 页</span>'
+    with pytest.raises(SourceError, match='页码与总数不一致'):
+        nongjy_discover(html, page=2)
+
 @pytest.mark.parametrize('url', ['https://127.0.0.1/', 'http://www.nongjy.cn/', 'https://www.nongjy.cn.evil.test/', 'https://user@www.nongjy.cn/', 'https://www.nongjy.cn:8080/', 'https://www.nongjy.cn:bad/', 'https://[::1/'])
 def test_ssrf_rejects_url(url):
     with pytest.raises(SourceError): validate_url(url)
